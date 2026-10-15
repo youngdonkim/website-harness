@@ -16,7 +16,7 @@
 ## 1. 이 문서를 언제 쓰나
 
 - **참고에서 값을 뽑을 때** — idea-to-mvp 2단계 입구(`2-mockup.md` §2.2)에서 참고 디자인을 받아 브리프에 적을 때, 이미 지은 프로젝트의 브랜드를 바꿀 때(리브랜딩).
-- **뽑아 둔 값을 토큰으로 옮길 때** — 브리프 「4. 확정 브랜드 자산」의 「우리가 쓰는 값」 표를 1층 램프·2층 shadcn 변수로 옮길 때 (§5). idea-to-mvp에서는 5단계 디자인 시스템 baseline(`5-frontend-build.md` §2.5.3)이 이 자리다.
+- **뽑아 둔 값을 토큰으로 옮길 때** — 브리프 「4. 확정 브랜드 자산」의 「우리가 쓰는 값」 표를 1층 램프·2층 shadcn 변수로 옮길 때 (§5). idea-to-mvp에서는 4단계 디자인 시스템 baseline(`4-frontend-build.md` §2.5.3)이 이 자리다.
 
 참고를 읽는 일이지 우리 화면을 판정하는 일이 아니다 — 남의 사이트를 브라우저로 열어도 「화면 검증은 사람 몫」 원칙과 부딪히지 않는다.
 
@@ -124,7 +124,7 @@
 | 그림자 | 그림자 원료 | 다리 블록 `--shadow-card` 등 (naming-taxonomy.md §2 shadow 행) |
 | 밀도 | 타입 스케일의 본문 크기(`--b1-base`) | `text-b1`. 화면 단위 조정이 필요하면 naming-taxonomy.md §2의 스코프 클래스 |
 | 첫 화면 구성 | 토큰 아님 | 토큰 아님 — 화면 인벤토리의 홈 항목이 받는다 |
-| 움직임 느낌 | 말로 적은 느낌을 움직임 값으로 바꿀 때 만든다 (idea-to-mvp는 5단계 `5-frontend-build.md` §2.5.7) | `--duration-*`·`--ease-*` ([bootstrap-project.md](bootstrap-project.md) §1.4) |
+| 움직임 느낌 | 말로 적은 느낌을 움직임 값으로 바꿀 때 만든다 (idea-to-mvp는 4단계 `4-frontend-build.md` §2.5.7) | `--duration-*`·`--ease-*` ([bootstrap-project.md](bootstrap-project.md) §1.4) |
 
 **강조색 하나에서 브랜드 램프 50~950 만들기**
 

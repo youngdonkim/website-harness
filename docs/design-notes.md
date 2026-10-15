@@ -70,7 +70,7 @@ SKILL.md에는 규칙 문장(코드에서 상태 변형을 확인한다)만 남�
 
 ### idea-to-mvp — 2단계가 「목업」, 5단계가 「프로토타입」인 이유
 
-출처: `payload/.claude/skills/idea-to-mvp/references/2-mockup.md` 도입부(목차 앞), `5-frontend-build.md` §1 용어 목록 아래. 같은 설명이 두 문서에 있어 둘 다 옮겼다.
+출처: `payload/.claude/skills/idea-to-mvp/references/2-mockup.md` 도입부(목차 앞), `4-frontend-build.md` §1 용어 목록 아래. 같은 설명이 두 문서에 있어 둘 다 옮겼다.
 
 > **이 단계 이름이 목업(Mockup)인 이유** — 업계에서 목업(mockup)은 겉모습만 완성된 정지 그림, 프로토타입(prototype)은 동작으로 이어지는 견본을 뜻한다. 여기 캔버스는 기능 목록을 다듬으려고 보는 정지 그림이라 목업이고, 코드로 곧장 옮겨지는 5단계 캔버스가 프로토타입 캔버스다 (`5-frontend-build.md` 첫머리).
 
@@ -84,7 +84,7 @@ SKILL.md에는 규칙 문장(코드에서 상태 변형을 확인한다)만 남�
 
 ### idea-to-mvp — 「최종 아이디어·비목표·검증 가설·북극성」의 옛 이름
 
-출처: `payload/.claude/skills/idea-to-mvp/references/3-market-research.md` §2.7 「여기서 하지 않는 것」
+출처: `payload/.claude/skills/idea-to-mvp/references/6-market-research.md` §2.7 「여기서 하지 않는 것」
 
 이 넷의 옛 이름은 「빌더 가드레일」이었다. 본문의 「(구 "빌더 가드레일")」 괄호는 지웠고, 그 이름을 쓰는 문서는 이제 없다.
 
