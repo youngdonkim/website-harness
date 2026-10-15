@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 앱 코드가 생기기 전(5단계 FrontendBuild 이전)에는 검사할 것이 없어 통과 처리한다.
+      # 앱 코드가 생기기 전(4단계 FrontendBuild 이전)에는 검사할 것이 없어 통과 처리한다.
       # package-lock.json이 생기는 순간부터 아래 Node 단계들이 자동으로 돌기 시작한다.
       - name: Node 프로젝트 여부 확인
         id: node
@@ -37,7 +37,7 @@ jobs:
         run: npm run lint
 
       # 라우트 정적 검사·순수 함수 단위 검사 — 화면도 DB도 안 열어서 CI에서 그대로 돈다.
-      # 스크립트가 package.json에 있을 때만 돈다 (5단계 이전 프로젝트는 없다).
+      # 스크립트가 package.json에 있을 때만 돈다 (4단계 이전 프로젝트는 없다).
       # 스모크 테스트(npm run smoke)는 여기 넣지 않는다 — 도는 서버와 로컬 Supabase가
       # 있어야 하는데 CI에는 DB가 없다. 안 도는 검사를 넣으면 있다고 믿게 돼서 더 위험하다.
       # 대신 done-task가 머지 직전에 로컬에서 돌린다.

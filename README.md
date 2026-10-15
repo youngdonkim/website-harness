@@ -139,7 +139,7 @@ git clone https://github.com/youngdonkim/website-harness.git ~/dev/website-harne
 
 | 종류 | 이름 | 역할 |
 |---|---|---|
-| 단계 스킬 | `idea-to-mvp` | 7단계: UserStory · Mockup · MarketResearch · InformationArchitecture · FrontendBuild · BackendBuild · MvpLaunch (통과 기준) |
+| 단계 스킬 | `idea-to-mvp` | 7단계: UserStory · Mockup · InformationArchitecture · FrontendBuild · BackendBuild · MarketResearch · MvpLaunch (통과 기준) |
 | 횡단 스킬 | `project-init` | 프로젝트에 하네스 적용 — `payload/`를 프로젝트 루트에 복사 + 훅 등록 설정 병합 + AGENTS.md 뼈대 생성. 이미 적용된 프로젝트에서 재실행하면 최신 원본과 비교해 동기화 |
 | 횡단 스킬 | `github-connect` | 이 컴퓨터에서 프로젝트가 GitHub에 올라가게 준비 — git·gh 설치 확인, 토큰(`.env.cli`), 계정 검문, 저장소 생성, 첫 push. 이미 된 단계는 건너뛴다. 하네스 신규 적용 끝에 자동으로 불리고, "깃헙 연결해줘"로 따로 불러도 된다 |
 | 횡단 스킬 | `new-task` | main 최신화 + 머지가 끝난 옛 작업 브랜치 정리 + 새 작업 브랜치 생성 |
@@ -341,7 +341,7 @@ payload/.claude/hooks/                # 훅 스크립트
 payload/.claude/rules/                # 특정 파일을 다룰 때만 적용되는 세부 규칙
 payload/.claude/templates/            # delegation-integrator가 쓰는 sources·status 문서 틀
 payload/docs/git-workflow.md          # 훅·done-task가 참조하는 작업 흐름 문서
-payload/docs/account-check.md         # 계정 검문 절차·서비스별 함정 — 첫 push·첫 배포·6-0 직전에 읽는 온디맨드 문서
+payload/docs/account-check.md         # 계정 검문 절차·서비스별 함정 — 첫 push·첫 배포·5-0 직전에 읽는 온디맨드 문서
 payload/.github/workflows/ci.yml      # done-task가 머지 전 통과를 기다리는 lint + build 검사
 payload/.claude/settings-hooks.json   # (예외) 복사 아님 — 훅 등록 원본, 프로젝트 설정 파일에 합쳐 넣는 내용
 payload/AGENTS.md.template            # (예외) 복사 아님 — 소유·계정 답을 채워 프로젝트 AGENTS.md를 만드는 틀
