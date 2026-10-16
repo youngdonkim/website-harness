@@ -139,7 +139,7 @@ git clone https://github.com/youngdonkim/website-harness.git ~/dev/website-harne
 
 | 종류 | 이름 | 역할 |
 |---|---|---|
-| 단계 스킬 | `idea-to-mvp` | 7단계: UserStory · Mockup · InformationArchitecture · FrontendBuild · BackendBuild · MarketResearch · MvpLaunch (통과 기준) |
+| 단계 스킬 | `idea-to-mvp` | 7단계: Intent(인터뷰) · Mockup · InformationArchitecture · FrontendBuild · BackendBuild · MarketResearch · MvpLaunch (통과 기준) |
 | 횡단 스킬 | `project-init` | 프로젝트에 하네스 적용 — `payload/`를 프로젝트 루트에 복사 + 훅 등록 설정 병합 + AGENTS.md 뼈대 생성. 이미 적용된 프로젝트에서 재실행하면 최신 원본과 비교해 동기화 |
 | 횡단 스킬 | `github-connect` | 이 컴퓨터에서 프로젝트가 GitHub에 올라가게 준비 — git·gh 설치 확인, 토큰(`.env.cli`), 계정 검문, 저장소 생성, 첫 push. 이미 된 단계는 건너뛴다. 하네스 신규 적용 끝에 자동으로 불리고, "깃헙 연결해줘"로 따로 불러도 된다 |
 | 횡단 스킬 | `new-task` | main 최신화 + 머지가 끝난 옛 작업 브랜치 정리 + 새 작업 브랜치 생성 |
@@ -152,7 +152,6 @@ git clone https://github.com/youngdonkim/website-harness.git ~/dev/website-harne
 | 횡단 스킬 | `transfer-ownership` | 프로젝트 소유를 다른 소유로 옮김 — 저장소·DB·호스팅·로그인 앱·AI 키를 순서대로 이전하고 계정 표를 다시 씀 |
 | 서브에이전트 | `git-flow` | `new-task`·`ship-task`·`rewind-task`의 실제 실행자 |
 | 서브에이전트 | `harness-auditor` | `harness-diet`의 회차별 감사관 — 지시 문서를 읽기 전용으로 정독해 판정만 반환 |
-| 서브에이전트 | `user-scenario-writer` | 영화 시나리오형 유저 스토리 작성 |
 | 서브에이전트 | `ux-writing-reviewer` | UI 문구를 UX writing 원칙과 대조해 직접 교정 |
 | 서브에이전트 | `delegation-integrator` | 타 코딩 에이전트 연동 조사·설치·테스트·위임 스킬 생성/갱신 |
 | 훅 | `no-main-push` | main 브랜치에 바로 올리는 것을 차단 (PR 검토 흐름 강제). 예외는 원격에 main이 아직 없을 때의 첫 push 하나 |
