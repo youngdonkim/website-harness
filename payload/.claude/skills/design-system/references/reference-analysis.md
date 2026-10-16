@@ -123,7 +123,7 @@
 | 간격 | 4px 격자는 그대로 둔다 | 따로 변수 없음 — 셸 거터(`--space-screen-x`)와 부품 `size` 기본값을 고르는 근거. adapter 적용 규칙 요약에 한 줄 ([bootstrap-project.md](bootstrap-project.md) §4) |
 | 그림자 | 그림자 원료 | 다리 블록 `--shadow-card` 등 (naming-taxonomy.md §2 shadow 행) |
 | 밀도 | 타입 스케일의 본문 크기(`--b1-base`) | `text-b1`. 화면 단위 조정이 필요하면 naming-taxonomy.md §2의 스코프 클래스 |
-| 첫 화면 구성 | 토큰 아님 | 토큰 아님 — 화면 인벤토리의 홈 항목이 받는다 |
+| 첫 화면 구성 | 토큰 아님 | 토큰 아님 — `feature-list.md` 화면 목록의 홈 행이 받는다 |
 | 움직임 느낌 | 말로 적은 느낌을 움직임 값으로 바꿀 때 만든다 (idea-to-mvp는 3단계 `3-frontend-build.md` §2.5.7) | `--duration-*`·`--ease-*` ([bootstrap-project.md](bootstrap-project.md) §1.4) |
 | 부품 모양 | 토큰 아님 | 토큰 아님 — 3층 부품의 기본 모양으로 간다 (아래) |
 
