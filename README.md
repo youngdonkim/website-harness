@@ -83,7 +83,7 @@ git clone https://github.com/youngdonkim/website-harness.git ~/dev/website-harne
 하네스 적용해줘
 ```
 
-→ 자세히: [§5.2](#52-프로젝트에-적용하기). 이 말이 안 먹으면 [§5.5](#55-자주-막히는-두-가지)에 해결법이 있다.
+→ 자세히: [§5.2](#52-프로젝트에-적용하기). 이 말이 통하지 않으면 [§5.5](#55-자주-막히는-두-가지)에 해결법이 있다.
 
 적용이 끝나면 채팅창에서 이 명령들을 쓴다 — 역할은 [§4 들어 있는 것](#4-들어-있는-것) 표에.
 
@@ -135,21 +135,21 @@ git clone https://github.com/youngdonkim/website-harness.git ~/dev/website-harne
 부품의 종류는 [§3.2](#32-스킬서브에이전트훅)에서 설명한 스킬·서브에이전트·훅 세 가지인데, 스킬은 쓰이는 시점에 따라 다시 둘로 나뉜다.
 
 - **단계 스킬** — 아이디어에서 MVP까지 가는 **6단계 본줄기를 진행하는 스킬**이다. 프로젝트를 앞으로 밀고 나가는 역할이라 지금은 `idea-to-mvp` 하나뿐이고, 이 하나를 여러 번 불러 단계를 하나씩 밟아간다.
-- **횡단 스킬** — 몇 단계에 있든 **필요할 때마다 꺼내 쓰는 스킬**이다. 6단계 전체를 가로질러(횡단) 쓰이기 때문에 이렇게 부른다. 작업을 시작하고 마무리하고 되돌리는 일, 디자인을 다루는 일처럼 단계와 상관없이 계속 반복되는 작업들이다.
+- **공통 스킬** — 몇 단계에 있든 **필요할 때마다 꺼내 쓰는 스킬**이다.단계와 상관없이 공통으로 쓰이기 때문에 이렇게 부른다. 작업을 시작하고 마무리하고 되돌리는 일, 디자인을 다루는 일처럼 단계와 상관없이 계속 반복되는 작업들이다.
 
 | 종류 | 이름 | 역할 |
 |---|---|---|
 | 단계 스킬 | `idea-to-mvp` | 6단계: Intent(인터뷰) · Mockup · InformationArchitecture · FrontendBuild · BackendBuild · MarketResearch · MvpLaunch (통과 기준) |
-| 횡단 스킬 | `project-init` | 프로젝트에 하네스 적용 — `payload/`를 프로젝트 루트에 복사 + 훅 등록 설정 병합 + AGENTS.md 뼈대 생성. 이미 적용된 프로젝트에서 재실행하면 최신 원본과 비교해 동기화 |
-| 횡단 스킬 | `github-connect` | 이 컴퓨터에서 프로젝트가 GitHub에 올라가게 준비 — git·gh 설치 확인, 토큰(`.env.cli`), 계정 검문, 저장소 생성, 첫 push. 이미 된 단계는 건너뛴다. 하네스 신규 적용 끝에 자동으로 불리고, "깃헙 연결해줘"로 따로 불러도 된다 |
-| 횡단 스킬 | `new-task` | main 최신화 + 머지가 끝난 옛 작업 브랜치 정리 + 새 작업 브랜치 생성 |
-| 횡단 스킬 | `done-task` | ship 한 흐름 — 안에서 simplify 판단을 먼저 하고, git 절차는 내부 스킬 ship-task에 넘긴다. 부르는 이름은 done-task 하나다 |
-| 횡단 스킬 | `ship-task` | done-task가 부르는 내부 스킬(fork) — push → PR 생성 → (오너면) CI 대기 → squash 머지 → 브랜치 정리. 직접 부를 일 없음 |
-| 횡단 스킬 | `rewind-task` | 자동 저장 시점으로 되돌리기 — 후보 표를 보여준 뒤 파일·브랜치·되감기 중 선택 |
-| 횡단 스킬 | `design-system` | 3단 토큰 계층(foundation→semantic→component) + 조립 계층(frame·pattern) 디자인 시스템 방법론 — 화면·컴포넌트·토큰을 만들거나 수정할 때 참조 |
-| 횡단 스킬 | `harness-diet` | 지시 문서(AGENTS.md·스킬·에이전트·rules)의 군살·중복·모순 검토 → 보고서 + 사람 결정 목록 (수정은 결정 후 별도) |
-| 횡단 스킬 | `deep-research` | 질문을 여러 각도로 나눠 병렬 조사 → 주장마다 반박 시도 → 깨지지 않은 것만 출처·검증 상태를 달아 보고 |
-| 횡단 스킬 | `transfer-ownership` | 프로젝트 소유를 다른 소유로 옮김 — 저장소·DB·호스팅·로그인 앱·AI 키를 순서대로 이전하고 계정 표를 다시 씀 |
+| 공통 스킬 | `project-init` | 프로젝트에 하네스 적용 — `payload/`를 프로젝트 루트에 복사 + 훅 등록 설정 병합 + AGENTS.md 뼈대 생성. 이미 적용된 프로젝트에서 재실행하면 최신 원본과 비교해 동기화 |
+| 공통 스킬 | `github-connect` | 이 컴퓨터에서 프로젝트가 GitHub에 올라가게 준비 — git·gh 설치 확인, 토큰(`.env.cli`), 계정 확인, 저장소 생성, 첫 push. 이미 된 단계는 건너뛴다. 하네스 신규 적용 끝에 자동으로 불리고, "깃헙 연결해줘"로 따로 불러도 된다 |
+| 공통 스킬 | `new-task` | main 최신화 + 머지가 끝난 옛 작업 브랜치 정리 + 새 작업 브랜치 생성 |
+| 공통 스킬 | `done-task` | ship 한 흐름 — 안에서 simplify 판단을 먼저 하고, git 절차는 내부 스킬 ship-task에 넘긴다. 부르는 이름은 done-task 하나다 |
+| 공통 스킬 | `ship-task` | done-task가 부르는 내부 스킬(fork) — push → PR 생성 → (오너면) CI 대기 → squash 머지 → 브랜치 정리. 직접 부를 일 없음 |
+| 공통 스킬 | `rewind-task` | 자동 저장 시점으로 되돌리기 — 후보 표를 보여준 뒤 파일·브랜치·되감기 중 선택 |
+| 공통 스킬 | `design-system` | 3단 토큰 계층(foundation→semantic→component) + 조립 계층(frame·pattern) 디자인 시스템 방법론 — 화면·컴포넌트·토큰을 만들거나 수정할 때 참조 |
+| 공통 스킬 | `harness-diet` | 지시 문서(AGENTS.md·스킬·에이전트·rules)의 군살·중복·모순 검토 → 보고서 + 사람 결정 목록 (수정은 결정 후 별도) |
+| 공통 스킬 | `deep-research` | 질문을 여러 각도로 나눠 병렬 조사 → 주장마다 반박 시도 → 깨지지 않은 것만 출처·검증 상태를 달아 보고 |
+| 공통 스킬 | `transfer-ownership` | 프로젝트 소유를 다른 소유로 옮김 — 저장소·DB·호스팅·로그인 앱·AI 키를 순서대로 이전하고 계정 표를 다시 씀 |
 | 서브에이전트 | `git-flow` | `new-task`·`ship-task`·`rewind-task`의 실제 실행자 |
 | 서브에이전트 | `harness-auditor` | `harness-diet`의 회차별 감사관 — 지시 문서를 읽기 전용으로 정독해 판정만 반환 |
 | 서브에이전트 | `ux-writing-reviewer` | UI 문구를 UX writing 원칙과 대조해 직접 교정 |
@@ -191,9 +191,9 @@ git clone https://github.com/youngdonkim/website-harness.git ~/dev/website-harne
 하네스 적용해줘
 ```
 
-그러면 `/project-init` 스킬이 돌면서 [§5.3](#53-프로젝트에-무엇이-생기나)의 파일들을 만든다. 도중에 **프로젝트 소유(개인/회사)** 하나만 물어본다. 소유 답과 함께 서비스별 계정을 물어 같은 파일의 「소유와 계정」 표를 채운다 (모르는 항목은 `(확인 필요)`) — 이후 저장소·배포·DB가 전부 그 표의 계정으로만 만들어지도록 검문이 걸린다. 서비스 이름·한 줄 정의·타겟은 여기서 묻지 않는다 — `/idea-to-mvp` 1단계가 물어 함께 다듬은 뒤 `AGENTS.md` 상단에 써넣는다(설치 때 대충 한 답이 그대로 굳지 않게).
+그러면 `/project-init` 스킬이 돌면서 [§5.3](#53-프로젝트에-무엇이-생기나)의 파일들을 만든다. 도중에 **프로젝트 소유(개인/회사)** 하나만 물어본다. 소유 답과 함께 서비스별 계정을 물어 같은 파일의 「소유와 계정」 표를 채운다 (모르는 항목은 `(확인 필요)`) — 이후 저장소·배포·DB가 전부 그 표의 계정으로만 만들어지도록 확인이 걸린다. 서비스 이름·한 줄 정의·타겟은 여기서 묻지 않는다 — `/idea-to-mvp` 1단계가 물어 함께 다듬은 뒤 `AGENTS.md` 상단에 써넣는다(설치 때 대충 한 답이 그대로 굳지 않게).
 
-**첫 적용 때는 이 말이 안 먹을 수 있다.** 아직 그 프로젝트에 스킬 파일이 없어서 Claude가 무슨 말인지 모르기 때문이다. 그럴 땐 원본 경로를 직접 알려주면 된다.
+**첫 적용 때는 이 말이 통하지 않을 수 있다.** 아직 그 프로젝트에 스킬 파일이 없어서 Claude가 무슨 말인지 모르기 때문이다. 그럴 땐 원본 경로를 직접 알려주면 된다.
 
 ```
 ~/dev/website-harness의 payload/.claude/skills/project-init/SKILL.md를 읽고 그대로 실행해줘
@@ -228,7 +228,7 @@ git clone https://github.com/youngdonkim/website-harness.git ~/dev/website-harne
 
 ### 5.5 자주 막히는 두 가지
 
-- **첫 적용 때 "하네스 적용해줘"가 안 먹는다.** 아직 그 프로젝트에 스킬 파일이 없어서다. [§5.2](#52-프로젝트에-적용하기)처럼 원본의 `SKILL.md` 경로를 알려주면 된다.
+- **첫 적용 때 "하네스 적용해줘"가 통하지 않는다.** 아직 그 프로젝트에 스킬 파일이 없어서다. [§5.2](#52-프로젝트에-적용하기)처럼 원본의 `SKILL.md` 경로를 알려주면 된다.
 - **스킬 이름은 짧은 형태로 친다.** 입력창 자동완성에 뜨는 이름 그대로 — `/project-init`·`/idea-to-mvp`처럼 쓴다. 데스크톱 앱이든 터미널이든 같다.
 
 ## 6. 업데이트 — 새 버전 받기
@@ -334,13 +334,13 @@ CLAUDE.md                             # @AGENTS.md 한 줄 — 클로드 코드�
 docs/eval-scenarios.md                # 실사고 재현 색인 — 스킬·에이전트·rules를 크게 고칠 때 되짚는다
 .claude/                              # 이 저장소에 적용된 하네스 — payload/.claude/와 같은 내용
 payload/                              # 프로젝트 루트의 미러 — 이 구조 그대로 프로젝트에 복사된다
-payload/.claude/skills/               # 단계 스킬·횡단 스킬
+payload/.claude/skills/               # 단계 스킬·공통 스킬
 payload/.claude/agents/               # 서브에이전트
 payload/.claude/hooks/                # 훅 스크립트
 payload/.claude/rules/                # 특정 파일을 다룰 때만 적용되는 세부 규칙
 payload/.claude/templates/            # delegation-integrator가 쓰는 sources·status 문서 틀
 payload/docs/git-workflow.md          # 훅·done-task가 참조하는 작업 흐름 문서
-payload/docs/account-check.md         # 계정 검문 절차·서비스별 함정 — 첫 push·첫 배포·4-0 직전에 읽는 온디맨드 문서
+payload/docs/account-check.md         # 계정 확인 절차·서비스별 함정 — 첫 push·첫 배포·4-0 직전에 읽는 온디맨드 문서
 payload/.github/workflows/ci.yml      # done-task가 머지 전 통과를 기다리는 lint + build 검사
 payload/.claude/settings-hooks.json   # (예외) 복사 아님 — 훅 등록 원본, 프로젝트 설정 파일에 합쳐 넣는 내용
 payload/AGENTS.md.template            # (예외) 복사 아님 — 소유·계정 답을 채워 프로젝트 AGENTS.md를 만드는 틀

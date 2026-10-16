@@ -18,14 +18,14 @@ description: 현재 feature 브랜치를 main에 ship. 메인 세션에서 simpl
 
 1. `git branch --show-current`를 돌린다. main이거나 detached HEAD면 중단하고 사용자에게 안내한다 — ship할 브랜치가 아니다.
 2. **simplify 판단** — 아래 셋을 순서대로 본다.
-   - a. `git diff origin/main...HEAD --stat -- src` (src 폴더가 없는 프로젝트면 코드 폴더로 대체). 비어 있으면 → 4로 (코드 변경 없음, 게이트 대상 아님).
+   - a. `git diff origin/main...HEAD --stat -- src` (src 폴더가 없는 프로젝트면 코드 폴더로 대체). 비어 있으면 → 4로 (코드 변경 없음, 관문 대상 아님).
    - b. `git log origin/main..HEAD --format=%s | grep -E '^(wip: /simplify( |$)|chore: simplify 반영$)'`. 하나라도 있으면 → 4로 (이미 검토함).
    - c. 변경이 주석·문구 한 줄처럼 자잘하면(diff --stat 기준 몇 줄 이내, 로직 없음) → 스킵으로 정하고 4로. 그 외 → 3으로.
 3. Skill 도구로 `simplify`를 실행하고 나온 지적을 반영한다. 끝나면 **이 턴 안에서 직접 커밋한다** —
    `git add -A && git commit -m "wip: /simplify — <한 줄 요약>"`.
    고칠 게 없어 변경이 없으면 `git commit --allow-empty -m "wip: /simplify — 변경 없음"`.
    simplify는 코드만 고치니 시크릿 파일이 새로 생기지 않는다 — `git status`에 `.env*`·키 파일이 보이면 add 전에 멈추고 보고한다.
-   (이유: auto-wip-commit 훅은 턴이 끝날 때 커밋한다. 같은 턴에서 바로 ship-task를 부르면 그 시점엔 working tree가 더러워서 ship-task §1 안전 검사에 걸린다. 그리고 표식 제목 형식은 ship-task §1.5 게이트의 정규식과 맞아야 한다.)
+   (이유: auto-wip-commit 훅은 턴이 끝날 때 커밋한다. 같은 턴에서 바로 ship-task를 부르면 그 시점엔 working tree가 더러워서 ship-task §1 안전 검사에 걸린다. 그리고 표식 제목 형식은 ship-task §1.5 관문의 정규식과 맞아야 한다.)
 4. Skill 도구로 `ship-task`를 호출한다. args = 이 스킬이 받은 인자 그대로 + (2-c에서 스킵했으면) "스킵".
 5. ship-task가 [결정 필요]를 돌려주면 판단해 결정을 args에 담아 **ship-task를** 재호출한다 (done-task를 다시 부르지 않는다 — simplify 판단은 이미 끝났다). 사실 확인이 필요한 결정(마이그레이션 종류 등)은 지어내지 말고 사용자에게 묻는다.
 6. ship-task의 완료 보고를 그대로 사용자에게 전한다.
