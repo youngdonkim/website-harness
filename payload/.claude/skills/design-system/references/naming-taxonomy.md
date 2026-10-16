@@ -24,7 +24,7 @@ semantic 층에 토큰을 추가할 때 따르는 규범. **기존 토큰의 이
 5. [새 토큰 추가 절차](#5-새-토큰-추가-절차)
    - [5.1 자리 찾기](#51-자리-찾기)
    - [5.2 이름 짓기](#52-이름-짓기)
-   - [5.3 값 배선](#53-값-배선)
+   - [5.3 값 연결](#53-값-연결)
    - [5.4 주석](#54-주석)
    - [5.5 검증](#55-검증)
 
@@ -59,7 +59,7 @@ semantic 층에 토큰을 추가할 때 따르는 규범. **기존 토큰의 이
 상태(state)    = 상호작용:     pressed · disabled · hover
 ```
 
-Tailwind는 이름 묶음(namespace)마다 클래스를 만든다 — `--radius-card`를 다리 블록에 두면 `rounded-card`,
+Tailwind는 이름 묶음(namespace)마다 클래스를 만든다 — `--radius-card`를 `@theme inline` 블록에 두면 `rounded-card`,
 `--text-b1`이면 `text-b1`이 생긴다. 그래서 이름이 곧 제품 코드가 쓰는 클래스 이름이다.
 
 **대원칙 두 가지:**
@@ -70,7 +70,7 @@ Tailwind는 이름 묶음(namespace)마다 클래스를 만든다 — `--radius-
 ## 2. 유형표 — 새 토큰의 자리 찾기
 
 새 토큰 하나는 2층 파일의 세 블록에 걸친다 — 값은 `:root`(다크 값은 `.dark`), 클래스로 꺼내 쓰려면
-다리 블록(`@theme inline`)에 이름을 올린다. 「둘 자리」 열이 그 배치다.
+`@theme inline` 블록에 이름을 올린다. 「둘 자리」 열이 그 배치다.
 
 | 유형 | 하위 유형 | 예시 | 둘 자리 → 생기는 클래스 | 신규 추가 문법 |
 |---|---|---|---|---|
@@ -80,15 +80,15 @@ Tailwind는 이름 묶음(namespace)마다 클래스를 만든다 — `--radius-
 | color/surface·line | 면과 선 | `--background` · `--card` · `--popover` · `--border` · `--input` · `--ring` | 같음 → `bg-card`·`border-border` | 표면 위계 규범(§3) 준수 |
 | color/control | 컨트롤 전용 | `--neutral-pressed` | 같음 | `--{역할}-{부위}[-{상태}]` |
 | color/domain | 기능 전용 팔레트 | `--chart-1`~`--chart-5`(shadcn) · `--bar-*`(계산기) | 같음 → `fill-chart-1` | `--{도메인}-{역할}` — 2개 이상 화면에서 쓸 때만 |
-| radius | 용도별 | `--radius`(기준) · `--radius-control` · `--radius-card` · `--radius-sheet` · `--radius-pill` | `--radius`는 `:root`, 나머지는 다리 블록에 — 대개 `calc(var(--radius) ± Npx)`로 파생 → `rounded-card` | `--radius-{용도}` |
+| radius | 용도별 | `--radius`(기준) · `--radius-control` · `--radius-card` · `--radius-sheet` · `--radius-pill` | `--radius`는 `:root`, 나머지는 `@theme inline` 블록에 — 대개 `calc(var(--radius) ± Npx)`로 파생 → `rounded-card` | `--radius-{용도}` |
 | space | 콘텐츠 간격·여백 | 4px 그리드 스칼라 (요소 간 gap, 카드 패딩) | Tailwind 간격 스케일 그대로 → `p-4`·`gap-2` | 스케일 밖 간격이 정말 필요할 때만 `--spacing-{용도}` |
-| layout/frame-budget | 프레임 계약 값 | 영역 치수: `--app-max-width` · `--nav-height` / 거터·안전영역: `--space-screen-x` · `--space-bottom-safe` | `:root`. 클래스가 필요하면 다리 블록에 (`--spacing-screen-x: var(--space-screen-x)` → `px-screen-x`) | `--{영역}-{치수}` — 거터·안전영역은 레거시로 `--space-` 접두 유지 |
-| shadow | 용도별 | `--shadow-fab/cta/sheet/card` | 다리 블록 → `shadow-card` | `--shadow-{용도}` |
-| motion | 가속 곡선·길이 | `--ease-standard` · `--duration-fast/base/slow` | 곡선: 다리 블록 → `ease-standard` / 길이: `:root`에 `--duration-*`, 다리 블록에 `--transition-duration-*`로 올림 → `duration-base` ([bootstrap-project.md](bootstrap-project.md) §1.4) | `--ease-{느낌}` / `--duration-{속도}` |
-| typography/family | 글꼴 자체 | `--font-sans`(본문 기본) · 필요시 `--font-brand`·`--font-mono` | 다리 블록 → `font-sans` | `--font-{역할}` — 값은 1층 폰트 변수를 합친 것 ([font-loading.md](font-loading.md) §3) |
+| layout/frame-budget | 프레임 계약 값 | 영역 치수: `--app-max-width` · `--nav-height` / 거터·안전영역: `--space-screen-x` · `--space-bottom-safe` | `:root`. 클래스가 필요하면 `@theme inline` 블록에 (`--spacing-screen-x: var(--space-screen-x)` → `px-screen-x`) | `--{영역}-{치수}` — 거터·안전영역은 레거시로 `--space-` 접두 유지 |
+| shadow | 용도별 | `--shadow-fab/cta/sheet/card` | `@theme inline` 블록 → `shadow-card` | `--shadow-{용도}` |
+| motion | 가속 곡선·길이 | `--ease-standard` · `--duration-fast/base/slow` | 곡선: `@theme inline` 블록 → `ease-standard` / 길이: `:root`에 `--duration-*`, `@theme inline` 블록에 `--transition-duration-*`로 올림 → `duration-base` ([bootstrap-project.md](bootstrap-project.md) §1.4) | `--ease-{느낌}` / `--duration-{속도}` |
+| typography/family | 글꼴 자체 | `--font-sans`(본문 기본) · 필요시 `--font-brand`·`--font-mono` | `@theme inline` 블록 → `font-sans` | `--font-{역할}` — 값은 1층 폰트 변수를 합친 것 ([font-loading.md](font-loading.md) §3) |
 | typography/weight | 글자 굵기 | 400 · 500 · 700 | Tailwind 기본 → `font-normal`·`font-medium`·`font-bold` | 역할 이름이 필요하면 `--font-weight-{역할}` → `font-{역할}` |
-| typography/scale | 글(prose) 전용 — 제목·본문·캡션 | `t1~t4`(제목) `h1~h2` `b1~b2` `c1~c2`·`label` | 다리 블록 `--text-b1` + `--text-b1--line-height` → `text-b1` | 스케일 이름은 시스템 규약으로 고정, 크기 값만 프로젝트별 교체. 11단계에 안 맞는 크기는 typography/component으로 |
-| typography/component | UI 부품 전용 — 칩·뱃지·필드라벨·헬퍼텍스트 등 prose 스케일에 안 맞는 크기 | `--text-chip` · `--text-field-label` | 다리 블록 → `text-chip` | `--text-{부품/역할}` — §5 절차로 신규 추가 |
+| typography/scale | 글(prose) 전용 — 제목·본문·캡션 | `t1~t4`(제목) `h1~h2` `b1~b2` `c1~c2`·`label` | `@theme inline` 블록 `--text-b1` + `--text-b1--line-height` → `text-b1` | 스케일 이름은 시스템 규약으로 고정, 크기 값만 프로젝트별 교체. 11단계에 안 맞는 크기는 typography/component으로 |
+| typography/component | UI 부품 전용 — 칩·뱃지·필드라벨·헬퍼텍스트 등 prose 스케일에 안 맞는 크기 | `--text-chip` · `--text-field-label` | `@theme inline` 블록 → `text-chip` | `--text-{부품/역할}` — §5 절차로 신규 추가 |
 
 **typography가 두 갈래인 이유:** `t1~label` 11단계는 **글(prose) 역할** 전용이다 — 제목·본문·캡션처럼
 문서 구조를 나타내는 텍스트에만 쓴다. 칩·뱃지·필드 라벨·헬퍼텍스트 같은 **UI 부품 텍스트**는 이 11단계에
@@ -123,7 +123,7 @@ Tailwind 기본 글자 이름(`text-sm`·`text-xs` 등)은 shadcn 복사본이 �
 ```
 자기 자신을 가리키는 식(`--b1-size: calc(var(--b1-size) - 1px)`)은 쓰지 않는다 — CSS 명세상 한 요소 안에서
 변수가 자기 자신을 참조하면 순환으로 보고 값을 무효로 만든다(상위 스코프 값을 가져오지 않는다). 그래서 증감은
-1층 원본 변수(`--b1-base`) 기준으로 적는다. 다리 블록이 `inline`이라 `text-b1` 클래스가 그 자리의 `--b1-size`를
+1층 원본 변수(`--b1-base`) 기준으로 적는다. `@theme inline` 블록이 `inline`이라 `text-b1` 클래스가 그 자리의 `--b1-size`를
 읽으니, 스코프 안에서만 값이 바뀐다. 목표값을 직접 하드코딩(`--b1-size: 14px`)하는 대신 이렇게 증감폭만 적으면,
 원본 값이 나중에 바뀌어도 자동으로 따라가 사람이 다시 계산할 필요가 없다.
 
@@ -160,7 +160,7 @@ tight(장식) < badge(작은 태그) < input/control(컨트롤) < card(컨테이
 
 ## 5. 새 토큰 추가 절차
 
-semantic 층에 토큰을 추가할 때. (foundation 확장은 원료 자체가 없을 때만 — 드묾, 신중히.)
+semantic 층에 토큰을 추가할 때. (foundation 확장은 기본 값 자체가 없을 때만 — 드묾, 신중히.)
 
 ### 5.1 자리 찾기
 
@@ -174,7 +174,7 @@ semantic 층에 토큰을 추가할 때. (foundation 확장은 원료 자체가 
 역할이 한정된 토큰(특정 자리 전용)은 이름에 그 자리를 넣는다 — 예: 캡션 전용 크기면 이름에 caption.
 이름이 역할을 말해야, 고치는 파일만 읽는 에이전트가 토큰 선택만으로 규칙을 지킨다.
 
-### 5.3 값 배선
+### 5.3 값 연결
 
 `2-semantic.css`의 세 곳에 한 줄씩 넣는다 — **값은 반드시 foundation 변수 참조**:
 
@@ -185,8 +185,8 @@ semantic 층에 토큰을 추가할 때. (foundation 확장은 원료 자체가 
 ```
 
 `var(--green-600)` ✓ / `#64A8FF`·`oklch(…)` ✗ — 원시 값을 직접 쓰면 foundation 교체 시 안 따라간다.
-다리 블록에 올리지 않은 이름은 클래스가 안 생긴다 — 그 빈자리를 `bg-(--success)` 같은 괄호 변수로 메우지 말고
-다리 블록에 올린다.
+`@theme inline` 블록에 올리지 않은 이름은 클래스가 안 생긴다 — 그 빈자리를 `bg-(--success)` 같은 괄호 변수로 메우지 말고
+`@theme inline` 블록에 올린다.
 
 ### 5.4 주석
 

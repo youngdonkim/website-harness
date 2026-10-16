@@ -30,7 +30,7 @@ preview URL·공유 링크·봇 prefetch·검색엔진·우연한 ID 추측 — 
 이 사이클이 가진 attack surface에 따라 적용 룰 0~다수:
 
 - **없음** (정적 사이트·외부 link redirect만) → 적용 0
-- **있음** (사용자 데이터·인증·업로드·DB·API) → 3단계(FrontendBuild)부터 baseline 박음. mvp 진화 시 자연 흡수.
+- **있음** (사용자 데이터·인증·업로드·DB·API) → 3단계(FrontendBuild)부터 baseline 적용. mvp 진화 시 자연 흡수.
 
 ### 영역별 baseline
 
@@ -72,7 +72,7 @@ create policy ..._read_public on 새표 for select to anon, authenticated using 
 
 ### 정책 모양 다섯 줄 **[공식 — 벤치마크 포함]**
 
-**이 다섯은 어겨도 에러가 안 난다. 조용히 느려질 뿐이라 아무도 모른다** — 그래서 규칙으로 박는다.
+**이 다섯은 어겨도 에러가 안 난다. 조용히 느려질 뿐이라 아무도 모른다** — 그래서 규칙으로 정해 둔다.
 
 | # | 규칙 | 효과 |
 |---|---|---|
@@ -95,7 +95,7 @@ using ( (select authorize('reports.resolve')) ) -- ✅ 문에 권한을 쓴다
 
 역할 표·판정 함수를 실제로 만드는 절차는 `idea-to-mvp` 스킬의 `4-2-backend-auth.md` §11에 있다.
 
-### ⚠ 공개 정책이 판정 함수를 타면 `anon`에도 `grant execute` **[실측 1건]**
+### ⚠ 공개 정책이 판정 함수를 부르면 `anon`에도 `grant execute` **[실측 1건]**
 
 정책이 이런 모양이면:
 
@@ -105,7 +105,7 @@ using ( 공개조건 or (select authorize('...')) )
 
 **Postgres는 `or`의 평가 순서를 보장하지 않는다.** 비로그인 조회에서도 판정 함수가 평가될 수 있고, execute 권한이 없으면 그 자리에서 오류가 나 **공개 목록 전체가 안 보인다.**
 
-→ 공개 정책이 판정 함수를 타면 `anon`에도 execute를 연다. 함수 안에서 비로그인은 어차피 `false`가 된다.
+→ 공개 정책이 판정 함수를 부르면 `anon`에도 execute를 연다. 함수 안에서 비로그인은 어차피 `false`가 된다.
 
 ### 하지 말 것 아홉 **[①~⑧ 공식이 명시적으로 금지 · ⑨ 공식 권장 전환 + 실측 1건]**
 

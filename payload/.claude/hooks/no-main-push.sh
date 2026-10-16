@@ -257,7 +257,7 @@ if [ "$block_reason" = "main-push" ]; then
   cat >&2 <<'MSG'
 BLOCKED: main branch 직접 push 금지.
 
-이유: 모든 변경은 PR 워크플로를 거쳐야 함 (CI 통과 게이트).
+이유: 모든 변경은 PR 워크플로를 거쳐야 함 (CI 통과 관문).
 feature branch → push -u → PR → CI → merge 흐름 사용.
 
 자세히: docs/git-workflow.md
