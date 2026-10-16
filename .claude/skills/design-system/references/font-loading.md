@@ -9,7 +9,7 @@
 
 ## 목차
 
-1. [원리 — 한글 폰트는 조각 배달이 전부다](#1-원리--한글-폰트는-조각-배달이-전부다)
+1. [원리 — 한글 폰트는 분할 로딩(글자 묶음을 나눠 받기)이 전부다](#1-원리--한글-폰트는-분할-로딩글자-묶음을-나눠-받기이-전부다)
 2. [깜빡임과 자리 흔들림은 다른 문제다](#2-깜빡임과-자리-흔들림은-다른-문제다)
 3. [토큰 계층에서의 자리](#3-토큰-계층에서의-자리)
 4. [로딩 방식 결정표 (Next.js)](#4-로딩-방식-결정표-nextjs)
@@ -18,7 +18,7 @@
 
 ---
 
-## 1. 원리 — 한글 폰트는 조각 배달이 전부다
+## 1. 원리 — 한글 폰트는 분할 로딩(글자 묶음을 나눠 받기)이 전부다
 
 한글은 글자가 1만 자가 넘는다. 그래서 폰트 파일 하나에 전부 담으면 MB 단위가 되고, 그걸 통째로
 받게 하면 첫 화면이 그만큼 늦어진다.
@@ -44,12 +44,12 @@
 
 ## 3. 토큰 계층에서의 자리
 
-- 폰트 패밀리(글꼴 이름)는 **foundation(1층) 원료**다. 색 팔레트 램프와 같은 자리다.
-  - 구글 폰트: `next/font`의 `variable` 옵션이 내보내는 CSS 변수(예: `--font-base`)가 원료다.
+- 폰트 패밀리(글꼴 이름)는 **foundation(1층) 기본 값**이다. 색 팔레트 램프와 같은 자리다.
+  - 구글 폰트: `next/font`의 `variable` 옵션이 내보내는 CSS 변수(예: `--font-base`)가 기본 값이다.
     `next/font`가 이 변수를 `<html>`에 붙인다.
-  - npm 폰트: 1층 `:root`에 적은 패밀리 이름 변수(예: `--font-pretendard: "Pretendard Variable"`)가 원료다.
-- **2층 다리 블록의 `--font-sans`만 이 원료들을 합친다** (예: `--font-sans: var(--font-base), var(--font-pretendard), "Apple SD Gothic Neo", sans-serif`).
-  다리 블록이 `@theme inline`이어야 `<html>`에 붙는 `--font-base`를 제자리에서 찾는다.
+  - npm 폰트: 1층 `:root`에 적은 패밀리 이름 변수(예: `--font-pretendard: "Pretendard Variable"`)가 기본 값이다.
+- **2층 `@theme inline` 블록의 `--font-sans`만 이 기본 값들을 합친다** (예: `--font-sans: var(--font-base), var(--font-pretendard), "Apple SD Gothic Neo", sans-serif`).
+  이 블록이 `@theme inline`이어야 `<html>`에 붙는 `--font-base`를 제자리에서 찾는다.
 - 제품 코드는 `font-sans` 클래스만 쓴다. 그래서 폰트를 통째로 갈아끼워도 foundation만 바뀌고 화면 코드는
   한 줄도 안 바뀐다.
 - **로딩 방식은 토큰이 아니다.** 어떤 파일을 어떻게 받아올지는 빌드 인프라의 일이라 3층 밖에 있다.
@@ -122,5 +122,5 @@ grep -ho 'url([^)]*)' .next/static/css/*.css | sort -u | head -20
 grep -rl 'fonts.gstatic.com\|fonts.googleapis.com\|cdn.jsdelivr.net' .next/static/css/
 ```
 
-이 명령이 파일 이름을 하나라도 뱉으면 아직 외부에서 폰트를 받아오고 있다는 뜻이다.
+이 명령이 파일 이름을 하나라도 출력하면 아직 외부에서 폰트를 받아오고 있다는 뜻이다.
 아무것도 안 나와야 통과.

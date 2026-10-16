@@ -147,14 +147,14 @@ env GH_TOKEN="$(sed -n 's/^GH_TOKEN=//p' .env.cli 2>/dev/null)" gh pr list --hea
   선택지:
   - 보존
   - 삭제
-  - 태그로 표시해두고 삭제 — `git tag archive/branch-X`로 지금 지점에 이름표를 박아두는 것입니다.
+  - 태그로 표시해두고 삭제 — `git tag archive/branch-X`로 지금 지점에 태그를 붙여 두는 것입니다.
     브랜치는 계속 앞으로 움직이는 표시라 지우면 위치 정보도 같이 사라지지만, 태그는 특정
     커밋에 고정된 이름표라 브랜치를 지워도 남습니다. 나중에 `git checkout archive/branch-X`로
     돌아갈 수 있습니다. (로컬 저장소가 살아있는 한 이것으로 충분하고, 원격에도 남기려면
     `git push origin archive/branch-X`까지 해 주세요.)
 
   재호출 예시: `/new-task <의도> — branch-X 삭제하고 진행` / `/new-task <의도> — branch-X 보존하고 진행`
-  / `/new-task <의도> — branch-X 태그 박고 삭제`
+  / `/new-task <의도> — branch-X 태그 붙이고 삭제`
   ```
 - 실행: "삭제"면 `git branch -D branch-X` (+ remote에도 있으면 `git push origin --delete branch-X`).
   "태그로 표시해두고 삭제"면 먼저 `git tag archive/branch-X` 찍고 나서 위 삭제 명령 실행.
@@ -251,7 +251,7 @@ git ls-remote --heads origin "${type}/${topic}-${n}"
 ```
 ✓ 새 브랜치: <type>/<topic>
 ✓ 시작 시점: main 최신 (commit <short-sha>)
-✓ 작업 중 자동 임시 저장 활성 (auto-wip-commit 훅 — feature 브랜치에서 매 turn 변경이 wip 커밋으로 박힙니다)
+✓ 작업 중 자동 임시 저장 활성 (auto-wip-commit 훅 — feature 브랜치에서 매 turn 변경이 wip 커밋으로 남습니다)
 ✓ 정리된 옛 브랜치 (머지 확인됨, 자동 삭제): <branch-A (#N)>, <branch-B (#M)> — 없으면 이 줄 생략
 ✓ 보존된 옛 브랜치 (PR 리뷰 대기 중): <branch-C (#P)>, <branch-D (#Q)> — 없으면 이 줄 생략
 ℹ️ 방금 떠난 브랜치의 PR #<N>도 아직 리뷰 대기 중입니다 (<url>) — 머지되면 다음 /new-task 때 자동으로 정리됩니다. — 팀원이고 §1-c에서 그냥 진행한 경우만, 아니면 이 줄 생략
@@ -274,7 +274,7 @@ git ls-remote --heads origin "${type}/${topic}-${n}"
 | PR이 머지 안 됐는데 새 작업 가야 함 — 나는 팀원(push만)   | 묻지 않고 진행 (§1-c)                             |
 | PR이 머지 안 됐는데 새 작업 가야 함 — 나는 팀장(admin·maintain) | 지시 없으면 [결정 필요], 브랜치는 보존 (§1-c·§3) |
 | 권한 조회(`gh api .../permissions`) 실패                  | 팀원 취급 (§1-c)                                  |
-| PR 없는 local 브랜치를 "태그 박고 삭제"로 결정            | 태그 후 삭제 (§3)                                 |
+| PR 없는 local 브랜치를 "태그 붙이고 삭제"로 결정            | 태그 후 삭제 (§3)                                 |
 | 새 브랜치 이름이 로컬에 이미 있음                         | 번호 붙여 재시도 후 생성 (§엣지 — 이름 충돌)      |
 | 새 브랜치 이름이 원격(GitHub)에 이미 있음                 | 번호 붙여 재시도 후 생성 (§엣지 — 이름 충돌)      |
 | suffix 10회(`-2`~`-11`)까지 전부 겹침                     | [결정 필요]로 더 구체적인 이름 요청 (§엣지 — 이름 충돌) |
@@ -289,7 +289,7 @@ git ls-remote --heads origin "${type}/${topic}-${n}"
 - `/new-task <의도> — 변경은 커밋하고 진행` — §1-b [결정 필요]에 대한 결정을 담아 재호출
   - 예: `/new-task feat hero-redesign — stash하고 진행`
 - `/new-task <의도> — <브랜치명> 삭제하고 진행` — §3의 PR 없는 브랜치 [결정 필요]에 대한 결정을 담아 재호출
-  - 예: `/new-task feat hero-redesign — wip-test 태그 박고 삭제`
+  - 예: `/new-task feat hero-redesign — wip-test 태그 붙이고 삭제`
 
 명시적 패턴 감지: `$0`이 valid type 목록 중 하나 + `$1`이 kebab-case면 명시 패턴, 아니면 전체를 자연어로 처리.
 

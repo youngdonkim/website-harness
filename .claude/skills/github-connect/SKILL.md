@@ -1,6 +1,6 @@
 ---
 name: github-connect
-description: 이 컴퓨터에서 이 프로젝트가 GitHub에 올라갈 수 있는 상태를 만든다 — git·gh 설치 확인, GitHub 계정, gh 인증 토큰(.env.cli), 계정 검문, HTTPS push 통로, 원격 저장소 생성, 첫 push까지 순서대로. 이미 된 단계는 건너뛰어 언제 다시 돌려도 안전하고, 사람 몫이 나오면 그 한 단계만 화면·버튼 이름 그대로 안내하고 멈췄다가 "됐어"에 이어간다. project-init 신규 적용 끝에서 자동으로 불린다. 트리거 예 "깃헙 연결해줘", "깃헙에 올려줘", "/github-connect".
+description: 이 컴퓨터에서 이 프로젝트가 GitHub에 올라갈 수 있는 상태를 만든다 — git·gh 설치 확인, GitHub 계정, gh 인증 토큰(.env.cli), 계정 확인, HTTPS push 인증 방식, 원격 저장소 생성, 첫 push까지 순서대로. 이미 된 단계는 건너뛰어 언제 다시 돌려도 안전하고, 사람 몫이 나오면 그 한 단계만 화면·버튼 이름 그대로 안내하고 멈췄다가 "됐어"에 이어간다. project-init 신규 적용 끝에서 자동으로 불린다. 트리거 예 "깃헙 연결해줘", "깃헙에 올려줘", "/github-connect".
 ---
 
 # github-connect — 이 프로젝트를 GitHub에 잇기
@@ -37,8 +37,8 @@ env GH_TOKEN="$(sed -n 's/^GH_TOKEN=//p' .env.cli 2>/dev/null)" gh <명령>
 | ② gh | `gh --version` 성공 | 설치 | [AI]·[사람] |
 | ③ GitHub 계정 | ④가 이미 됐거나, 사용자가 "있어" | 가입 안내 | [사람] (Aside는 화면만 열어 줌) |
 | ④ 토큰 | `.env.cli` 토큰으로 `gh api user` 성공 | 1순위 gh 로그인 → 2순위 Aside 발급 → 3순위 사람이 붙여넣기 | [AI]·[Aside]·[사람] |
-| ⑤ 계정 검문 | (매번 한다) | — | [AI] |
-| ⑥ push 통로 | 로컬 도우미 설정이 아래와 같음 | 로컬 git 설정 | [AI] |
+| ⑤ 계정 확인 | (매번 한다) | — | [AI] |
+| ⑥ push 인증 방식 | 로컬 도우미 설정이 아래와 같음 | 로컬 git 설정 | [AI] |
 | ⑦ 원격 저장소 | `git remote get-url origin` 성공 | `gh repo create` | [AI] |
 | ⑧ 첫 push | 원격 main = 로컬 main | `git push -u origin main` | [AI] |
 
@@ -154,7 +154,7 @@ Aside가 없으면 "브라우저 에이전트(Aside)를 설치해도 되겠습�
 4. [사람] `GH_TOKEN=` 바로 뒤에 붙여넣고 저장 → "됐어". **채팅창에는 붙여넣지 마세요 — 대화 기록에 남습니다.**
 5. [AI] 확인 명령으로 검증한다. 실패하면 앞뒤 공백·따옴표가 끼지 않았는지 한 번만 봐 달라고 하고, 그래도 안 되면 그 토큰을 지우고 다시 발급하게 한다.
 
-### ⑤ 계정 검문
+### ⑤ 계정 확인
 
 [AI] 토큰이 답하는 계정을 프로젝트 `AGENTS.md` 「소유와 계정」 표의 GitHub 행과 대조한다.
 
@@ -166,7 +166,7 @@ env GH_TOKEN="$(sed -n 's/^GH_TOKEN=//p' .env.cli 2>/dev/null)" gh api user --jq
 - **표가 비어 있거나 `(확인 필요)`** → "GitHub 계정을 <계정>으로 표에 적겠습니다. 맞습니까?"로 확인받은 뒤 채운다. 이메일은 사용자에게 받는다.
 - **다르다** → 멈추고 사용자에게 알린다. 저장소를 만들지 않는다(원칙 ①). 토큰이 다른 계정 것이면 ④로 표의 계정 토큰을 새로 받고, 표가 틀렸으면 사용자가 표를 고친다.
 
-### ⑥ push 통로 — HTTPS + 토큰
+### ⑥ push 인증 방식 — HTTPS + 토큰
 
 SSH 대신 HTTPS + 토큰으로 통일한다. 설정은 **이 저장소의 로컬 git 설정에만** 한다.
 
@@ -187,7 +187,7 @@ git config --local --add credential.helper '!f() { echo username=x-access-token;
 - 빈 값 줄은 「위에서 물려받은 도우미 목록을 여기서 비운다」는 표시다 — 전역에 걸린 맥 키체인·윈도우 자격 증명 관리자가 저장해 둔 다른 계정 비밀번호를 먼저 내밀지 못하게 한다.
 - 두 번째 줄은 git이 GitHub 비밀번호를 물을 때마다 이 저장소의 `.env.cli`에서 `GH_TOKEN`을 읽어 건네는 도우미다(사용자명은 `x-access-token`). 토큰을 갈아 끼우면 다음 push부터 바로 새 토큰을 쓴다. 실측 2026-09-29: 임시 저장소에서 `git credential fill`로 가짜 토큰이 password로 그대로 나오는 것을 확인했다.
 - 그래서 git 명령에는 로더가 필요 없다. gh 명령만 위 「토큰 로더」를 단다.
-- **원격 주소가 ssh 형식**(`git@github.com:`·`ssh://`)인 옛 프로젝트면, https로 바꿀지 사용자에게 한 번 묻는다. 바꾸면 `git remote set-url origin https://github.com/<주인>/<저장소>.git`. 안 바꾸면 SSH 검문(`docs/account-check.md` 「GitHub SSH 키」)을 그대로 따른다.
+- **원격 주소가 ssh 형식**(`git@github.com:`·`ssh://`)인 옛 프로젝트면, https로 바꿀지 사용자에게 한 번 묻는다. 바꾸면 `git remote set-url origin https://github.com/<주인>/<저장소>.git`. 안 바꾸면 SSH 확인(`docs/account-check.md` 「GitHub SSH 키」)을 그대로 따른다.
 
 ### ⑦ 원격 저장소
 
