@@ -49,8 +49,8 @@
 
 **사이트 주소 — 값은 계산된 스타일로, 느낌은 화면 한 장으로**
 
-- 실제 적용된 CSS 값을 요소별로 읽는다 — 몸통 배경색(배경) · 본문 글자색(글자) · 주 버튼이나 링크의 배경색(강조) · 성공·위험 표시가 보이면 그 색 · 제목과 본문의 `font-family` · 카드와 버튼의 `border-radius` · 카드의 `box-shadow` · `:root`에 선언된 CSS 변수(이름에 primary·brand가 들어간 것). 화면에 없는 값(예: 첫 화면에 위험 표시가 없음)은 지어내지 않고 「관찰 못 함」으로 적는다.
-- 부품 모양은 스타일과 화면을 같이 본다 — 주 버튼과 보조 버튼의 배경·`border`·높이, 카드의 `box-shadow`·`border`·몸통과의 배경색 차이, 입력칸의 `border`(네 변인지 아래만인지)·배경, 메뉴가 화면 아래에 고정된 탭바인지(`position: fixed; bottom`) 상단 탭인지 햄버거 버튼(줄 세 개를 누르면 메뉴가 펼쳐지는 버튼)인지. 결과는 말로 적고 읽은 px를 덧붙인다.
+- 실제 적용된 CSS 값을 요소별로 읽는다 — body 배경색(배경) · 본문 글자색(글자) · 주 버튼이나 링크의 배경색(강조) · 성공·위험 표시가 보이면 그 색 · 제목과 본문의 `font-family` · 카드와 버튼의 `border-radius` · 카드의 `box-shadow` · `:root`에 선언된 CSS 변수(이름에 primary·brand가 들어간 것). 화면에 없는 값(예: 첫 화면에 위험 표시가 없음)은 지어내지 않고 「관찰 못 함」으로 적는다.
+- 부품 모양은 스타일과 화면을 같이 본다 — 주 버튼과 보조 버튼의 배경·`border`·높이, 카드의 `box-shadow`·`border`·body와의 배경색 차이, 입력칸의 `border`(네 변인지 아래만인지)·배경, 메뉴가 화면 아래에 고정된 탭바인지(`position: fixed; bottom`) 상단 탭인지 햄버거 버튼(줄 세 개를 누르면 메뉴가 펼쳐지는 버튼)인지. 결과는 말로 적고 읽은 px를 덧붙인다.
 - 같은 세션에서 화면 한 장을 찍어 밀도·첫 화면 구성을 본다. 한 번 열 때 둘 다 하면 추가 비용이 거의 없다.
 - **연 조건을 값과 함께 적는다** — 라이트·다크, 창 폭. 운영체제 다크 모드·A/B 실험(사람마다 다른 화면을 보여 주는 실험)·로그인 전후에 따라 다른 값이 나온다.
 - 브라우저 출력이 맥락을 많이 먹으니 서브 에이전트에 맡기는 게 맞다. 지시서에 아래 재시도 한도 줄·로그인 멈춤 줄·「재위임 금지」 줄을 넣는다.
@@ -67,7 +67,7 @@
 
 **재시도 한도** — 바깥 사이트를 여는 일이라 적용한다. 같은 실패 2회면 멈추고 보고한다. 401·403·404는 다시 하지 않는다. 로그인 화면이 뜨면 1회에 멈추고 사람에게 넘긴다. 반복된 실패 시도는 계정 제재로 이어진다.
 
-**눈대중 표시** — 이미지에서(또는 CSS 값이 없어 화면에서) 뽑은 값은 「뽑은 값」 끝에 「(화면에서 눈대중)」을 붙인다. 이 표시가 빠지면 추정값이 확정처럼 흘러간다 — 토큰으로 옮길 때 사람이 한 번 더 볼 표시다.
+**눈대중 표시** — 이미지에서(또는 CSS 값이 없어 화면에서) 뽑은 값은 「뽑은 값」 끝에 「(화면에서 눈대중)」을 붙인다. 이 표시가 빠지면 추정값이 확정처럼 전달된다 — 토큰으로 옮길 때 사람이 한 번 더 볼 표시다.
 
 ## 4. 분석 항목표
 
@@ -109,19 +109,19 @@
 
 ## 5. 분석값 → 토큰
 
-브리프의 값을 1층 원료와 2층 shadcn 변수로 옮기는 대응이다. 이름과 파일 모양은 [bootstrap-project.md](bootstrap-project.md) §1.2, 이름 문법은 [naming-taxonomy.md](naming-taxonomy.md) §2 유형표를 따른다.
+브리프의 값을 1층 기본 값과 2층 shadcn 변수로 옮기는 대응이다. 이름과 파일 모양은 [bootstrap-project.md](bootstrap-project.md) §1.2, 이름 문법은 [naming-taxonomy.md](naming-taxonomy.md) §2 유형표를 따른다.
 
-| 분석 항목 | 1층 (원료) | 2층 (shadcn 변수) |
+| 분석 항목 | 1층 (기본 값) | 2층 (shadcn 변수) |
 |---|---|---|
 | 색 — 배경 | 회색 램프의 가장 밝은 단계(`--gray-0` 류) | `--background`. `--card`·`--popover`는 같은 램프 이웃 단계 |
 | 색 — 글자 | 회색 램프 진한 쪽(`--gray-900` 류) | `--foreground`. `--muted-foreground`는 같은 램프에서 파생하고 배경과 4.5:1 |
 | 색 — 강조 | 그 색을 600 근처에 둔 브랜드 램프 50~950 | `--primary`·`--primary-foreground`·`--ring`. 옅은 단계는 `--accent`·`--secondary` 후보 |
 | 색 — 성공 | 초록 램프 | `--success`·`--success-foreground` — shadcn 세트에 없어 더한다 (naming-taxonomy.md §2 color/semantic 행) |
 | 색 — 위험 | 빨강 램프 | `--destructive`와 짝. 장식에 쓰지 않는다 |
-| 서체 — 제목·본문 | 폰트 변수(`--font-pretendard` 등). 로딩은 [font-loading.md](font-loading.md) §4 | 다리 블록 `--font-sans`(본문). 제목 서체가 다르면 `--font-brand` |
+| 서체 — 제목·본문 | 폰트 변수(`--font-pretendard` 등). 로딩은 [font-loading.md](font-loading.md) §4 | `@theme inline` 블록 `--font-sans`(본문). 제목 서체가 다르면 `--font-brand` |
 | 둥글기 | `--radius-base` = 카드 값 | `--radius` → `--radius-card`·`--radius-control`은 `calc()`로 파생 — 버튼 값이 나오게 차이를 고른다 (SKILL.md 동심원 radius 규칙) |
 | 간격 | 4px 격자는 그대로 둔다 | 따로 변수 없음 — 셸 거터(`--space-screen-x`)와 부품 `size` 기본값을 고르는 근거. adapter 적용 규칙 요약에 한 줄 ([bootstrap-project.md](bootstrap-project.md) §4) |
-| 그림자 | 그림자 원료 | 다리 블록 `--shadow-card` 등 (naming-taxonomy.md §2 shadow 행) |
+| 그림자 | 그림자 기본 값 | `@theme inline` 블록 `--shadow-card` 등 (naming-taxonomy.md §2 shadow 행) |
 | 밀도 | 타입 스케일의 본문 크기(`--b1-base`) | `text-b1`. 화면 단위 조정이 필요하면 naming-taxonomy.md §2의 스코프 클래스 |
 | 첫 화면 구성 | 토큰 아님 | 토큰 아님 — `feature-list.md` 화면 목록의 홈 행이 받는다 |
 | 움직임 느낌 | 말로 적은 느낌을 움직임 값으로 바꿀 때 만든다 (idea-to-mvp는 3단계 `3-frontend-build.md` §2.5.7) | `--duration-*`·`--ease-*` ([bootstrap-project.md](bootstrap-project.md) §1.4) |

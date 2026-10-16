@@ -8,13 +8,13 @@ description: Tailwind + shadcn 위의 3단 토큰 계층(foundation→semantic�
 
 # 디자인 시스템 — 계층 아키텍처
 
-모든 시각 값은 CSS 변수(토큰)로만 흐른다. 스택은 Tailwind + shadcn 고정이라, 제품 코드는 토큰을 **클래스 이름으로 고른다** (`bg-primary`·`p-4`·`text-b1`). hex·px·대괄호 임의 값(`p-[13px]`) 금지.
+모든 시각 값은 CSS 변수(토큰)를 거쳐서만 쓴다. 스택은 Tailwind + shadcn 고정이라, 제품 코드는 토큰을 **클래스 이름으로 고른다** (`bg-primary`·`p-4`·`text-b1`). hex·px·대괄호 임의 값(`p-[13px]`) 금지.
 
 **토큰 계층 (CSS 파일 — 진입 CSS가 `@import "tailwindcss"` 다음에 1→2→3 순서로 불러온다):**
 
-1. **foundation** (`1-foundation/`) — 원료: 색 램프(oklch)·타입 스케일 원본·그리드. `@theme`이 아니라 `:root`에 둔다 — 그래야 램프 이름이 클래스(`bg-brand-600`)로 새지 않는다. 교체 가능 (브랜드/DS 변경 = 이 층 교체)
-2. **semantic** (`2-semantic.css`) — 의미: shadcn 변수 이름(`--background`·`--primary`·`--primary-foreground`·`--radius` …)으로 1층을 다시 잇는다. 같은 파일에 `.dark` 블록과 다리 블록(`@theme inline` — 여기 적은 이름만 Tailwind 클래스가 된다)을 둔다. Tailwind 기본 팔레트는 여기서 끈다. **화면·컴포넌트 코드가 참조하는 유일한 층**
-3. **component** — 부품: 몸통은 `components/ui/*.tsx`(shadcn 복사본, 범용)와 `components/*.tsx`(전용). `3-components.css`는 클래스로 못 푸는 전용 스타일과 전역 기본 규칙(body 기본 스타일·동작 줄이기 — [references/bootstrap-project.md](references/bootstrap-project.md) §1.4)만 담는 보조 파일
+1. **foundation** (`1-foundation/`) — 기본 값: 색 램프(oklch)·타입 스케일 원본·그리드. `@theme`이 아니라 `:root`에 둔다 — 그래야 램프 이름이 클래스(`bg-brand-600`)로 새지 않는다. 교체 가능 (브랜드/DS 변경 = 이 층 교체)
+2. **semantic** (`2-semantic.css`) — 의미: shadcn 변수 이름(`--background`·`--primary`·`--primary-foreground`·`--radius` …)으로 1층을 다시 잇는다. 같은 파일에 `.dark` 블록과 `@theme inline` 블록(여기 적은 이름만 Tailwind 클래스가 된다)을 둔다. Tailwind 기본 팔레트는 여기서 끈다. **화면·컴포넌트 코드가 참조하는 유일한 층**
+3. **component** — 부품: 코드는 `components/ui/*.tsx`(shadcn 복사본, 범용)와 `components/*.tsx`(전용). `3-components.css`는 클래스로 못 푸는 전용 스타일과 전역 기본 규칙(body 기본 스타일·동작 줄이기 — [references/bootstrap-project.md](references/bootstrap-project.md) §1.4)만 담는 보조 파일
 
 **조립 계층 (방법론 — 파일 없음):**
 
@@ -65,7 +65,7 @@ git branch --show-current
 1. semantic에 의미가 맞는 토큰이 있나? → [references/naming-taxonomy.md](references/naming-taxonomy.md) 유형표로 탐색
 2. 있다 → 쓴다
 3. 없다 → semantic에 추가 → [references/naming-taxonomy.md](references/naming-taxonomy.md) §5
-4. foundation에 원료 자체가 없다? → 그때만 foundation 확장 검토 (드묾, 신중히)
+4. foundation에 기본 값 자체가 없다? → 그때만 foundation 확장 검토 (드묾, 신중히)
 
 간격·둥글기·글자처럼 theme 스케일에 이미 있는 값은 그 클래스(`p-4`·`rounded-card`·`text-b1`)를 쓴다 — 새 토큰을 만들지 않는다.
 
@@ -78,7 +78,7 @@ git branch --show-current
 | px 매직넘버 글자크기 (`text-[15px]`) | 글 스케일 클래스(`text-b1`), 안 맞으면 `typography/component` 토큰 새로 만들기 (naming-taxonomy.md §2) |
 | 3층·제품 코드에 모션 값(ms·곡선) 직접 쓰기 (`duration-300`, `duration-[250ms]`, `cubic-bezier(…)`, `ease-out`) | 1층 모션 토큰을 2층 이름 클래스로 (`duration-base`·`ease-standard`). Tailwind 기본 곡선 이름(`ease-out` 등)은 끄지 않지만 제품 코드에서 쓰지 않는다 — `ease-standard` 같은 우리 이름만. 동작 줄이기는 전역 규칙 한 번 — [bootstrap-project.md](references/bootstrap-project.md) §1.4 |
 | Tailwind 팔레트 이름 (`bg-blue-500`) | semantic 이름 클래스 — 기본 팔레트는 2층에서 꺼 둔다 ([bootstrap-project.md](references/bootstrap-project.md) §1.2) |
-| 괄호 변수로 이름 클래스 건너뛰기 (`bg-(--primary)`, `bg-[var(--x)]`) | 다리 블록에 이름을 올려 클래스로 (`bg-primary`) — naming-taxonomy.md §5.3 |
+| 괄호 변수로 이름 클래스 건너뛰기 (`bg-(--primary)`, `bg-[var(--x)]`) | `@theme inline` 블록에 이름을 올려 클래스로 (`bg-primary`) — naming-taxonomy.md §5.3 |
 | 색 있는 배경 위 글자색 하드코딩 | `-foreground` 짝 (`bg-primary text-primary-foreground`) — 배경이 바뀌면 글자도 따라가야 함 |
 | 화면에서 부품 겉모양을 `className`으로 덮어쓰기 (`<Button className="bg-… rounded-…">`) | 2층 값 → `variant` → 부품 파일 수정 차례로 ([component-taxonomy.md](references/component-taxonomy.md) §4). 화면이 부품에 주는 `className`은 배치(바깥 여백·폭·flex·grid)만 |
 | margin 주려고 wrapper div로 감싸기 | 부품의 `className`에 배치 클래스(`mt-4`) |
@@ -111,6 +111,6 @@ shadcn이 `--radius` 하나에서 `calc(var(--radius) - 2px)`처럼 sm~xl을 파
 - **댓글창·게시글 에디터처럼 글을 써서 올리는 입력란을 만들 때** — [common-patterns.md](references/common-patterns.md) §2~§7 (접근성 체크 목록 · 컴포저 · 에디터)
 - **새 화면·레이아웃을 설계할 때** — [layout-frames.md](references/layout-frames.md) (frame-first 절차, 셸 분류, 컨테이너 정책)
 - **참고 사이트·스크린샷에서 스타일 값을 뽑을 때, 또는 그렇게 뽑아 브리프에 적어 둔 값을 토큰으로 옮길 때** — [reference-analysis.md](references/reference-analysis.md) (고르는 법·갤러리 · 입력 네 종류와 값 뽑는 법 · 분석 항목표 · 분석값 → 1층 램프·2층 shadcn 변수 · 금지)
-- **화면 생김새를 개선할 때** — [visual-polish.md](references/visual-polish.md) (위계·글자·간격·색·부품·폰 접기 점검 항목과 지시 문장 예 · 규칙표를 먼저 만들고 그리게 한다)
+- **화면 생김새를 개선할 때** — [visual-polish.md](references/visual-polish.md) (위계·글자·간격·색·부품·폰 화면으로 옮기기 점검 항목과 지시 문장 예 · 규칙표를 먼저 만들고 그리게 한다)
 - **폰트를 새로 넣거나 바꿀 때** — [font-loading.md](references/font-loading.md) (조각화·자체 호스팅 원리, Next.js 로딩 결정표 — 구글 폰트·npm 폰트 갈래, `--font-sans`에서 합치기, 빌드 검증 관문 3종)
 - **새 프로젝트에 도입할 때** — [bootstrap-project.md](references/bootstrap-project.md)를 순서대로 따른다. 이 절차는 도중에 세 문서를 함께 읽는다: 토큰 3층 단계에서 font-loading.md(폰트 선정·로딩 방식을 같이 정한다 — 미루면 foundation을 다시 갈아엎는다), 인벤토리 생성에서 component-taxonomy.md §6(인벤토리 한 줄 형식), 프레임 정의에서 layout-frames.md §4(웹·앱 통합이면 canvas·gutter 플랫폼 차이)
