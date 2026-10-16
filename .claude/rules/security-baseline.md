@@ -30,7 +30,7 @@ preview URL·공유 링크·봇 prefetch·검색엔진·우연한 ID 추측 — 
 이 사이클이 가진 attack surface에 따라 적용 룰 0~다수:
 
 - **없음** (정적 사이트·외부 link redirect만) → 적용 0
-- **있음** (사용자 데이터·인증·업로드·DB·API) → 4단계(FrontendBuild)부터 baseline 박음. mvp 진화 시 자연 흡수.
+- **있음** (사용자 데이터·인증·업로드·DB·API) → 3단계(FrontendBuild)부터 baseline 박음. mvp 진화 시 자연 흡수.
 
 ### 영역별 baseline
 
@@ -93,7 +93,7 @@ using ( (select authorize('reports.resolve')) ) -- ✅ 문에 권한을 쓴다
 
 지금은 둘이 똑같이 동작한다. 갈리는 건 나중에 **"검토자도 신고를 처리한다"**가 될 때다 — 신분을 쓴 정책은 **전부** 고쳐야 하고, 권한을 쓴 정책은 **판정 함수만** 고치면 된다.
 
-역할 표·판정 함수를 실제로 만드는 절차는 `idea-to-mvp` 스킬의 `5-2-backend-auth.md` §11에 있다.
+역할 표·판정 함수를 실제로 만드는 절차는 `idea-to-mvp` 스킬의 `4-2-backend-auth.md` §11에 있다.
 
 ### ⚠ 공개 정책이 판정 함수를 타면 `anon`에도 `grant execute` **[실측 1건]**
 
