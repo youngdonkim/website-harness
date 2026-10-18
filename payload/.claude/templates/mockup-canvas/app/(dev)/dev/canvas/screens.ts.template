@@ -1,0 +1,44 @@
+// 목업 캔버스 목록 파일 — 캔버스에 띄울 화면을 여기에 적는다.
+// 기획 문서의 「화면 목록」과는 다르다: 화면 목록은 「어떤 화면이 있어야 하나」, 이 파일은 「캔버스가 어떤 주소를 띄울까」다.
+// 화면을 만들 때 이 파일에도 한 줄 올린다. 배열 순서가 곧 흐름 순서다.
+
+export type CanvasScreen = {
+  /** 화면 ID (화면 목록의 ID와 같게) */
+  id: string
+  /** 화면 이름 — 사용자가 보는 이름 */
+  name: string
+  /** 흐름 묶음 — 같은 묶음끼리 한 제목 아래 모인다 (예: 「소비자 — 찾아보기에서 참가 신청까지」) */
+  group: string
+  /** 화면 주소 (예: "/challenges") */
+  path: string
+  /** 같이 띄울 상태 — "empty" | "loading" | "error" | "forbidden". 화면 주소 끝에 ?state=가 붙는다 */
+  states?: ("empty" | "loading" | "error" | "forbidden")[]
+  /** 비교안 — 같은 화면에 붙은 비교안 주소들. 원래 화면 옆에 나란히 뜬다 */
+  drafts?: { label: string; path: string }[]
+}
+
+// {{예시 — 프로젝트 화면으로 바꾼다}}
+export const SCREENS: CanvasScreen[] = [
+  {
+    id: "S-01",
+    name: "첫 화면",
+    group: "{{흐름 묶음 이름 1}}",
+    path: "/",
+    states: ["empty", "loading"],
+    // drafts: [{ label: "A판", path: "/dev/drafts/home-a" }, { label: "B판", path: "/dev/drafts/home-b" }],
+  },
+  {
+    id: "S-02",
+    name: "목록 화면",
+    group: "{{흐름 묶음 이름 1}}",
+    path: "/{{목록 주소}}",
+    states: ["empty", "error"],
+  },
+  {
+    id: "S-03",
+    name: "내 정보 화면",
+    group: "{{흐름 묶음 이름 2}}",
+    path: "/{{내 정보 주소}}",
+    states: ["forbidden"],
+  },
+]

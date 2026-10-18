@@ -1,0 +1,220 @@
+"use client"
+
+import { useEffect, useRef, useState } from "react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+// {{프로젝트에 없는 부품은 import와 아래 「부품 상태」 칸에서 같이 지운다. 있는 부품(탭·토글 등)은 같은 모양으로 더한다}}
+
+// 디자인 시스템 페이지 — 실제 토큰과 실제 부품으로 그린다. 토큰의 정본은 1·2층 CSS이고, 이 페이지는 그것을 비춰 보여 주는 거울이다.
+// 색·크기 값은 코드에 적지 않고, 브라우저가 계산한 값을 읽어 보여 준다.
+// 프로젝트마다 고칠 자리: `{{…}}`와 「프로젝트에 맞게 고친다」 주석.
+
+const SERVICE_NAME = "{{서비스 이름}}"
+
+/** 견본 하나 — 클래스를 입힌 상자를 그리고, 브라우저가 계산한 값을 읽어 옆에 보여 준다 */
+function Probe({
+  className,
+  read,
+  children,
+}: {
+  className: string
+  read: (keyof CSSStyleDeclaration & string)[]
+  children?: React.ReactNode
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [values, setValues] = useState<string[]>([])
+  useEffect(() => {
+    if (!ref.current) return
+    const style = getComputedStyle(ref.current)
+    setValues(read.map((key) => String(style[key])))
+  }, [read])
+  return (
+    <div className="flex flex-col gap-1">
+      <div ref={ref} className={className}>
+        {children}
+      </div>
+      <p className="text-b2 text-muted-foreground">{values.join(" · ")}</p>
+    </div>
+  )
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="flex flex-col gap-6">
+      <h2 className="border-b border-border pb-2 text-h2">{title}</h2>
+      {children}
+    </section>
+  )
+}
+
+// ── 프로젝트에 맞게 고친다: 글자 단계 (2층의 글자 이름과 쓰는 자리) ──
+const TYPE_STEPS = [
+  { cls: "text-h1", use: "상세 화면 제목" },
+  { cls: "text-h2", use: "목록 제목" },
+  { cls: "text-h3", use: "큰 목록 줄 제목·빈 상태 제목" },
+  { cls: "text-h4", use: "목록 줄 제목·버튼" },
+  { cls: "text-b1", use: "본문" },
+  { cls: "text-b2", use: "회색 정보 줄·칩·아래 안내" },
+]
+
+// ── 프로젝트에 맞게 고친다: 색 역할 (2층의 색 이름). 클래스는 글자 그대로 적어야 Tailwind가 만든다 ──
+const COLOR_ROLES = [
+  { name: "background", cls: "bg-background", use: "화면 바탕" },
+  { name: "foreground", cls: "bg-foreground", use: "진한 글자" },
+  { name: "primary", cls: "bg-primary", use: "주 버튼·선택된 칩" },
+  { name: "secondary", cls: "bg-secondary", use: "채운 바탕" },
+  { name: "muted", cls: "bg-muted", use: "흐린 바탕" },
+  { name: "muted-foreground", cls: "bg-muted-foreground", use: "흐린 글자" },
+  { name: "accent", cls: "bg-accent", use: "마우스 올림 바탕" },
+  { name: "border", cls: "bg-border", use: "칸막이선" },
+  { name: "input", cls: "bg-input", use: "입력칸 테두리" },
+  { name: "ring", cls: "bg-ring", use: "포커스 표시" },
+  { name: "destructive", cls: "bg-destructive", use: "위험" },
+  // {{서비스가 더한 역할(highlight·emphasis·success 등)을 같은 모양으로 더한다}}
+]
+
+// ── 프로젝트에 맞게 고친다: 간격 단계 (Tailwind 단계 이름) ──
+const SPACING = [
+  { name: "1", cls: "w-1" },
+  { name: "2", cls: "w-2" },
+  { name: "3", cls: "w-3" },
+  { name: "4", cls: "w-4" },
+  { name: "6", cls: "w-6" },
+  { name: "8", cls: "w-8" },
+  { name: "12", cls: "w-12" },
+  { name: "16", cls: "w-16" },
+]
+
+// ── 프로젝트에 맞게 고친다: 둥글기 ──
+const RADII = [
+  { name: "rounded-sm", cls: "rounded-sm" },
+  { name: "rounded-lg", cls: "rounded-lg" },
+  { name: "rounded-full", cls: "rounded-full" },
+  // {{rounded-card·rounded-control 같은 서비스 이름이 있으면 더한다}}
+]
+
+const TYPE_READ: (keyof CSSStyleDeclaration & string)[] = ["fontSize", "fontWeight", "lineHeight"]
+const COLOR_READ: (keyof CSSStyleDeclaration & string)[] = ["backgroundColor"]
+const SPACE_READ: (keyof CSSStyleDeclaration & string)[] = ["width"]
+const RADIUS_READ: (keyof CSSStyleDeclaration & string)[] = ["borderRadius"]
+
+export default function DesignSystemPage() {
+  return (
+    <main className="mx-auto flex max-w-content flex-col gap-12 px-4 py-12">
+      <header className="flex flex-col gap-4">
+        <h1 className="text-h1">{SERVICE_NAME} 디자인 시스템</h1>
+        <p className="text-b1 text-muted-foreground">
+          실제 토큰과 부품으로 그린 거울입니다. 값의 정본은 1·2층 CSS입니다.
+        </p>
+        <Link href="/dev/canvas" className="w-fit text-b1 text-foreground underline underline-offset-4">
+          목업 캔버스 보기
+        </Link>
+      </header>
+
+      <Section title="글자 단계">
+        <div className="flex flex-col gap-6">
+          {TYPE_STEPS.map((step) => (
+            <div key={step.cls} className="flex flex-col gap-1">
+              <p className="text-b2 text-muted-foreground">
+                {step.cls} — {step.use}
+              </p>
+              <Probe className={step.cls} read={TYPE_READ}>
+                {SERVICE_NAME}가 보여 주는 문장 견본
+              </Probe>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="색 역할">
+        <div className="flex flex-wrap gap-6">
+          {COLOR_ROLES.map((role) => (
+            <div key={role.name} className="flex w-40 flex-col gap-2">
+              <Probe className={`h-16 rounded-card border border-border ${role.cls}`} read={COLOR_READ} />
+              <p className="text-b2 font-semibold">{role.name}</p>
+              <p className="text-b2 text-muted-foreground">{role.use}</p>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="간격">
+        <div className="flex flex-col gap-3">
+          {SPACING.map((space) => (
+            <div key={space.name} className="flex items-center gap-4">
+              <span className="w-8 text-b2 font-semibold">{space.name}</span>
+              <Probe className={`h-4 bg-primary ${space.cls}`} read={SPACE_READ} />
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="둥글기">
+        <div className="flex flex-wrap gap-6">
+          {RADII.map((radius) => (
+            <div key={radius.name} className="flex flex-col gap-2">
+              <p className="text-b2 font-semibold">{radius.name}</p>
+              <Probe className={`h-16 w-24 border border-input bg-secondary ${radius.cls}`} read={RADIUS_READ} />
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="부품 상태">
+        <p className="text-b2 text-muted-foreground">
+          평소와 비활성은 그대로 그립니다. 마우스 올림·누름·포커스는 아래 칸의 부품을 직접 올리고 눌러 보세요(포커스는 Tab 키로 옮겨 보세요).
+        </p>
+
+        {/* 프로젝트에 맞게 고친다: 버튼 종류(variant)는 프로젝트의 button.tsx에 있는 것만 둔다 */}
+        <div className="flex flex-col gap-4">
+          <h3 className="text-h4">버튼</h3>
+          <div className="flex flex-wrap items-center gap-4">
+            <Button>주 버튼</Button>
+            <Button variant="secondary">보조 버튼</Button>
+            <Button variant="ghost">글자 버튼</Button>
+            <Button variant="destructive">위험 버튼</Button>
+          </div>
+          <div className="flex flex-wrap items-center gap-4">
+            <Button disabled>주 버튼</Button>
+            <Button variant="secondary" disabled>
+              보조 버튼
+            </Button>
+            <Button variant="ghost" disabled>
+              글자 버튼
+            </Button>
+          </div>
+          <p className="rounded-card bg-muted px-4 py-3 text-b2">
+            직접 올리고 눌러 보세요 — 위 첫 줄 버튼에 마우스를 올리고, 누르고, Tab 키로 포커스를 옮겨 보세요.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <h3 className="text-h4">배지</h3>
+          <div className="flex flex-wrap items-center gap-4">
+            <Badge>기본</Badge>
+            <Badge variant="outline">테두리</Badge>
+            <Badge variant="destructive">위험</Badge>
+          </div>
+        </div>
+
+        <div className="flex max-w-reading flex-col gap-4">
+          <h3 className="text-h4">입력칸</h3>
+          <Input placeholder="평소" />
+          <Input placeholder="비활성" disabled />
+          <p className="rounded-card bg-muted px-4 py-3 text-b2">
+            직접 올리고 눌러 보세요 — 위 평소 칸에 마우스를 올리고, 눌러 포커스를 줘 보세요.
+          </p>
+        </div>
+      </Section>
+
+      <Section title="폰 배치 메모">
+        {/* 프로젝트에 맞게 고친다: 어느 폭에서 무엇이 접히는지 한 줄씩 */}
+        <ul className="flex list-disc flex-col gap-1 pl-6 text-b1">
+          <li>{"{{예: 본문 976 이상에서 목록 8칸 + 콘테스트 3칸, 그 아래에서는 한 칸}}"}</li>
+        </ul>
+      </Section>
+    </main>
+  )
+}

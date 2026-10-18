@@ -1,0 +1,109 @@
+import Link from "next/link"
+import { SCREENS, type CanvasScreen } from "./screens"
+
+// 목업 캔버스 — screens.ts를 읽어 화면을 위에서 아래로 늘어놓는다. 개발 서버에서만 열린다((dev)/layout.tsx).
+// 창 크기는 숫자 속성(width·height)으로 적는다. 데스크톱 창은 실제 폭으로 띄우고 CSS로 줄여 보여 줘서,
+// 창 안의 컨테이너 쿼리가 실제 폭 기준으로 돈다.
+
+const DESKTOP = { width: 1440, height: 900, scale: 0.5 }
+const PHONE = { width: 390, height: 844, scale: 0.5 }
+
+function withState(path: string, state: string) {
+  return `${path}${path.includes("?") ? "&" : "?"}state=${state}`
+}
+
+function Frame({ title, src, size }: { title: string; src: string; size: typeof DESKTOP }) {
+  return (
+    <figure className="flex flex-col gap-2">
+      <figcaption className="text-b2 text-muted-foreground">{title}</figcaption>
+      {/* 바깥 상자는 줄인 크기, 안쪽 창은 실제 크기에서 줄인다 */}
+      <div
+        className="overflow-hidden rounded-card border border-border"
+        style={{ width: size.width * size.scale, height: size.height * size.scale }}
+      >
+        <iframe
+          title={title}
+          src={src}
+          width={size.width}
+          height={size.height}
+          loading="lazy"
+          className="origin-top-left border-0 bg-background"
+          style={{ transform: `scale(${size.scale})` }}
+        />
+      </div>
+    </figure>
+  )
+}
+
+function Pair({ label, src }: { label: string; src: string }) {
+  return (
+    <div className="flex flex-wrap items-start gap-6">
+      <Frame title={`${label} · 데스크톱`} src={src} size={DESKTOP} />
+      <Frame title={`${label} · 폰`} src={src} size={PHONE} />
+    </div>
+  )
+}
+
+function ScreenBlock({ screen }: { screen: CanvasScreen }) {
+  return (
+    <section id={screen.id} className="flex scroll-mt-8 flex-col gap-6">
+      <h3 className="text-h3">
+        {screen.id} {screen.name}
+        <span className="ml-2 text-b2 font-normal text-muted-foreground">{screen.path}</span>
+      </h3>
+      <Pair label={screen.name} src={screen.path} />
+      {screen.states?.map((state) => (
+        <Pair key={state} label={`${screen.name} · ${state}`} src={withState(screen.path, state)} />
+      ))}
+      {screen.drafts && screen.drafts.length > 0 && (
+        <div className="flex flex-col gap-4">
+          <h4 className="text-h4">비교안</h4>
+          <div className="flex flex-wrap items-start gap-6">
+            {screen.drafts.map((draft) => (
+              <Pair key={draft.path} label={`${screen.name} · ${draft.label}`} src={draft.path} />
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  )
+}
+
+export default function CanvasPage() {
+  const groups = [...new Set(SCREENS.map((s) => s.group))]
+  return (
+    <main className="mx-auto flex max-w-content flex-col gap-12 px-4 py-12">
+      <header className="flex flex-col gap-4">
+        <h1 className="text-h1">목업 캔버스</h1>
+        <p className="text-b1 text-muted-foreground">
+          화면을 흐름 순서로 내려 봅니다. 보이는 창만 불러오니, 처음 내려 볼 때는 느릴 수 있습니다.
+        </p>
+        <Link href="/dev/design-system" className="w-fit text-b1 text-foreground underline underline-offset-4">
+          디자인 시스템 페이지 보기
+        </Link>
+      </header>
+
+      <nav aria-label="흐름 묶음" className="flex flex-col gap-2">
+        <h2 className="text-h4">흐름 묶음</h2>
+        <ul className="flex flex-col gap-1 text-b2">
+          {groups.map((group) => (
+            <li key={group}>
+              <a href={`#group-${groups.indexOf(group)}`} className="text-foreground underline underline-offset-4">
+                {group}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      {groups.map((group, index) => (
+        <div key={group} id={`group-${index}`} className="flex scroll-mt-8 flex-col gap-12">
+          <h2 className="border-b border-border pb-2 text-h2">{group}</h2>
+          {SCREENS.filter((s) => s.group === group).map((screen) => (
+            <ScreenBlock key={screen.id} screen={screen} />
+          ))}
+        </div>
+      ))}
+    </main>
+  )
+}
