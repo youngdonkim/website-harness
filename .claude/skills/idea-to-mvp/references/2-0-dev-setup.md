@@ -1,6 +1,6 @@
 ---
 name: 2-0-dev-setup
-description: 목업 단계(2단계)의 맨 앞 하위 단계 가이드 — 개발환경 준비. 1단계가 끝나고 루트에 앱 코드가 아직 없을 때, 스택(React 웹 / Expo)을 사용자에게 확인받고, 고정 스택(Next.js·React·TypeScript·Tailwind·shadcn·Supabase·Vercel)의 최신 호환 버전 조합을 조사해 적용하고, Supabase는 붙일 자리만 잡고, Vercel 플러그인을 확인하고, design-system 스킬 순서대로 디자인 시스템 첫 세팅(shadcn 설치 → 1층 → 2층 → 셸 → 부품 목록 → 연결 정보)을 한 뒤, 목업 캔버스 뼈대(목업 캔버스·「[서비스 이름] 디자인 시스템」 페이지·목업 캔버스 목록 파일·상태 표시 도우미)를 프로젝트에 넣는다. 여기서 만든 앱 코드 위에 2-1이 주요 화면을 리액트로 바로 만들고, 3·4단계가 같은 코드를 이어 짓는다. 아티팩트 캔버스로 진행하던 프로젝트를 리액트로 옮겨 오는 호환 절도 이 문서 끝에 있다. idea-to-mvp SKILL.md §2의 2번 단계.
+description: 목업 단계(2단계)의 맨 앞 하위 단계 가이드 — 개발환경 준비. 1단계가 끝나고 루트에 앱 코드가 아직 없을 때, 스택(React 웹 / Expo)을 사용자에게 확인받고, Node.js 주 버전을 정해 이 컴퓨터·CI·Vercel을 같은 판으로 맞추고, 고정 스택(Next.js·React·TypeScript·Tailwind·shadcn·Supabase·Vercel)의 최신 호환 버전 조합을 서로 받는 범위를 따져 조사해 적용하고, Supabase는 붙일 자리만 잡고, Vercel 플러그인을 확인하고, design-system 스킬 순서대로 디자인 시스템 첫 세팅(shadcn 설치 → 1층 → 2층 → 셸 → 부품 목록 → 연결 정보)을 한 뒤, 목업 캔버스 뼈대(목업 캔버스·「[서비스 이름] 디자인 시스템」 페이지·목업 캔버스 목록 파일·상태 표시 도우미)를 프로젝트에 넣는다. 여기서 만든 앱 코드 위에 2-1이 주요 화면을 리액트로 바로 만들고, 3·4단계가 같은 코드를 이어 짓는다. 아티팩트 캔버스로 진행하던 프로젝트를 리액트로 옮겨 오는 호환 절도 이 문서 끝에 있다. idea-to-mvp SKILL.md §2의 2번 단계.
 ---
 
 이 문서는 2단계의 맨 앞 하위 단계다. 2단계는 **`2-0-dev-setup.md`(개발환경 준비) → `2-1-mockup.md`(기능·화면 목록과 주요 화면) → `2-2-mockup-design-upgrade.md`(전문가 수준 디자인 개선)** 순서로 간다. 단계 번호는 하나라 대화가 끊기지 않고 이어진다.
@@ -31,7 +31,7 @@ description: 목업 단계(2단계)의 맨 앞 하위 단계 가이드 — 개�
 
 이 문서의 목표는 **2-1이 주요 화면을 리액트로 바로 만들 수 있는 바닥을 까는 것**이다. 끝나면 아래가 있다.
 
-- **루트 앱 코드 뼈대** — 고정 스택으로 만든 Next.js 앱. 정확한 버전을 `package.json`에 고정했다.
+- **루트 앱 코드 뼈대** — 고정 스택으로 만든 Next.js 앱. 정확한 버전을 `package.json`에 고정했고, Node.js 주 버전을 이 컴퓨터·`engines.node`·`.nvmrc`(CI가 읽는다)에 같게 맞췄다.
 - **기술 결정 기록** — `mvp/adr.md`(ADR — 왜 그 기술을 골랐는지 적어 두는 문서)에 스택 선택과 버전 조합.
 - **디자인 시스템 첫 세팅** — `src/styles/`의 토큰 세 층, 모든 화면에 씌우는 셸, 부품 목록 문서(`docs/components.md`), `AGENTS.md`의 「디자인 시스템 연결 정보」 절.
 - **목업 캔버스 뼈대** — 개발 서버에서만 열리는 목업 캔버스(`/dev/canvas`)와 「[서비스 이름] 디자인 시스템」 페이지(`/dev/design-system`), 목업 캔버스 목록 파일, 상태 표시 도우미.
@@ -56,7 +56,7 @@ description: 목업 단계(2단계)의 맨 앞 하위 단계 가이드 — 개�
 
 **위임 지시서에 꼭 넣을 것** (메인) — 아래를 `<constraints>`에 넣는다. 이 문서는 자동으로 들어가지 않는 자료라 에이전트가 알 길이 없다.
 
-- §2.2~§2.6에서 그 일에 닿는 규칙을 몇 줄씩 — 특히 버전 조사 6단계, Supabase는 자리만, 디자인 시스템 첫 세팅 순서, 틀은 `README.md`대로 복사하고 이름만 채우기.
+- §2.2~§2.6에서 그 일에 닿는 규칙을 몇 줄씩 — 특히 Node.js 버전 정하기(이 컴퓨터의 Node가 없거나 주 버전이 다르면 설치를 진행하지 않고 멈춰 보고), 버전 조사 6단계와 서로 받는 범위 확인, Supabase는 자리만, 디자인 시스템 첫 세팅 순서, 틀은 `README.md`대로 복사하고 이름만 채우기.
 - 메인이 design-system 스킬(`SKILL.md`·`references/bootstrap-project.md` §1~§4·`references/reference-analysis.md` §5)을 한 번 읽고 걸러 낸 제약 몇 줄. 에이전트에게 스킬을 읽으라고 시키지 않는다 (`AGENTS.md` 위임 절).
 - 「바깥 조회(npm registry·공식 문서)에서 같은 실패 2회면 멈추고 보고하라. 401·403·404는 재시도하지 마라.」
 - 「브라우저 자동화로 화면을 열어 보고 '확인 완료'라고 결론 내지 마라 — 빌드·린트·타입 검사까지만 하고 결과를 보고하라.」
@@ -64,7 +64,7 @@ description: 목업 단계(2단계)의 맨 앞 하위 단계 가이드 — 개�
 - 「전제가 다르면 멈추고 보고하라.」
 - 「재위임 금지: 다른 에이전트를 띄우지 말고, 필요해 보이면 멈추고 보고하라.」
 
-**보고에 담을 것** — 고정한 버전 조합, ADR에 적은 것, `가정` 값으로 채운 1층 항목, 받은 shadcn 부품과 고친 부품, 셸의 메뉴(어느 근거로 정했는지), 목업 캔버스 뼈대를 넣은 자리, 빌드·린트·타입 결과, `추후 결정:` 목록.
+**보고에 담을 것** — 고른 Node 주 버전과 이 컴퓨터의 Node 버전, 고정한 버전 조합, ADR에 적은 것, `가정` 값으로 채운 1층 항목, 받은 shadcn 부품과 고친 부품, 셸의 메뉴(어느 근거로 정했는지), 목업 캔버스 뼈대를 넣은 자리, 빌드·린트·타입 결과, `추후 결정:` 목록.
 
 ## 2. 진행 절차
 
@@ -128,14 +128,71 @@ description: 목업 단계(2단계)의 맨 앞 하위 단계 가이드 — 개�
 
 **mandated core 밖**은 프로젝트별 추가 (지도=leaflet, 아이콘=lucide 등) — 검증 가설에 필요할 때만. core에서 빼거나 다른 것으로 갈아타는 건 하지 않는다. (결제 PG는 4단계 — 2·3단계엔 결제가 없다.)
 
+**Node.js 버전부터 정한다** — Node.js(자바스크립트를 컴퓨터에서 돌리는 실행기 — 개발 서버와 빌드가 이 위에서 돈다)의 주 버전(맨 앞 숫자)이 이 컴퓨터·CI·Vercel에서 서로 다르면, 내 컴퓨터에서는 되던 빌드가 배포에서 깨진다. 그래서 패키지보다 먼저 정한다.
+
+1. **이 컴퓨터에 Node가 있는지 본다** — `node -v`. 없으면 아래 「Node가 없을 때」 문안으로 안내하고 멈춘다.
+2. **고를 주 버전** — 아래 셋을 모두 만족하는 것 중 가장 새 것이다.
+   - ① 고를 Next.js의 `engines.node`를 만족한다 — `npm view next@<버전> engines`.
+   - ② Vercel이 지원한다 — Vercel 공식 문서 「Supported Node.js versions」(<https://vercel.com/docs/functions/runtimes/node-js/node-js-versions>)의 지원 목록과 기본값으로 확인한다.
+   - ③ LTS(장기 지원판 — 오래 보안 수정을 받는 판)다. 막 나온 Current판(LTS가 되기 전 판)은 Vercel이 아직 지원하지 않을 수 있어 고르지 않는다.
+
+   지금 LTS인 판은 Node.js 공식 릴리스 일정(nodejs/Release 저장소의 `schedule.json`)으로 확인한다. 명령 예:
+
+   ```bash
+   curl -s https://raw.githubusercontent.com/nodejs/Release/main/schedule.json \
+     | node -e 'const d=JSON.parse(require("fs").readFileSync(0,"utf8"));const t=new Date().toISOString().slice(0,10);for(const [v,r] of Object.entries(d)) if(r.lts&&r.lts<=t&&r.end>t) console.log(v,"LTS 시작",r.lts,"지원 끝",r.end)'
+   ```
+
+3. **다섯 자리를 같은 주 버전으로 맞춘다.**
+
+   | 자리 | 맞추는 법 |
+   |---|---|
+   | 이 컴퓨터 | `node -v`의 맨 앞 숫자. 다르면 아래 「이 컴퓨터의 판이 다를 때」 |
+   | `package.json`의 `engines.node` | 「주 버전.x」 모양으로 적는다 — 예: `"engines": { "node": "24.x" }` (숫자는 모양을 보이려는 예시다) |
+   | `.nvmrc` | 루트에 주 버전 숫자 한 줄. Node 버전 관리 도구가 이 파일을 읽어 폴더에 맞는 판을 고른다 |
+   | CI | 하네스가 넣은 `.github/workflows/ci.yml`이 `setup-node`의 `node-version-file: .nvmrc`로 읽는다 — 따로 고칠 것이 없다 |
+   | Vercel 프로젝트 설정 | Settings → Build and Deployment → Node.js Version. 프로젝트는 3단계 첫 배포 때 생기니 그때 맞춘다. Vercel은 `package.json`의 `engines.node`를 프로젝트 설정보다 먼저 따른다(공식 문서) — `engines.node`를 적어 두면 설정이 달라도 그 주 버전으로 빌드되고, 3단계 첫 배포 체크리스트가 빌드 기록으로 다시 확인한다 (`3-frontend-build.md` §2.6) |
+
+4. **ADR에 한 줄** — 고른 주 버전과 그 근거(①②③ 각각 무엇으로 확인했는지).
+
+**이 컴퓨터의 판이 다를 때** — 설치는 사용자 몫이다. AI가 대신 깔거나 바꾸지 않고, 아래 문안으로 안내한 뒤 멈춘다. 「됐어요」가 오면 `node -v`로 다시 보고 이어 간다. 문안 골자:
+
+> 이 컴퓨터의 Node.js는 [지금 판]판인데, 이 프로젝트는 [맞출 판]판으로 맞추려고 합니다. Node.js는 앱을 내 컴퓨터에서 돌리는 실행기이고, 배포하는 곳(Vercel)과 판이 같아야 「내 컴퓨터에서는 되는데 배포하면 깨지는」 일이 생기지 않습니다. 아래 둘 중 편한 방법으로 [맞출 판]판을 쓰게 해 주세요.
+>
+> - **Node 버전 관리 도구**(여러 판을 깔아 두고 폴더마다 골라 쓰게 해 주는 프로그램) — nvm·fnm·Volta 중 하나. 이미 쓰고 있으면 그 도구로 [맞출 판]판을 깔고 이 폴더에서 그 판을 쓰게 하면 됩니다(nvm·fnm은 이 폴더의 `.nvmrc`를 읽습니다).
+> - **맥 Homebrew**(맥용 프로그램 설치 도구) — 터미널에 `brew install node@[맞출 판]`. 설치가 끝날 때 화면에 나오는 안내(명령을 찾는 경로를 더하는 한 줄)도 따라 해 주세요.
+>
+> 끝나면 「됐어요」라고 알려 주세요.
+>
+> 예시 답변: 「nvm으로 바꿨어요」 / 「Homebrew로 깔았어요」 / 「뭘 써야 할지 모르겠어요」(→ 이미 깔린 도구가 없으면 Homebrew를 권합니다)
+
+**Node가 없을 때** — 같은 방식으로 안내하고 멈춘다. 문안 골자:
+
+> 이 컴퓨터에 Node.js가 없습니다. Node.js는 앱을 내 컴퓨터에서 돌리는 실행기라, 화면을 만들기 전에 하나 깔아야 합니다. 아래 둘 중 하나로 [맞출 판]판을 깔아 주세요.
+>
+> - **공식 설치 파일** — nodejs.org에서 [맞출 판]판(LTS라고 적힌 판) 설치 파일을 받아 실행합니다.
+> - **맥 Homebrew** — 터미널에 `brew install node@[맞출 판]`. 설치가 끝날 때 화면에 나오는 안내도 따라 해 주세요.
+>
+> 끝나면 「됐어요」라고 알려 주세요.
+>
+> 예시 답변: 「설치 파일로 깔았어요」 / 「Homebrew가 없어요」(→ 공식 설치 파일을 권합니다)
+
 **이 절에서 실제로 하는 일 = 고정 스택의 최신 호환 버전 조합을 상호 의존성 고려해 조사·적용** (초안 모드 — AI가 조사·적용·보고, 사용자 선택 없음). **버전 숫자는 휘발성이라 이 references에 적지 않는다.** 조합은 빌드 시점에 조사해 `mvp/adr.md`에 기록한다:
 
-1. Next.js 최신 stable 확인 → 그것이 요구하는 React·Node 버전(peer deps) 파악.
-2. TypeScript·eslint-config-next를 그 Next와 호환되는 최신으로.
+1. Next.js 최신 stable 확인 → 그것이 받는 React 범위와 Node 범위 파악(`npm view next@<버전> peerDependencies engines`). Node 주 버전은 위 「Node.js 버전부터 정한다」에서 정한다.
+2. TypeScript·ESLint·eslint-config-next를 그 Next와 맞는 것 중, 서로 받는 범위 안에서 가장 새 것으로 (아래 「서로 받는 범위를 먼저 본다」).
 3. Supabase(`@supabase/ssr`·`@supabase/supabase-js`) 최신.
 4. Tailwind CSS 최신 stable과 그 Next 버전과의 연결 방식(PostCSS 플러그인 등). shadcn은 npm 패키지가 아니라 CLI가 부품 파일을 프로젝트에 복사해 주는 방식이라 버전을 고정하지 않는다 — 대신 고른 style 이름과 `components.json` 내용을 ADR에 적는다. 이 값이 같아야 나중에 부품을 다시 받아도 같은 모양이 나온다.
 5. **조합 설치 검증** — `npm install`이 peer-dep 충돌(`ERESOLVE`) 없이 통과하는지. 충돌 시 마지막 호환 조합으로 한 단계 물러선다 (`--force`·`--legacy-peer-deps`로 덮지 말 것).
-6. 해소된 정확한 버전을 `package.json`에 고정 + ADR에 조합 기록. 3·4단계는 이 기록을 참조만 하고 다시 고르지 않는다.
+6. 해소된 정확한 버전을 `package.json`에 고정 + ADR에 조합 기록. `package-lock.json`(설치된 정확한 버전을 적어 두는 파일)도 커밋한다 — CI의 `npm ci`와 Vercel이 이 파일 그대로 설치한다. 3·4단계는 이 기록을 참조만 하고 다시 고르지 않는다.
+
+**서로 받는 범위를 먼저 본다** — 핵심 패키지마다 `npm view <패키지>@<버전> peerDependencies engines`(다른 패키지를 끌어오는 패키지면 `dependencies`도)로 다른 패키지를 어느 범위까지 받는지 본다. 한 패키지의 최신이 다른 패키지가 받는 범위 밖이면, 범위 안에서 가장 새 것으로 내린다. 설치를 돌리기 전에 고를 버전을 정하는 데 쓴다 — 설치가 막힌 뒤 거꾸로 되짚는 것보다 빠르다. 흔한 예:
+
+- **TypeScript** — eslint-config-next가 끌어오는 typescript-eslint가 받는 범위 안에서만. `npm view eslint-config-next@<버전> dependencies`로 typescript-eslint 범위를 보고, `npm view typescript-eslint@<그 범위의 최신> peerDependencies`로 TypeScript 범위를 본다.
+- **ESLint** — eslint-config-next가 끌어오는 eslint-plugin-react·eslint-plugin-import·eslint-plugin-jsx-a11y가 받는 주 버전 안에서만.
+- **React·react-dom** — Next가 받는 범위 안에서만.
+
+최신을 못 쓴 패키지는 ADR에 「누가 어떤 범위만 받아서」를 한 줄씩 적는다 — 예: 「TypeScript는 최신 대신 `<고른 버전>` — typescript-eslint `<버전>`이 `<범위>`만 받아서」. 다음에 올릴 때 그 패키지가 범위를 넓혔는지만 보면 된다.
 
 - **조사 소스**: 공식 docs·npm registry·context7 (최신 버전·peer 요구). LLM 학습 시점 이후 버전은 반드시 조사로 확인 — 기억으로 적지 말 것.
 - **graceful degradation**: 조사가 불확실하면 마지막 known-good 조합으로 진행하고 `추후 결정: [무엇을 재확인]` 마킹.
@@ -200,7 +257,7 @@ Supabase는 **환경변수 자리만 비워서 잡아둔다** — 프로젝트�
 2. **서비스 이름 채우기** — 디자인 시스템 페이지 제목을 「[서비스 이름] 디자인 시스템」으로(예: 「aikung 디자인 시스템」), 그 밖에 `README.md`가 가리키는 채울 자리를 채운다. 「규칙 페이지」라고 부르지 않는다.
 3. **목업 캔버스 목록 파일** — `src/app/(dev)/dev/canvas/screens.ts`. 목업 캔버스에 띄울 화면을 적는 코드 파일이고, 화면마다 화면 ID·이름·흐름 묶음·주소·띄울 상태를 적는다. 지금은 화면이 없으니 빈 목록으로 둔다 — 2-1이 화면을 만들며 채운다 (`2-1-mockup.md` §2.6.2 「목업 캔버스 목록 파일」).
 4. **상태 표시 도우미를 저장·조회 코드에 잇기** — 도우미는 개발 서버에서만 주소 끝 `?state=empty|loading|error|forbidden`을 읽어 돌려준다. 저장·조회 코드(`src/lib/storage.ts`)의 뼈대를 만들고, 그 안에서 도우미를 불러 빈 결과·느린 응답·오류를 돌려주게 잇는다(권한없음은 가짜 로그인 상태를 바꿔서 낸다). 아직 데이터 종류가 없으면 공통 읽기·쓰기 함수 자리만 둔다. 화면 코드는 상태 표시를 읽지 않는다 — 화면은 저장·조회 코드가 돌려준 결과대로 실제 처리 경로를 탄다. 저장·조회 코드의 규칙은 `2-1-mockup.md` §2.6.2 「저장·조회 코드」다.
-5. **검사** — 빌드·린트·타입 검사를 돌려 통과시킨다. 실서비스 빌드에서 `/dev` 주소가 막히는지(개발용 묶음 레이아웃이 404를 내는지)도 화면을 열지 않고 확인한다 — 예: 실서비스 빌드를 띄워 `curl -s -o /dev/null -w "%{http_code}" http://localhost:<포트>/dev/canvas`가 `404`인지. 확인용으로 띄운 서버는 끝나면 자기가 띄운 것만 끈다.
+5. **검사** — 빌드·린트·타입 검사를 돌려 통과시킨다. 실서비스 빌드에서 `/dev` 주소가 막히는지(개발용 묶음 레이아웃이 404를 내는지)도 화면을 열지 않고 확인한다 — 예: 실서비스 빌드를 띄워 `curl -s -o /dev/null -w "%{http_code}" http://localhost:<포트>/dev/canvas`가 `404`인지. 확인용으로 띄운 서버는 끝나면 자기가 띄운 것만 끈다. 내 컴퓨터에서 실서비스 빌드로 빠르게 볼 때 쓰는 `MOCKUP_CANVAS=1`(틀 `README.md` 「실서비스 빌드로 빠르게 보기」)은 명령 앞에만 붙인다 — `.env` 파일과 Vercel 환경변수에는 절대 넣지 않는다(넣으면 공개 주소에서 열린다).
 
 **원칙**:
 
@@ -247,7 +304,8 @@ Supabase는 **환경변수 자리만 비워서 잡아둔다** — 프로젝트�
 2단계 전체의 완료 체크리스트는 `2-2-mockup-design-upgrade.md` §3이다. 아래는 이 문서 몫이다.
 
 - [ ] **스택 선택 확정** (§2.1) — 사용자에게 React 웹 / Expo를 확인받았고 `mvp/adr.md`에 기록. Expo면 짚을 것 셋을 사용자에게 말했다.
-- [ ] **고정 core 버전 조합 조사·적용** (§2.2) — 정확한 버전이 `package.json`에 고정됐고, `npm install`이 `ERESOLVE` 없이 통과(`--force`·`--legacy-peer-deps` 0건). 조합과 shadcn style·`components.json` 내용이 ADR에 있음. 루트에 원래 있던 파일을 덮지 않았음.
+- [ ] **Node.js 주 버전** (§2.2) — Next.js `engines.node`·Vercel 지원 목록·LTS를 모두 만족하는 가장 새 판으로 골랐고, 이 컴퓨터(`node -v`)·`package.json` `engines.node`·`.nvmrc`가 같은 주 버전. 고른 근거가 ADR에 있음.
+- [ ] **고정 core 버전 조합 조사·적용** (§2.2) — 정확한 버전이 `package.json`에 고정됐고, `npm install`이 `ERESOLVE` 없이 통과(`--force`·`--legacy-peer-deps` 0건). 조합과 shadcn style·`components.json` 내용이 ADR에 있고, 최신을 못 쓴 패키지마다 「누가 어떤 범위만 받아서」 한 줄. `package-lock.json` 커밋됨. 루트에 원래 있던 파일을 덮지 않았음.
 - [ ] **Supabase 환경변수 자리** (§2.3) — `.env.example`에 이름만, 초기화 코드까지만. Supabase·Vercel 프로젝트 0개(외부 리소스 안 만듦).
 - [ ] **Vercel 플러그인** (§2.4) — 깔려 있거나, 사용자에게 설치를 안내했음.
 - [ ] **디자인 시스템 첫 세팅** (§2.5) — shadcn 설치, 1층이 브리프 「4」 「우리가 쓰는 값」으로 채워짐(`가정` 항목은 보고에 있음), 2층이 shadcn 이름 세트를 1층으로 다시 이음, 셸이 `feature-list.md` 8절 메뉴 구조와 맞음(8절이 나온 뒤 맞췄음), `docs/components.md`에 받은 부품 등록, `AGENTS.md` 연결 정보 절이 있음. 새 variant 0개.
@@ -258,6 +316,7 @@ Supabase는 **환경변수 자리만 비워서 잡아둔다** — 프로젝트�
 ## 4. 사용자 응대 톤
 
 - **톤**: SKILL.md §1.3 따름 — `AGENTS.md` 응답 톤(~입니다 체)·친근·짧게.
+- **Node 판을 맞춰 달라고 할 때** — 왜 맞추는지 한 줄(배포하는 곳과 판이 같아야 한다)과 방법 둘만 말한다. 설치는 사용자 몫이고, 끝나면 「됐어요」를 기다린다.
 - **스택 질문은 짧게 한 번** — 고를 게 하나뿐이다. 「잘 모르겠어요」면 웹으로 간다고 알리고 진행한다. 버전 숫자·패키지 이름 같은 조사 내용은 묻지 않는다 — AI가 조사해 정하고 ADR에 남긴다.
 - **기다리게 하지 않는다** — 개발환경 준비는 뒤에서 돌고, 그동안 기능 목록과 화면 목록을 함께 본다고 알린다. "설치가 끝날 때까지 기다려 주세요"라고 하지 않는다.
 - **"빨리 화면부터 보고 싶다"** — 화면은 이 바닥 위에 바로 지어져 그대로 진짜 앱이 된다고 짚는다. 그림을 먼저 그리고 나중에 다시 만드는 방식이 아니라서, 바닥을 까는 시간이 뒤에서 다시 만드는 시간을 없앤다.

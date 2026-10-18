@@ -125,6 +125,7 @@ description: 4단계(BackendBuild)에 들어가기 전에 사람이 미리 갖�
 ### 3.6 로컬 도구
 
 - **[사람]** Docker 이미지가 잘 받아지는지 `docker pull hello-world`로 확인한다. 회사 네트워크나 VPN이 이미지 저장소(레지스트리)를 막는 경우가 있다 (실측 1건: 못 받아져서 Supabase CLI를 이미 받아 둔 이미지와 맞는 옛 버전으로 고정했다).
+- **[AI]** Supabase CLI와 Docker도 Node.js와 같은 방식으로 판을 맞춘다 (`2-0-dev-setup.md` §2.2 「Node.js 버전부터 정한다」) — 고를 판은 공식 문서로 서로 맞는지 확인하고, 고른 판 숫자는 이 문서에 적지 않고 4단계 기록(`mvp/backend-build.md`)과 ADR에 적는다. Supabase CLI는 개발 의존성이라 `package.json`에 정확한 판으로 고정된다.
 - **[사람]** 다른 프로젝트의 로컬 Supabase가 같은 포트를 쓰고 있으면 `supabase/config.toml`에서 포트를 옮긴다.
 - **[AI]** `gh`·`vercel`·`supabase` 인증이 전부 프로젝트 CLI 전용 파일의 발급 토큰이고 표의 계정 것인지 §2 방식대로 다시 확인한다.
 
