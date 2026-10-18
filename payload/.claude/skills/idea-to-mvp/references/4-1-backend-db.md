@@ -120,7 +120,9 @@ description: 4단계(BackendBuild)에서 실제 코드 작업이 시작되는 �
 
 **Docker Desktop을 쓴다.** 공식 문서가 preferred option(권장 선택지)으로 적어둔 것이고, 화면으로 상태를 볼 수 있어 문제가 생겼을 때 원인을 찾기 쉽다.
 
-설치 후 앱을 한 번 실행해서 권한을 준 다음, `docker info`가 정보를 출력하는지로 돌고 있는지 확인한다.
+**설치는 4단계 준비에서 정한다** — 없으면 AI가 크기·용도를 알리고 사용자에게 깔지 묻는다. 허락하면 AI가 깔거나 사용자가 공식 설치 파일로 깐다 (`4-0-backend-prep.md` §3.6). 이미 있으면 묻지 않는다.
+
+설치 후 사용자가 앱을 한 번 열어 이용 약관에 동의(Accept)하고 권한을 준 다음, AI가 `docker info`가 정보를 출력하는지로 돌고 있는지 확인한다.
 
 Docker Desktop이 꺼진 채로 `npx supabase status`/`start`를 돌리면 **원인을 알기 어려운 JSON 에러만 출력한다** (실제 겪음 — 에러 어디에도 Docker 얘기가 없다). supabase 명령이 정체불명 에러를 내면 먼저 `docker info`를 돌려본다 — `docker.sock` 연결 오류면 데몬이 꺼진 것이니, 맥은 `open -a Docker`로 켜고 `docker info`가 성공할 때까지 기다린 뒤 supabase 명령을 재시도한다. 재부팅 뒤에 특히 자주 겪는다.
 
