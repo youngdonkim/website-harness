@@ -23,13 +23,29 @@ jobs:
             echo "present=false" >> "$GITHUB_OUTPUT"
             echo "package-lock.json 없음 — 앱 코드 생기기 전이라 빌드 검사를 건너뜀 (통과)"
           fi
+          if [ -f .nvmrc ]; then
+            echo "nvmrc=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "nvmrc=false" >> "$GITHUB_OUTPUT"
+          fi
 
-      - if: steps.node.outputs.present == 'true'
+      # Node 버전은 .nvmrc가 정본이다 — 내 컴퓨터·package.json의 engines.node·Vercel과 같은 주 버전을 쓴다
+      # (2-0-dev-setup.md §2.2). setup-node는 node-version과 node-version-file을 함께 주면
+      # node-version을 따르므로 둘을 한 단계에 섞지 않고, .nvmrc가 있을 때와 없을 때를 나눈다.
+      - if: steps.node.outputs.present == 'true' && steps.node.outputs.nvmrc == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # .nvmrc가 없는 옛 프로젝트만 이 값으로 돈다. .nvmrc를 만들면(2-0-dev-setup.md §2.2) 위 단계로 옮겨 간다.
+      - if: steps.node.outputs.present == 'true' && steps.node.outputs.nvmrc != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
 
+      # npm ci — package-lock.json에 고정된 버전 그대로 설치한다(lock과 package.json이 어긋나면 실패한다).
       - if: steps.node.outputs.present == 'true'
         run: npm ci
 

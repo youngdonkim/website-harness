@@ -95,24 +95,32 @@ const RADII = [
   // {{rounded-card·rounded-control 같은 서비스 이름이 있으면 더한다}}
 ]
 
+// ── 프로젝트에 맞게 고친다: 격자 (단 수·칸 사이·본문 최대 폭·긴 글 폭). 폭 이름은 2층의 컨테이너 이름으로 ──
+const GRID_COLUMNS = 12
+const GRID_GAP = "gap-x-6"
+const GRID_WIDTHS = [
+  { name: "max-w-content", use: "본문 최대 폭" },
+  { name: "max-w-reading", use: "긴 글 한 줄 폭" },
+]
+
+// ── 비교안 값 (2-2처럼 토큰 값을 바꿔 보는 동안만) ──
+// 2층 파일 맨 끝의 비교안 범위 클래스(예: `.draft-home-b`)를 적으면, 아래 견본을 그 클래스로 감싸 「지금 값」 옆에 나란히 그린다.
+// 비교안을 고르거나 지우면 이 목록에서도 지운다. 비어 있으면 「지금 값」 하나만 그린다.
+const DRAFT_SCOPES: { label: string; cls: string }[] = [
+  // {{예: { label: "B안 값", cls: "draft-home-b" }}}
+]
+
 const TYPE_READ: (keyof CSSStyleDeclaration & string)[] = ["fontSize", "fontWeight", "lineHeight"]
 const COLOR_READ: (keyof CSSStyleDeclaration & string)[] = ["backgroundColor"]
 const SPACE_READ: (keyof CSSStyleDeclaration & string)[] = ["width"]
 const RADIUS_READ: (keyof CSSStyleDeclaration & string)[] = ["borderRadius"]
+const GAP_READ: (keyof CSSStyleDeclaration & string)[] = ["columnGap"]
+const MAX_WIDTH_READ: (keyof CSSStyleDeclaration & string)[] = ["maxWidth"]
 
-export default function DesignSystemPage() {
+/** 견본 묶음 — 「지금 값」과 「비교안 값」에 같은 견본을 두 번 그린다. 계산값을 읽어서 비교안 칸에는 덮어쓴 값이 저절로 보인다 */
+function Samples() {
   return (
-    <main className="mx-auto flex max-w-content flex-col gap-12 px-4 py-12">
-      <header className="flex flex-col gap-4">
-        <h1 className="text-h1">{SERVICE_NAME} 디자인 시스템</h1>
-        <p className="text-b1 text-muted-foreground">
-          실제 토큰과 부품으로 그린 거울입니다. 값의 정본은 1·2층 CSS입니다.
-        </p>
-        <Link href="/dev/canvas" className="w-fit text-b1 text-foreground underline underline-offset-4">
-          목업 캔버스 보기
-        </Link>
-      </header>
-
+    <div className="flex flex-col gap-12">
       <Section title="글자 단계">
         <div className="flex flex-col gap-6">
           {TYPE_STEPS.map((step) => (
@@ -157,6 +165,29 @@ export default function DesignSystemPage() {
             <div key={radius.name} className="flex flex-col gap-2">
               <p className="text-b2 font-semibold">{radius.name}</p>
               <Probe className={`h-16 w-24 border border-input bg-secondary ${radius.cls}`} read={RADIUS_READ} />
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="격자">
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-2">
+            <p className="text-b2 font-semibold">
+              {GRID_COLUMNS}단 · 칸 사이 {GRID_GAP}
+            </p>
+            <Probe className={`grid grid-cols-12 ${GRID_GAP}`} read={GAP_READ}>
+              {Array.from({ length: GRID_COLUMNS }, (_, i) => (
+                <div key={i} className="h-12 rounded-card bg-muted" />
+              ))}
+            </Probe>
+          </div>
+          {GRID_WIDTHS.map((width) => (
+            <div key={width.name} className="flex flex-col gap-2">
+              <p className="text-b2 font-semibold">
+                {width.name} — {width.use}
+              </p>
+              <Probe className={`h-4 w-full bg-primary ${width.name}`} read={MAX_WIDTH_READ} />
             </div>
           ))}
         </div>
@@ -208,6 +239,39 @@ export default function DesignSystemPage() {
           </p>
         </div>
       </Section>
+    </div>
+  )
+}
+
+export default function DesignSystemPage() {
+  return (
+    <main className="@container/ds mx-auto flex max-w-content flex-col gap-12 px-4 py-12">
+      <header className="flex flex-col gap-4">
+        <h1 className="text-h1">{SERVICE_NAME} 디자인 시스템</h1>
+        <p className="text-b1 text-muted-foreground">
+          실제 토큰과 부품으로 그린 거울입니다. 값의 정본은 1·2층 CSS입니다.
+        </p>
+        <Link href="/dev/canvas" className="w-fit text-b1 text-foreground underline underline-offset-4">
+          목업 캔버스 보기
+        </Link>
+      </header>
+
+      {DRAFT_SCOPES.length === 0 ? (
+        <Samples />
+      ) : (
+        <div className="grid gap-12 @5xl/ds:grid-cols-2 @5xl/ds:gap-x-6">
+          <div className="flex flex-col gap-6">
+            <p className="text-h3">지금 값</p>
+            <Samples />
+          </div>
+          {DRAFT_SCOPES.map((draft) => (
+            <div key={draft.cls} className={`flex flex-col gap-6 ${draft.cls}`}>
+              <p className="text-h3">{draft.label}</p>
+              <Samples />
+            </div>
+          ))}
+        </div>
+      )}
 
       <Section title="폰 배치 메모">
         {/* 프로젝트에 맞게 고친다: 어느 폭에서 무엇이 접히는지 한 줄씩 */}
