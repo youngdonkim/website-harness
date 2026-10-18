@@ -37,7 +37,7 @@
 # 허용 예외 — 부트스트랩 첫 push (2026-09-29 추가):
 #   main을 겨냥한 push라도 강제 push가 아니고, 그 원격에 main 브랜치가 아직
 #   없으면(git ls-remote --exit-code --heads <원격> refs/heads/main 이 "없음"
-#   으로 끝나면) 허용한다 — 하네스 첫 적용의 첫 push(github-connect ⑧).
+#   으로 끝나면) 허용한다 — 하네스 첫 적용의 첫 push(github-connect ⑨).
 #   원격에 main이 있거나 조회가 실패하면(네트워크·인증 등) 지금처럼 차단한다.
 #   main push 조각이 한 명령에 둘 이상이면 예외 없이 차단한다.
 #
@@ -54,6 +54,19 @@
 set -euo pipefail
 
 INPUT=$(cat)
+
+# jq가 없으면 아래 jq 줄이 set -e로 비정상 종료(127)한다. Claude Code 훅은
+# 종료 코드 2만 막고 그 밖의 실패는 통과시키므로, 그대로 두면 main push를
+# 못 막는다. 그래서 jq가 없을 때는 입력 원문에 git과 push가 함께 있으면
+# 안전한 쪽으로 막고(exit 2), 그 밖의 명령은 통과시킨다.
+if ! command -v jq >/dev/null 2>&1; then
+  # 외부 명령(grep 등) 없이 bash 자체 비교로 본다 — 도구가 하나 더 빠져도 막는 쪽으로 남게.
+  if [[ "$INPUT" == *git* && "$INPUT" == *push* ]]; then
+    echo "jq가 없어 main push 차단 검사를 할 수 없어 막았습니다 — github-connect의 jq 단계(③)를 다시 돌리면 jq를 자동으로 깝니다." >&2
+    exit 2
+  fi
+  exit 0
+fi
 COMMAND=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty')
 HOOK_CWD=$(printf '%s' "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")
 

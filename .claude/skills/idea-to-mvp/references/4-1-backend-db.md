@@ -128,7 +128,10 @@ Docker Desktop이 꺼진 채로 `npx supabase status`/`start`를 돌리면 **원
 
 ### 3.2 Supabase CLI
 
-전역이 아니라 **프로젝트 개발 의존성(`--save-dev`)으로 깔고 `npx`로 부른다.**
+**2단계 개발환경 준비에서 이미 개발용 패키지(`--save-dev`)로 깔렸다 — 여기서는 확인과 인증만 한다** (`2-0-dev-setup.md` §2.1 도구 점검표). 전역이 아니라 프로젝트 안의 것을 `npx`로 부른다.
+
+- **확인** — `npx supabase --version`이 `package.json`의 `devDependencies`에 고정된 판을 답하는지 본다. 없으면(2단계를 거치지 않은 옛 프로젝트) 여기서 `npm install --save-dev supabase`로 깐다. 판은 Docker와 맞춰 고른다 (`4-0-backend-prep.md` §3.6).
+- **인증** — 4-0 §3.2대로 발급 토큰을 CLI 전용 파일에 두고 넘긴다. 전역 `supabase login`은 하지 않는다.
 
 이유: 스키마를 다루는 도구라 **버전이 사람마다 다르면 사고가 난다.** `package.json`에 적어 두면 팀원이 같은 버전을 쓴다. 전역에도 깔려 있으면 어느 쪽이 실행되는지 헷갈리니 **둘 중 하나만 남긴다.**
 
@@ -140,7 +143,10 @@ PR을 만들고 머지하는 데 쓴다. **깔기는 전역으로 하고, 인증
 
 ### 3.4 Vercel CLI
 
-Supabase CLI와 같이 **프로젝트 개발 의존성으로 깔고 `npx`로 부른다.** 인증은 4-0 §3.3대로 발급 토큰을 CLI 전용 파일에 두고 넘긴다 — `vercel login`으로 전역 로그인하지 않는다. 배포와 환경변수 내려받기에 쓴다.
+**2단계 개발환경 준비에서 이미 개발용 패키지로 깔렸다 — 여기서는 확인과 인증만 한다** (`2-0-dev-setup.md` §2.1 도구 점검표). 프로젝트 안의 것을 `npx vercel`로 부른다. 배포와 환경변수 내려받기에 쓴다.
+
+- **확인** — `npx vercel --version`이 `devDependencies`에 고정된 판을 답하는지 본다. 없으면 여기서 `npm install --save-dev vercel`로 깐다.
+- **인증** — 3단계 첫 배포 때 `.env.cli`에 둔 `VERCEL_TOKEN`이 살아 있는지 `env VERCEL_TOKEN="$(sed -n 's/^VERCEL_TOKEN=//p' .env.cli 2>/dev/null)" npx vercel whoami`로 본다 (`3-frontend-build.md` §2.6 · 4-0 §3.3). `vercel login`으로 전역 로그인하지 않는다.
 
 **2단계 개발환경 준비에서 깐 Vercel "플러그인"과는 다른 것이다** — 플러그인은 클로드 코드 안에서 쓰는 스킬 묶음이고, 이건 터미널에서 직접 치는 명령이다. 이름만 같지 하는 일이 다르니 둘 다 갖춰 둔다.
 
