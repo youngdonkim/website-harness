@@ -1,0 +1,35 @@
+// 목업 캔버스가 화면의 상태(빈·로딩·오류·권한없음)를 띄울 때 쓰는 도우미.
+// 개발 서버에서만 주소 끝 `?state=empty|loading|error|forbidden`을 읽는다. 실서비스 빌드에서는 늘 null이다.
+//
+// 화면 코드는 고치지 않는다. 저장·조회 코드(서버 컴포넌트·서버 함수)가 이 함수를 불러 상태를 흉내 낸다.
+// 상태 표시는 주소로만 정한다(브라우저 저장소에 쓰지 않는다) — 한 창이 다른 창의 상태를 바꾸지 않게 하려는 것이다.
+//
+// 부르는 예 (저장·조회 코드, 페이지의 searchParams를 그대로 넘긴다):
+//
+//   export default async function Page({ searchParams }: { searchParams: Promise<DevSearchParams> }) {
+//     const state = await readDevState(searchParams)
+//     if (state === "loading") await devLoadingDelay()      // 느린 응답 흉내
+//     if (state === "error") throw new Error("개발용 오류")   // 오류 흉내 (error.tsx가 받는다)
+//     if (state === "forbidden") redirect("/login")          // 권한없음 흉내 (또는 forbidden 화면)
+//     const items = state === "empty" ? [] : await listItems() // 빈 결과 흉내
+//     ...
+//   }
+
+export const DEV_STATES = ["empty", "loading", "error", "forbidden"] as const
+export type DevState = (typeof DEV_STATES)[number]
+export type DevSearchParams = Record<string, string | string[] | undefined>
+
+export async function readDevState(
+  searchParams?: DevSearchParams | Promise<DevSearchParams>,
+): Promise<DevState | null> {
+  if (process.env.NODE_ENV === "production") return null
+  const params = await searchParams
+  const raw = params?.state
+  const value = Array.isArray(raw) ? raw[0] : raw
+  return DEV_STATES.find((s) => s === value) ?? null
+}
+
+/** 느린 응답 흉내 — 로딩 화면이 보일 만큼 기다린다. 숫자는 밀리초다. */
+export function devLoadingDelay(ms = 4000): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}

@@ -263,6 +263,7 @@ git status --porcelain -- .claude docs/git-workflow.md docs/account-check.md .gi
 - 마커 구역이 아예 없으면 템플릿의 마커 구역을 파일 맨 끝에 덧붙인다. 파일 자체가 없으면 [3. AGENTS.md 생성](#3-agentsmd-생성)대로 템플릿에서 새로 만든다.
 - 병합으로 「소유와 계정」 표가 **처음 들어오는** 옛 프로젝트면, 소유(개인/회사)와 서비스별 계정을 사용자에게 물어 채운다 ([3. AGENTS.md 생성](#3-agentsmd-생성)과 같은 방식).
 - 「소유와 계정」 절처럼 **템플릿의 규칙 문단이 크게 줄어든 경우** — 규칙 문단은 템플릿대로 줄이고, 표의 행과 채워진 값은 그대로 둔다.
+- **템플릿에서 표의 행이 빠진 경우**(예: 「캔버스(claude.ai 아티팩트) 소유 계정」 행) — 프로젝트 표에 그 행의 값이 채워져 있으면 지우지 않고 그대로 둔다. 채운 값은 프로젝트 소유물이고, 그 행을 쓰는 호환 절차(예: 아티팩트 캔버스로 진행한 프로젝트를 리액트로 옮기기)가 그 프로젝트에 아직 남아 있을 수 있다. 값 없이 `{{…}}` 자리 표시만 남은 행은 템플릿대로 빼는 쪽으로 병합안에 넣는다.
 
 #### CLAUDE.md — 한 줄로 줄이되, 옛 내용은 확인받고 옮긴다
 
@@ -306,7 +307,7 @@ git status --porcelain -- .claude docs/git-workflow.md docs/account-check.md .gi
 
 ## 안 하는 것 (의도적)
 
-- ❌ 앱 스캐폴딩(`package.json`·`src/`) 생성 — 그건 3단계 FrontendBuild 영역
+- ❌ 앱 스캐폴딩(`package.json`·`src/`) 생성 — 그건 idea-to-mvp 2단계 개발환경 준비(`2-0-dev-setup.md`) 영역. 목업 캔버스 뼈대(`.claude/templates/mockup-canvas/`)도 복사만 하고 `src/`에 펼치지 않는다
 - ❌ GitHub 저장소 생성·push를 이 스킬 본문에서 직접 하기 — 원격 쪽은 `github-connect`가 한다 (신규 적용 [9단계](#9-원격-단계--github-connect-호출)에서 호출)
 - ❌ 기존 AGENTS.md 무단 덮어쓰기 — 동기화 모드에서도 프로젝트 고유 내용은 병합으로 보존하고, 반영은 사용자 확인 뒤에만. AGENTS.md 안에서 다른 도구가 만든 구역도 손대지 않는다
 - ❌ 옛 프로젝트의 CLAUDE.md 내용 무단 삭제 — `@AGENTS.md` 말고 다른 내용이 있으면 AGENTS.md로 옮길 안을 보여주고 확인받은 뒤에만 줄인다

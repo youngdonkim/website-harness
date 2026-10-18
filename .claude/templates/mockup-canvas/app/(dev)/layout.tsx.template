@@ -1,0 +1,8 @@
+import { notFound } from "next/navigation"
+
+// 개발용 묶음 — 목업 캔버스·디자인 시스템 페이지·비교안이 이 아래에 산다.
+// 실서비스 빌드(`next build` 뒤 `next start`, Vercel 배포)에서는 이 묶음의 모든 주소가 404다.
+export default function DevLayout({ children }: { children: React.ReactNode }) {
+  if (process.env.NODE_ENV === "production") notFound()
+  return <>{children}</>
+}
