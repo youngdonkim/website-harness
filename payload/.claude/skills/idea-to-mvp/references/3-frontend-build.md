@@ -520,15 +520,23 @@ grep -rnoE --exclude-dir=ui '(duration|delay|ease)-\[[^]]+\]|(duration|delay)-[0
 
 1. **Vercel에 배포한다** — 연결하기 전에 로그인된 Vercel 계정·팀이 `AGENTS.md` 「소유와 계정」 표와 일치하는지 대조한다 (절차·함정은 `docs/account-check.md`를 그때 읽는다). 첫 배포가 호스팅 프로젝트가 계정에 묶이는 순간이라, 다르면 만들지 않고 멈춰 보고한다 (실사고: 회사 프로젝트가 개인 Vercel 팀에 조용히 생겼다). 그다음 저장소를 Vercel 프로젝트에 연결한다. main 직접 push 금지 — PR 워크플로로 간다 (repo 훅이 막는다).
 
-   > **배포의 정본 경로는 git 연동이다** — main 머지 = 자동 프로덕션, PR = 자동 프리뷰. CLI 수동 배포(`vercel deploy --prod`)는 연동 전·비상시 예비 수단이다. CLI 배포는 로컬 작업 트리를 그대로 올려서(머지 안 된 브랜치·커밋 안 된 변경 포함) "실서비스 코드 = main" 보장이 깨진다 — 연동이 걸린 뒤에는 수동 배포를 쓰지 않는다. 3단계 안에 git 연동까지 마치는 게 기본이고, 못 마쳤으면 그 사실을 4-0 준비 목록에 넘긴다.
+   > **배포의 정본 경로는 git 연동이다** — main 머지 = 자동 프로덕션, PR = 자동 프리뷰. CLI 수동 배포(`npx vercel deploy --prod`)는 연동 전·비상시 예비 수단이다. CLI 배포는 로컬 작업 트리를 그대로 올려서(머지 안 된 브랜치·커밋 안 된 변경 포함) "실서비스 코드 = main" 보장이 깨진다 — 연동이 걸린 뒤에는 수동 배포를 쓰지 않는다. 3단계 안에 git 연동까지 마치는 게 기본이고, 못 마쳤으면 그 사실을 4-0 준비 목록에 넘긴다.
+
+   **Vercel CLI 인증 — 이 첫 배포가 CLI를 처음 쓰는 때다.** CLI는 2단계 개발환경 준비에서 개발용 패키지로 깔아 두었으니(`2-0-dev-setup.md` §2.1 도구 점검표) 프로젝트 안의 것을 `npx vercel`로 부른다. 인증은 전역 `vercel login` 세션 대신 소유자 계정의 발급 토큰으로 한다 — 로그인 세션은 컴퓨터 전체에 하나라, 소유가 다른 프로젝트를 조용히 다른 계정으로 돌린다 (`docs/account-check.md` 원칙 ②). 발급·저장은 `4-0-backend-prep.md` §3의 비밀값 절차 넷과 §3.3 그대로다 — 토큰을 CLI 전용 깃 미추적 파일 `.env.cli`에 `VERCEL_TOKEN=...` 한 줄로 두고, 부를 때마다 같은 셸 호출 안에서 읽어 넘긴다. Vercel CLI는 `--token` 옵션과 환경변수 `VERCEL_TOKEN`을 둘 다 받는데(Vercel 공식 문서 「Global Options」), 명령줄 인자는 프로세스 목록·기록에 보일 수 있어 환경변수로 넘긴다.
+
+   ```bash
+   env VERCEL_TOKEN="$(sed -n 's/^VERCEL_TOKEN=//p' .env.cli 2>/dev/null)" npx vercel whoami
+   ```
+
+   아래 `npx vercel` 명령도 전부 이 모양(앞에 `env VERCEL_TOKEN=…`)으로 부른다. `whoami`가 답하는 계정과 팀을 위 계정 대조에 쓴다.
 
    첫 배포 체크리스트:
 
-   - [ ] Vercel 프로젝트 이름은 소문자만 허용 — 저장소 폴더명에 대문자가 있으면 `vercel link --project <소문자이름>`을 먼저 한다 (실측: 대문자 폴더명 deploy가 400으로 거부됨)
-   - [ ] `vercel git connect` → "Connected" 확인
-   - [ ] `vercel link`가 `.gitignore` 끝에 `.env*` 한 줄을 덧붙일 수 있다 — 그러면 올려야 할 `.env.example`까지 git에서 빠진다. `git check-ignore .env.example`이 아무것도 안 내야 정상이고, 걸리면 그 줄을 지운다(`.env*.local`은 남긴다). (실측 2026-10-17)
+   - [ ] Vercel 프로젝트 이름은 소문자만 허용 — 저장소 폴더명에 대문자가 있으면 `npx vercel link --project <소문자이름>`을 먼저 한다 (실측: 대문자 폴더명 deploy가 400으로 거부됨)
+   - [ ] `npx vercel git connect` → "Connected" 확인
+   - [ ] `npx vercel link`가 `.gitignore` 끝에 `.env*` 한 줄을 덧붙일 수 있다 — 그러면 올려야 할 `.env.example`까지 git에서 빠진다. `git check-ignore .env.example`이 아무것도 안 내야 정상이고, 걸리면 그 줄을 지운다(`.env*.local`은 남긴다). (실측 2026-10-17)
    - [ ] 남에게 보낼 공개 링크는 **`<프로젝트이름>.vercel.app`** 이다 — 팀 이름이 붙은 다른 주소(`<프로젝트>-<팀>.vercel.app`·`-git-<브랜치>-` 주소)는 팀 계정의 배포 보호 때문에 Vercel 로그인으로 튕길 수 있다. `curl -s -o /dev/null -w "%{http_code}" https://<프로젝트이름>.vercel.app`이 200인지 확인한다. (실측 2026-10-17)
-   - [ ] 공개 주소에서 목업 캔버스가 막혀 있다 — `curl -s -o /dev/null -w "%{http_code}" https://<프로젝트이름>.vercel.app/dev/canvas`가 404인지 확인한다. 개발용 묶음 레이아웃(`src/app/(dev)/layout.tsx`)이 실서비스 빌드에서 404를 내야 하고, 200이면 배포를 멈추고 그 레이아웃부터 고친다. Vercel 환경변수에 `MOCKUP_CANVAS`가 없는지도 `vercel env ls`로 본다 — 이 변수는 내 컴퓨터에서 목업 캔버스를 실서비스 빌드로 빠르게 볼 때만 명령 앞에 붙이는 것이라, Vercel에 들어가면 공개 주소에서 열린다
+   - [ ] 공개 주소에서 목업 캔버스가 막혀 있다 — `curl -s -o /dev/null -w "%{http_code}" https://<프로젝트이름>.vercel.app/dev/canvas`가 404인지 확인한다. 개발용 묶음 레이아웃(`src/app/(dev)/layout.tsx`)이 실서비스 빌드에서 404를 내야 하고, 200이면 배포를 멈추고 그 레이아웃부터 고친다. Vercel 환경변수에 `MOCKUP_CANVAS`가 없는지도 `npx vercel env ls`로 본다 — 이 변수는 내 컴퓨터에서 목업 캔버스를 실서비스 빌드로 빠르게 볼 때만 명령 앞에 붙이는 것이라, Vercel에 들어가면 공개 주소에서 열린다
    - [ ] Vercel 빌드 기록(배포 화면의 Build Logs)의 Node 버전이 `package.json`의 `engines.node`·`.nvmrc`와 같은 주 버전이다 — 기록에 버전이 안 보이면 Vercel 공식 문서(「Supported Node.js versions」)가 권하는 대로 빌드 명령 앞에 `node -v`를 붙여 한 번 배포해 보고 되돌린다. 다르면 Vercel 프로젝트 설정(Settings → Build and Deployment → Node.js Version)이나 `engines.node`를 2단계 개발환경 준비에서 정한 주 버전으로 맞춘다 (`2-0-dev-setup.md` §2.2). Vercel은 `engines.node`를 프로젝트 설정보다 먼저 따른다
    - [ ] 연동 실패("you have access to the repository" 류) 시 원인은 대부분 앱 미설치가 아니라 **설치된 Vercel GitHub 앱의 저장소 접근 목록(Only select repositories)에 이 저장소가 빠진 것** — GitHub 계정 Settings → Applications → Vercel → Repository access에 이 저장소만 추가한다(All repositories 전환 금지). 세부 함정은 `docs/account-check.md` Vercel 항목 참조
 2. **사이트 전체에 색인 제외(noindex)를 건다.** 지금 올리는 건 로컬스토리지로 도는 워킹 프로토타입이라 빈 상태 화면과 예시 데이터뿐인데, 이 링크는 4단계까지 몇 주를 떠 있는다. 그동안 검색에 잡히면 서비스가 그 얇은 화면으로 알려진다. 막는 건 검색 색인뿐이고 링크를 보내 여는 건 그대로 되니 남에게 보여주는 데는 아무 지장이 없다. Vercel의 preview 배포는 기본으로 막혀 있지만 **여기서 만드는 공개 URL은 production이라 안 막힌다** — 그래서 직접 걸어야 한다. 4단계에서 검색 노출을 켤 때 푼다 (`4-3-backend-deploy.md` §2.2).

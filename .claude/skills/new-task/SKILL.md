@@ -14,7 +14,7 @@ agent: git-flow
 
 PR 없는 로컬 브랜치 삭제(§3)처럼 되살릴 수 없는 선택은 판단이 애매하면 보존 쪽으로 기울이고 사용자에게 알린다.
 
-**gh 호출은 ship-task §1-0과 같은 토큰 로더를 같은 셸 호출 앞에 단다** — `env GH_TOKEN="$(sed -n 's/^GH_TOKEN=//p' .env.cli 2>/dev/null)" gh <명령>` (환경변수는 다음 Bash 호출로 안 넘어간다). git 명령(pull·fetch·push·ls-remote)에는 로더를 달지 않는다 — 로컬 git 설정의 자격 증명 도우미가 `.env.cli`를 직접 읽는다(`github-connect` ⑥).
+**gh 호출은 ship-task §1-0과 같은 토큰 로더를 같은 셸 호출 앞에 단다** — `env GH_TOKEN="$(sed -n 's/^GH_TOKEN=//p' .env.cli 2>/dev/null)" gh <명령>` (환경변수는 다음 Bash 호출로 안 넘어간다). git 명령(pull·fetch·push·ls-remote)에는 로더를 달지 않는다 — 로컬 git 설정의 자격 증명 도우미가 `.env.cli`를 직접 읽는다(`github-connect` ⑦).
 
 ## 호출 인자
 

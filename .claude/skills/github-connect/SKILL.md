@@ -1,6 +1,6 @@
 ---
 name: github-connect
-description: 이 컴퓨터에서 이 프로젝트가 GitHub에 올라갈 수 있는 상태를 만든다 — git·gh 설치 확인, GitHub 계정, gh 인증 토큰(.env.cli), 계정 확인, HTTPS push 인증 방식, 원격 저장소 생성, 첫 push까지 순서대로. 이미 된 단계는 건너뛰어 언제 다시 돌려도 안전하고, 사람 몫이 나오면 그 한 단계만 화면·버튼 이름 그대로 안내하고 멈췄다가 "됐어"에 이어간다. project-init 신규 적용 끝에서 자동으로 불린다. 트리거 예 "깃헙 연결해줘", "깃헙에 올려줘", "/github-connect".
+description: 이 컴퓨터에서 이 프로젝트가 GitHub에 올라갈 수 있는 상태를 만든다 — git·gh 설치 확인, 하네스 훅이 쓰는 jq 자동 설치, GitHub 계정, gh 인증 토큰(.env.cli), 계정 확인, HTTPS push 인증 방식, 원격 저장소 생성, 첫 push까지 순서대로. 이미 된 단계는 건너뛰어 언제 다시 돌려도 안전하고, 사람 몫이 나오면 그 한 단계만 화면·버튼 이름 그대로 안내하고 멈췄다가 "됐어"에 이어간다. project-init 신규 적용 끝에서 자동으로 불린다. 트리거 예 "깃헙 연결해줘", "깃헙에 올려줘", "/github-connect".
 ---
 
 # github-connect — 이 프로젝트를 GitHub에 잇기
@@ -27,7 +27,7 @@ description: 이 컴퓨터에서 이 프로젝트가 GitHub에 올라갈 수 있
 env GH_TOKEN="$(sed -n 's/^GH_TOKEN=//p' .env.cli 2>/dev/null)" gh <명령>
 ```
 
-**git 명령에는 로더를 달지 않는다** — ⑥에서 등록하는 자격 증명 도우미가 `.env.cli`를 직접 읽는다. `git push`·`git pull`을 맨 형태로 부르면 되고, 사람이 자기 터미널에서 쳐도 똑같이 된다. `env ...`를 git 앞에 붙이지 않는다 — 훅이 명령을 제대로 못 볼 수 있다(옛 `no-main-push` 훅은 그 형태를 통째로 놓쳤다).
+**git 명령에는 로더를 달지 않는다** — ⑦에서 등록하는 자격 증명 도우미가 `.env.cli`를 직접 읽는다. `git push`·`git pull`을 맨 형태로 부르면 되고, 사람이 자기 터미널에서 쳐도 똑같이 된다. `env ...`를 git 앞에 붙이지 않는다 — 훅이 명령을 제대로 못 볼 수 있다(옛 `no-main-push` 훅은 그 형태를 통째로 놓쳤다).
 
 ## 진행 순서
 
@@ -35,12 +35,13 @@ env GH_TOKEN="$(sed -n 's/^GH_TOKEN=//p' .env.cli 2>/dev/null)" gh <명령>
 |---|---|---|---|
 | ① git | `git --version` 성공 | 설치 | [AI]·[사람] |
 | ② gh | `gh --version` 성공 | 설치 | [AI]·[사람] |
-| ③ GitHub 계정 | ④가 이미 됐거나, 사용자가 "있어" | 가입 안내 | [사람] (Aside는 화면만 열어 줌) |
-| ④ 토큰 | `.env.cli` 토큰으로 `gh api user` 성공 | 1순위 gh 로그인 → 2순위 Aside 발급 → 3순위 사람이 붙여넣기 | [AI]·[Aside]·[사람] |
-| ⑤ 계정 확인 | (매번 한다) | — | [AI] |
-| ⑥ push 인증 방식 | 로컬 도우미 설정이 아래와 같음 | 로컬 git 설정 | [AI] |
-| ⑦ 원격 저장소 | `git remote get-url origin` 성공 | `gh repo create` | [AI] |
-| ⑧ 첫 push | 원격 main = 로컬 main | `git push -u origin main` | [AI] |
+| ③ jq | `jq --version` 성공 | 묻지 않고 자동 설치 | [AI] |
+| ④ GitHub 계정 | ⑤가 이미 됐거나, 사용자가 "있어" | 가입 안내 | [사람] (Aside는 화면만 열어 줌) |
+| ⑤ 토큰 | `.env.cli` 토큰으로 `gh api user` 성공 | 1순위 gh 로그인 → 2순위 Aside 발급 → 3순위 사람이 붙여넣기 | [AI]·[Aside]·[사람] |
+| ⑥ 계정 확인 | (매번 한다) | — | [AI] |
+| ⑦ push 인증 방식 | 로컬 도우미 설정이 아래와 같음 | 로컬 git 설정 | [AI] |
+| ⑧ 원격 저장소 | `git remote get-url origin` 성공 | `gh repo create` | [AI] |
+| ⑨ 첫 push | 원격 main = 로컬 main | `git push -u origin main` | [AI] |
 
 시작 전에 프로젝트 루트가 git 저장소인지 본다(`git rev-parse --show-toplevel`). 아니면 멈추고 하네스 적용(`project-init`)부터 하자고 안내한다 — 저장소를 만드는 `git init -b main`은 project-init 몫이다.
 
@@ -67,18 +68,41 @@ gh는 GitHub을 터미널에서 다루는 공식 도구(GitHub CLI)다. [AI] `gh
 
 설치 뒤 `gh --version`으로 다시 확인한다.
 
-### ③ GitHub 계정
+### ③ jq 확인·자동 설치
 
-④가 이미 돼 있으면(토큰이 살아 있으면) 건너뛴다. 아니면 묻는다 — "GitHub 계정이 있으십니까?" 프로젝트 `AGENTS.md` 「소유와 계정」 표의 GitHub 행에 값이 있으면 "표에는 <계정>으로 적혀 있는데, 이 계정으로 진행하시겠습니까?"로 묻는다.
+jq는 JSON(프로그램끼리 주고받는 데이터 형식)을 읽는 작은 도구다. 하네스 훅(hook — 클로드 코드가 명령 전후에 저절로 돌리는 검사 스크립트)이 쓴다 — 없으면 main 브랜치로 바로 올리기를 막는 훅이 안전을 위해 `git push`를 전부 막고, 자동 중간 저장(wip 커밋)도 쉰다. 그래서 하네스를 처음 적용할 때(`project-init` → 이 스킬) 깔려 있어야 한다.
+
+**이것만 묻지 않고 AI가 깐다** — 컴퓨터 전체에 까는 도구는 사용자 몫이 원칙이지만(`idea-to-mvp` `2-0-dev-setup.md` §2.1 도구 점검표), jq는 실행 파일 하나뿐인 작은 도구이고 하네스 안전장치가 쓰는 것이라, 묻고 기다리는 왕복 없이 바로 깐다.
+
+[AI] `jq --version`. 되면 건너뛴다. 없으면 아래대로 깐다. 패키지 이름·받을 파일 이름은 jq 공식 내려받기 페이지(<https://jqlang.org/download/>)가 정본이다 — 안 맞으면 거기서 지금 이름을 확인한다.
+
+- **맥, brew 있음** (`brew --version` 성공) — `brew install jq`. 최근 macOS에는 애플이 넣어 둔 `/usr/bin/jq`가 있어 보통 이 단계까지 오지 않는다.
+- **맥, brew 없음** — brew를 새로 들이지 않는다. jq 공식 GitHub 릴리스에서 이 맥의 CPU에 맞는 실행 파일 하나를 사용자 폴더에 받는다. 받을 폴더는 `echo "$PATH"`에 이미 들어 있는 사용자 폴더(`~/.local/bin`·`~/bin` 등)다.
+  ```bash
+  case "$(uname -m)" in arm64) f=jq-macos-arm64 ;; *) f=jq-macos-amd64 ;; esac
+  mkdir -p ~/.local/bin && curl -fsSL -o ~/.local/bin/jq "https://github.com/jqlang/jq/releases/latest/download/$f" && chmod +x ~/.local/bin/jq
+  ```
+  PATH에 든 사용자 폴더가 없으면 `~/.local/bin`에 받고, 그 폴더를 PATH에 넣는 한 줄(`~/.zprofile`에 `export PATH="$HOME/.local/bin:$PATH"`)은 셸 설정을 바꾸는 일이라 사용자에게 안내한다.
+- **윈도우(Git Bash)** — `winget install --id jqlang.jq -e`. winget이 없거나 실패하면 공식 릴리스의 윈도우 실행 파일을 `~/bin/jq.exe`로 받는다 — Git for Windows가 Git Bash를 열 때 `$HOME/bin`을 PATH 맨 앞에 넣는다(Git for Windows `env.sh`).
+  ```bash
+  case "${PROCESSOR_ARCHITECTURE:-AMD64}" in ARM64) f=jq-windows-arm64.exe ;; *) f=jq-windows-amd64.exe ;; esac
+  mkdir -p ~/bin && curl -fsSL -o ~/bin/jq.exe "https://github.com/jqlang/jq/releases/latest/download/$f"
+  ```
+
+설치 뒤 `jq --version`으로 다시 확인한다. 깔았는데 명령을 못 찾으면 「jq를 깔았습니다. 새 명령이 잡히도록 클로드 코드를 껐다 켜 주세요」 한 줄만 알린다(명령 경로가 새 창에서만 잡힌다). 같은 실패가 2번 나면 멈추고 어느 명령이 무엇으로 실패했는지 사용자에게 보고한다 — 사람에게 넘기는 건 그때뿐이다.
+
+### ④ GitHub 계정
+
+⑤가 이미 돼 있으면(토큰이 살아 있으면) 건너뛴다. 아니면 묻는다 — "GitHub 계정이 있으십니까?" 프로젝트 `AGENTS.md` 「소유와 계정」 표의 GitHub 행에 값이 있으면 "표에는 <계정>으로 적혀 있는데, 이 계정으로 진행하시겠습니까?"로 묻는다.
 
 없으면 가입은 **항상 [사람]**이다. 자동 가입은 하지 않는다 — 가입 자동화는 계정 제재로 이어진다(`docs/account-check.md` 원칙 ⑥).
 
 - **Aside가 있으면** (`command -v aside` 성공) — [Aside]가 표의 「브라우저 작업 프로필」로 `https://github.com/signup` 화면만 열어 준다. [사람] 이메일 → 비밀번호 → 사용자 이름(username) → 사람 확인 퍼즐 → 메일로 온 코드 입력까지 직접 채운다.
 - **Aside가 없으면** — 주소(`https://github.com/signup`)를 주고 사용자가 자기 브라우저에서 한다.
 
-가입·로그인이 한 번 실패하면 다시 시도하지 않고 멈춰서 무엇이 떴는지 사용자에게 묻는다. 끝나면 사용자 이름을 받아 둔다(⑤에서 표와 대조).
+가입·로그인이 한 번 실패하면 다시 시도하지 않고 멈춰서 무엇이 떴는지 사용자에게 묻는다. 끝나면 사용자 이름을 받아 둔다(⑥에서 표와 대조).
 
-### ④ 토큰 — `.env.cli`의 `GH_TOKEN`
+### ⑤ 토큰 — `.env.cli`의 `GH_TOKEN`
 
 **확인** — `.env.cli`에 `GH_TOKEN=` 줄이 있고 아래 명령이 계정 이름을 답하면 건너뛴다. 401(토큰 죽음)이면 같은 토큰으로 다시 부르지 않고 새로 받는다.
 
@@ -154,7 +178,7 @@ Aside가 없으면 "브라우저 에이전트(Aside)를 설치해도 되겠습�
 4. [사람] `GH_TOKEN=` 바로 뒤에 붙여넣고 저장 → "됐어". **채팅창에는 붙여넣지 마세요 — 대화 기록에 남습니다.**
 5. [AI] 확인 명령으로 검증한다. 실패하면 앞뒤 공백·따옴표가 끼지 않았는지 한 번만 봐 달라고 하고, 그래도 안 되면 그 토큰을 지우고 다시 발급하게 한다.
 
-### ⑤ 계정 확인
+### ⑥ 계정 확인
 
 [AI] 토큰이 답하는 계정을 프로젝트 `AGENTS.md` 「소유와 계정」 표의 GitHub 행과 대조한다.
 
@@ -164,9 +188,9 @@ env GH_TOKEN="$(sed -n 's/^GH_TOKEN=//p' .env.cli 2>/dev/null)" gh api user --jq
 
 - **같다** → 다음으로.
 - **표가 비어 있거나 `(확인 필요)`** → "GitHub 계정을 <계정>으로 표에 적겠습니다. 맞습니까?"로 확인받은 뒤 채운다. 이메일은 사용자에게 받는다.
-- **다르다** → 멈추고 사용자에게 알린다. 저장소를 만들지 않는다(원칙 ①). 토큰이 다른 계정 것이면 ④로 표의 계정 토큰을 새로 받고, 표가 틀렸으면 사용자가 표를 고친다.
+- **다르다** → 멈추고 사용자에게 알린다. 저장소를 만들지 않는다(원칙 ①). 토큰이 다른 계정 것이면 ⑤로 표의 계정 토큰을 새로 받고, 표가 틀렸으면 사용자가 표를 고친다.
 
-### ⑥ push 인증 방식 — HTTPS + 토큰
+### ⑦ push 인증 방식 — HTTPS + 토큰
 
 SSH 대신 HTTPS + 토큰으로 통일한다. 설정은 **이 저장소의 로컬 git 설정에만** 한다.
 
@@ -189,7 +213,7 @@ git config --local --add credential.helper '!f() { echo username=x-access-token;
 - 그래서 git 명령에는 로더가 필요 없다. gh 명령만 위 「토큰 로더」를 단다.
 - **원격 주소가 ssh 형식**(`git@github.com:`·`ssh://`)인 옛 프로젝트면, https로 바꿀지 사용자에게 한 번 묻는다. 바꾸면 `git remote set-url origin https://github.com/<주인>/<저장소>.git`. 안 바꾸면 SSH 확인(`docs/account-check.md` 「GitHub SSH 키」)을 그대로 따른다.
 
-### ⑦ 원격 저장소
+### ⑧ 원격 저장소
 
 **확인** — `git remote get-url origin`이 성공하면 만들지 않는다. 주소가 표 소유자의 저장소를 가리키는지만 보고, 다르면 멈춘다.
 
@@ -197,16 +221,16 @@ git config --local --add credential.helper '!f() { echo username=x-access-token;
 
 1. 저장소 이름은 폴더 이름이 기본(`basename "$(git rev-parse --show-toplevel)"`), 주인은 표의 GitHub 계정(회사 조직이 주인이면 그 조직), **비공개가 기본**이다 — 공개는 사용자가 공개로 하자고 말했을 때만.
 2. "GitHub에 `<주인>/<이름>` 비공개 저장소를 만들겠습니다" 하고 한 번 보여준다. 이름을 바꾸자고 하면 따른다.
-3. [AI] 만들기 직전에 ⑤ 대조를 같은 걸음에서 한 번 더 하고 만든다.
+3. [AI] 만들기 직전에 ⑥ 대조를 같은 걸음에서 한 번 더 하고 만든다.
    ```bash
    env GH_TOKEN="$(sed -n 's/^GH_TOKEN=//p' .env.cli 2>/dev/null)" gh repo create <주인>/<이름> --private --source=. --remote=origin
    git remote get-url origin   # https://github.com/... 이어야 한다
    ```
    주소가 ssh 형식으로 붙었으면(gh 전역 설정의 영향) `git remote set-url origin https://github.com/<주인>/<이름>.git`로 바꾼다.
 4. 같은 이름 저장소가 이미 있다고 실패하면 다시 시도하지 않는다 — 그 저장소에 이을지, 다른 이름으로 만들지 사용자에게 묻는다.
-5. `--push`는 붙이지 않는다 — push는 ⑧에서 `no-main-push` 훅이 검사하는 `git push`로 한다.
+5. `--push`는 붙이지 않는다 — push는 ⑨에서 `no-main-push` 훅이 검사하는 `git push`로 한다.
 
-### ⑧ 첫 push
+### ⑨ 첫 push
 
 **확인** — 올릴 게 없거나 이미 올라가 있으면 건너뛴다.
 
@@ -231,13 +255,13 @@ git ls-remote --heads origin main                 # 원격 main의 sha
 
 **`no-main-push` 훅** — 훅은 원격에 main이 아직 없을 때만 이 첫 push를 허용한다(강제 push는 제외). project-init 직후 같은 세션에서는 훅이 아직 안 잡혀 있어, GitHub이 만든 첫 커밋이 있는 경우도 그대로 올라간다. **훅이 잡힌 세션에서 원격 main이 이미 있어 막히면 부트스트랩으로 밀어붙이지 않는다** — 우회하지 말고 브랜치 흐름(`/new-task` → `/done-task`)으로 간다. 다른 명령 형태(`gh repo create --push` 등)로 피해 가지 않는다.
 
-push가 `refusing to allow an OAuth App to create or update workflow` 류로 거부되면 토큰에 `workflow` 스코프가 없는 것이다 — 같은 push를 되풀이하지 말고 ④로 돌아가 스코프를 갖춘 토큰으로 바꾼다.
+push가 `refusing to allow an OAuth App to create or update workflow` 류로 거부되면 토큰에 `workflow` 스코프가 없는 것이다 — 같은 push를 되풀이하지 말고 ⑤로 돌아가 스코프를 갖춘 토큰으로 바꾼다.
 
 ## 마무리 보고
 
 보고·안내는 ~입니다 체로 쓴다. 사용자에게 알린다:
 
-- **단계별 결과** — ①~⑧마다 「했음 / 이미 돼 있어 건너뜀 / 사람이 함」. 토큰은 몇 순위 길로 받았는지, 만료일이 있으면 그 날짜.
+- **단계별 결과** — ①~⑨마다 「했음 / 이미 돼 있어 건너뜀 / 사람이 함」. 토큰은 몇 순위 길로 받았는지, 만료일이 있으면 그 날짜.
 - **원격 주소** — `https://github.com/<주인>/<이름>` (비공개/공개).
 - **남길 경고** — 전역 활성 계정이 바뀌었으면 그 사실, 표와 다른 점이 있었으면 그 내용.
 - **project-init 신규 적용에서 불렸으면 재시작 안내를 붙인다** (project-init 마무리 안내와 합쳐 한 번만): 지금 열린 세션에는 새 스킬·훅·에이전트가 아직 안 잡힌다 — 새 파일이라서가 아니라 `.claude/` 폴더가 방금 처음 생겨 지금 세션의 감시 대상이 아니라서다. **앱을 껐다 켜야** 잡힌다 — 껐다 켜도 대화는 안 날아간다(대화를 버리는 `/clear`와는 다르다). 다시 켠 뒤부터는 작업마다 `/new-task`로 브랜치를 열고 `/done-task`로 합치는 흐름이다.

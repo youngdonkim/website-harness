@@ -118,10 +118,11 @@ design-system 스킬의 bootstrap-project.md 절차가 아래 항목을 여기�
 
 2단계 개발환경 준비에서 고정된 Supabase·Vercel 스택 기준이다.
 
-- **Supabase CLI** — 개발 의존성으로 깔아 `npx supabase`로 부른다. 로컬 스택을 `start`/`stop`으로 올리고 내리고, 스키마는 마이그레이션(migration — 스키마를 어떻게 바꿨는지 순서대로 적어 둔 파일) 파일로 쓰고 로컬 리셋으로 검증한다 — **래퍼가 있으면 맨손 `db reset` 대신 래퍼로 부른다**(아래). **클라우드 반영은 `db push --linked`.** 대시보드에서 스키마를 직접 고치면 이력이 어긋나 `db push`가 실패한다.
-- **gh CLI** — PR을 만들고 머지한다. `done-task` 스킬이 이 명령으로 돈다.
-- **Vercel CLI** — 배포와 환경변수(`vercel env pull`).
-- **Docker** — 로컬 Supabase가 그 위에서 돈다.
+- **Supabase CLI** — 2단계 개발환경 준비에서 개발 의존성으로 깔아 `npx supabase`로 부른다. 인증은 `.env.cli`의 발급 토큰이다(4단계에서 설정). 로컬 스택을 `start`/`stop`으로 올리고 내리고, 스키마는 마이그레이션(migration — 스키마를 어떻게 바꿨는지 순서대로 적어 둔 파일) 파일로 쓰고 로컬 리셋으로 검증한다 — **래퍼가 있으면 맨손 `db reset` 대신 래퍼로 부른다**(아래). **클라우드 반영은 `db push --linked`.** 대시보드에서 스키마를 직접 고치면 이력이 어긋나 `db push`가 실패한다.
+- **gh CLI** — PR을 만들고 머지한다. `done-task` 스킬이 이 명령으로 돈다. 컴퓨터 전체에 깔고, 인증은 `.env.cli`의 `GH_TOKEN`이다.
+- **jq** — 하네스 훅이 쓴다. 없으면 main push 차단 훅이 `git push`를 전부 막는다. 없으면 `github-connect`의 jq 단계가 묻지 않고 깐다.
+- **Vercel CLI** — 2단계 개발환경 준비에서 개발 의존성으로 깔아 `npx vercel`로 부른다. 배포와 환경변수(`npx vercel env pull`). 인증은 전역 `vercel login` 대신 `.env.cli`의 `VERCEL_TOKEN`을 같은 셸 호출에서 넘긴다 — `env VERCEL_TOKEN="$(sed -n 's/^VERCEL_TOKEN=//p' .env.cli 2>/dev/null)" npx vercel <명령>`(3단계 첫 배포 때 설정).
+- **Docker** — 로컬 Supabase가 그 위에서 돈다. 컴퓨터 전체에 깔고, 4단계에서 처음 필요하다.
 - **환경은 2단이다** — 로컬(도커) = 개발, 클라우드 프로젝트 1개 = 실서비스. 그 사이는 없다.
 - **마이그레이션은 자동으로 안 올라간다** — 마이그레이션이 든 PR을 머지하면 `npx supabase db push --linked`를 따로 돌린다.
 - **배포와 마이그레이션은 서로 안 기다린다.** 머지하면 코드는 자동으로 나가지만 DB는 그대로다.

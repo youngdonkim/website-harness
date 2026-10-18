@@ -95,6 +95,12 @@ set -uo pipefail
 
 # Stop hook input
 INPUT=$(cat)
+
+# jq가 없으면 작업 폴더·대화 기록을 읽을 수 없다 — 한 줄 알리고 조용히 끝낸다.
+if ! command -v jq >/dev/null 2>&1; then
+  echo "[auto-wip] jq가 없어 자동 wip 커밋을 건너뜁니다 — github-connect의 jq 단계(③)를 다시 돌리면 jq를 자동으로 깝니다." >&2
+  exit 0
+fi
 TRANSCRIPT_PATH=$(printf '%s' "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null || echo "")
 HOOK_CWD=$(printf '%s' "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")
 
