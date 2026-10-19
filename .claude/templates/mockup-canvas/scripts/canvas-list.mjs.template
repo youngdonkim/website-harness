@@ -9,6 +9,7 @@
 //   6절 표: 「ID」·「화면 이름」·「MVP 포함」·「주소」는 꼭 있어야 하고, 「흐름 묶음」·「역할」은 있으면 쓴다.
 //     MVP 포함이 O로 시작하고 주소가 있는 행만 올린다. 주소는 칸 안 `…` 속 첫 낱말(괄호 설명은 버린다).
 //     흐름 묶음 칸이 없거나 비었으면 「<역할>: 흐름 미정」으로 묶는다(screens.ts에서 바꿀 수 있다).
+//     역할 칸이 「비로그인 방문자」로 시작하면 주소 끝에 `?as=guest`를 붙인다(주소에 `?`가 있으면 `&as=guest`, 이미 `as=`가 있으면 그대로) — 로그인 전 흉내, src/lib/dev-state.ts의 readDevGuest.
 //   7절 표: 첫 칸이 화면 ID로 시작하는 행에서, 칸마다 적힌 (?state=…) 값을 모은다.
 
 import { readFile, writeFile } from "node:fs/promises"
@@ -70,19 +71,26 @@ const pathOf = (cell) => {
   return inTicks.trim().split(/\s+/)[0] ?? ""
 }
 
+// 로그인 전 화면 — 창들이 브라우저 저장소(가짜 로그인)를 같이 쓰니 주소로 로그인 전을 흉내 낸다
+const asGuest = (route) => {
+  if (/[?&]as=/.test(route)) return route
+  return `${route}${route.includes("?") ? "&" : "?"}as=guest`
+}
+
 const screens = []
 const skipped = []
 for (const row of screensTable.rows) {
   const id = row[need.id]?.replace(/\s/g, "")
   if (!/^S-/.test(id ?? "")) continue
   if (!/^O/.test(row[need.mvp] ?? "")) continue
-  const route = pathOf(row[need.path] ?? "")
-  if (!route.startsWith("/")) {
+  const found = pathOf(row[need.path] ?? "")
+  if (!found.startsWith("/")) {
     skipped.push(id)
     continue
   }
   // 흐름 묶음 이름은 「역할: 흐름」 꼴이다. 칸이 비면 역할만 알 수 있으니 「역할: 흐름 미정」으로 묶는다
-  const role = roleCol >= 0 ? row[roleCol] : ""
+  const role = roleCol >= 0 ? (row[roleCol] ?? "") : ""
+  const route = role.startsWith("비로그인 방문자") ? asGuest(found) : found
   const group = (groupCol >= 0 && row[groupCol]) || (role ? `${role}: 흐름 미정` : "흐름 미정")
   const states = statesById.get(id) ?? []
   screens.push({ id, name: row[need.name], group, path: route, ...(states.length ? { states } : {}) })

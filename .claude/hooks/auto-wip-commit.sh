@@ -103,7 +103,8 @@ suspicious=$(printf '%s\n' "$candidate_files" \
 #    사람 입력이 아니면 힌트 없이 파일 목록만 쓴다 — 머리 주석 「힌트」 참고.
 
 # 알려진 하네스 블록 태그 제거 + 줄바꿈 공백화 + 공백 정규화.
-# (제거 후에도 '<'로 시작하거나 비어 있으면 호출부에서 하네스 산물로 판단)
+# (제거 후에도 '<'로 시작하거나 비어 있거나 'Background (from the session'으로 시작하면 호출부에서 하네스 산물로 판단 —
+#  마지막은 다른 세션이 보낸 안내문이라 사용자 입력이 아니다)
 strip_harness_tags() {
   printf '%s' "$1" \
     | awk 'BEGIN{RS=""} {
@@ -211,7 +212,7 @@ if [ -n "$TRANSCRIPT_PATH" ] && [ -f "$TRANSCRIPT_PATH" ]; then
       raw="$slash"
     else
       cleaned=$(strip_harness_tags "$last_msg")
-      if [ -n "$cleaned" ] && [[ "$cleaned" != "<"* ]]; then
+      if [ -n "$cleaned" ] && [[ "$cleaned" != "<"* ]] && [[ "$cleaned" != "Background (from the session"* ]]; then
         raw="$cleaned"
       fi
     fi
