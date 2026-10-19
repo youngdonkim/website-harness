@@ -8,6 +8,11 @@
 // 화면 코드는 고치지 않는다. 저장·조회 코드(서버 컴포넌트·서버 함수, 또는 브라우저에서 데이터를 읽는 코드)가 이 함수를 불러 상태를 흉내 낸다.
 // 상태 표시는 주소로만 정한다(브라우저 저장소에 쓰지 않는다) — 한 창이 다른 창의 상태를 바꾸지 않게 하려는 것이다.
 //
+// 로그인 전 모습도 주소로 흉내 낸다. 목업 캔버스의 창들은 같은 주소라 브라우저 저장소(가짜 로그인 상태 포함)를 같이 쓴다.
+// 그래서 「로그인 전」은 저장소를 바꾸지 않고, `readDevGuest()`가 같은 조건(개발 서버에서만)으로 주소 끝 `?as=guest`를 읽어 돌려준다.
+// 저장·조회 코드에서 지금 로그인한 사람을 읽는 함수가 이 값을 먼저 봐서 참이면 「로그인 전」으로 답한다.
+// 목록 만들기 스크립트(`npm run canvas:list`)는 화면 목록 「역할」 칸이 「비로그인 방문자」인 화면 주소 끝에 `?as=guest`를 저절로 붙인다.
+//
 // 부르는 예 (저장·조회 코드, 페이지의 searchParams를 그대로 넘긴다):
 //
 //   export default async function Page({ searchParams }: { searchParams: Promise<DevSearchParams> }) {
@@ -16,6 +21,17 @@
 //     if (state === "error") throw new Error("개발용 오류")   // 오류 흉내 (error.tsx가 받는다)
 //     if (state === "forbidden") redirect("/login")          // 권한없음 흉내 (또는 forbidden 화면)
 //     const items = state === "empty" ? [] : await listItems() // 빈 결과 흉내
+//     ...
+//   }
+//
+// 브라우저에서 데이터를 읽는 저장·조회 코드는 페이지 searchParams가 없으니 주소에서 직접 만든다:
+//
+//   const state = await readDevState(Object.fromEntries(new URLSearchParams(location.search)))
+//
+// readDevGuest도 같은 식으로 부른다 — 서버에서는 페이지 searchParams를, 브라우저에서는 위처럼 주소에서 만든 값을 넘긴다:
+//
+//   async function currentUser() {
+//     if (await readDevGuest(searchParams)) return null   // 로그인 전 흉내
 //     ...
 //   }
 
@@ -31,6 +47,17 @@ export async function readDevState(
   const raw = params?.state
   const value = Array.isArray(raw) ? raw[0] : raw
   return DEV_STATES.find((s) => s === value) ?? null
+}
+
+/** 로그인 전 흉내 — 주소 끝이 `?as=guest`면 참. 켜지는 조건은 readDevState와 같다 */
+export async function readDevGuest(
+  searchParams?: DevSearchParams | Promise<DevSearchParams>,
+): Promise<boolean> {
+  if (process.env.NODE_ENV === "production" && process.env.MOCKUP_CANVAS !== "1") return false
+  const params = await searchParams
+  const raw = params?.as
+  const value = Array.isArray(raw) ? raw[0] : raw
+  return value === "guest"
 }
 
 /** 느린 응답 흉내 — 로딩 화면이 보일 만큼 기다린다. 숫자는 밀리초다. */
