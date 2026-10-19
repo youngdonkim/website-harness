@@ -158,6 +158,7 @@ git clone https://github.com/youngdonkim/website-harness.git ~/dev/website-harne
 | 서브에이전트 | `ux-writing-reviewer` | UI 문구를 UX writing 원칙과 대조해 직접 교정 |
 | 서브에이전트 | `delegation-integrator` | 타 코딩 에이전트 연동 조사·설치·테스트·위임 스킬 생성/갱신 |
 | 훅 | `no-main-push` | main 브랜치에 바로 올리는 것을 차단 (PR 검토 흐름 강제). 예외는 원격에 main이 아직 없을 때의 첫 push 하나 |
+| 훅 | `owner-runner-guard` | 키가 필요한 CLI(gh·vercel·supabase 클라우드 명령)를 실행기 없이 부르면 차단 — 컴퓨터에 남은 다른 계정 로그인으로 도는 것을 막음 |
 | 훅 | `auto-wip-commit` | 응답이 끝날 때마다 작업 브랜치에 진행 중 커밋(wip)을 자동 생성 |
 
 위 표는 부품(스킬·서브에이전트·훅)만 담았고, 함께 복사되는 규칙·설정 파일은 [§5.3](#53-프로젝트에-무엇이-생기나)에 정리돼 있다.
