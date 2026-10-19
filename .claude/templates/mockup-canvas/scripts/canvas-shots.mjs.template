@@ -8,6 +8,7 @@
 // package.json의 canvas:shots는 먼저 `playwright install --only-shell chromium`을 돌린다 — 첫 실행 때만 브라우저를 내려받고, 그 뒤엔 바로 넘어간다.
 //
 // 찍을 창 목록은 서버의 /dev/canvas/frames에서 받는다(screens.ts를 창 목록으로 편 것). 그림 이름은 `<창 열쇠>.jpg`.
+// 지도가 있는 화면(칸에 data-map-ready 표시가 달린 화면)은 지도가 다 그려질 때까지 기다렸다 찍는다 — 틀 `sample-map`.
 // 폰 폭만 띄우는 화면(screens.ts의 widths: ["phone"])은 목록에 데스크톱 창이 없으니 폰 그림만 찍는다.
 
 import { mkdir, readdir, rm } from "node:fs/promises"
@@ -22,6 +23,8 @@ const outDir = path.join(process.cwd(), ".canvas-shots")
 const SCALE = 0.5
 // 동시에 여는 창 수 — 개발 서버는 처음 여는 주소를 그때 만들어서, 많이 열면 오히려 느려진다
 const CONCURRENCY = 2
+// 지도 기다리는 시간 상한 — 지도 칸(`data-map-ready`)이 있는 화면은 "1"이 될 때까지 기다린다. 타일이 막히면 영영 안 오니 상한을 둔다
+const MAP_WAIT_MS = 15_000
 
 const response = await fetch(`${base}/dev/canvas/frames`).catch(() => null)
 if (!response?.ok) {
@@ -67,6 +70,13 @@ async function worker() {
       else {
         await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {})
         await page.waitForTimeout(500)
+      }
+      // 지도 칸이 있는 화면은 지도가 다 그려질 때까지 기다린다. 지도 칸이 없는 화면은 그대로 지나간다
+      if (await page.$("[data-map-ready]")) {
+        await page.waitForSelector('[data-map-ready="1"]', { timeout: MAP_WAIT_MS }).then(
+          () => page.waitForTimeout(300),
+          () => console.warn(`지도가 ${MAP_WAIT_MS / 1000}초 안에 안 그려졌습니다: ${frame.key} — 빈 지도가 찍힐 수 있습니다.`),
+        )
       }
       await page.screenshot({ path: path.join(outDir, `${frame.key}.jpg`), type: "jpeg", quality: 70 })
       done += 1

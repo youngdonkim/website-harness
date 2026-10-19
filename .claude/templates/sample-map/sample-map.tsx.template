@@ -1,0 +1,71 @@
+"use client"
+
+// 견본 지도 부품 — 키·가입 없이 쓰는 공개 지도(OpenFreeMap 스타일)를 MapLibre GL JS로 그린다.
+// 프로젝트에 넣는 자리: src/components/sample-map.tsx. 넣는 차례와 이유는 틀의 README.md.
+// 실서비스 지도(키가 필요한 국내 지도 서비스 등)로 바꿀 때는 4단계 준비에서 정하고, 이 파일을 갈아끼운다.
+
+import { useEffect, useRef } from "react"
+import "maplibre-gl/dist/maplibre-gl.css"
+
+export type SampleMarker = { name: string; lng: number; lat: number }
+
+type Props = {
+  center: [number, number] // [경도, 위도] — 구글 지도와 순서가 반대다
+  zoom: number
+  markers: SampleMarker[]
+  className?: string // 높이가 꼭 있어야 한다(없으면 0이라 안 보인다). 부모 크기를 따르게 h-full을 권한다
+}
+
+// 공개 무료 스타일. 서비스가 커지면 이 주소 한 줄만 바꿔 자체 호스팅·유료 타일로 옮긴다
+const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
+
+// 이 컴포넌트에 넘기는 center·markers는 컴포넌트 밖 상수나 useMemo로 고정한다 — 새 배열이 올 때마다 지도를 다시 만든다
+export function SampleMap({ center, zoom, markers, className }: Props) {
+  const box = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    let remove: (() => void) | undefined
+    const el = box.current
+    if (!el) return
+    el.dataset.mapReady = "0"
+    // 동적 import — 라이브러리(압축 약 300KB)는 지도가 있는 화면에서만 내려받는다
+    import("maplibre-gl").then((maplibregl) => {
+      if (cancelled) return
+      // 번들러(Turbopack)가 일꾼 파일(지도를 그리는 보조 프로그램) 위치를 못 찾는다.
+      // public/에 복사해 둔 파일을 직접 알려 주지 않으면 실서비스 빌드에서 지도가 안 뜬다
+      maplibregl.setWorkerUrl("/maplibre-gl-worker.mjs")
+      // 출처 표시(오른쪽 아래)는 지도 사용 조건이다 — 지우지 않는다
+      const map = new maplibregl.Map({ container: el, style: STYLE_URL, center, zoom, attributionControl: { compact: true } })
+      map.on("load", () => {
+        // 지명을 한글 우선으로: name:ko → name (스타일 기본은 영어 이름을 먼저 본다)
+        for (const layer of map.getStyle().layers) {
+          if (layer.type === "symbol" && layer.layout && "text-field" in layer.layout) {
+            const textField = JSON.stringify(layer.layout["text-field"])
+            if (textField.includes("name")) map.setLayoutProperty(layer.id, "text-field", ["coalesce", ["get", "name:ko"], ["get", "name"]])
+          }
+        }
+      })
+      for (const m of markers) {
+        // 마커 모양은 서비스 토큰 클래스로 — hex 값을 쓰지 않는다
+        const dot = document.createElement("div")
+        dot.className = "size-4 rounded-full border-2 border-background bg-foreground"
+        new maplibregl.Marker({ element: dot })
+          .setLngLat([m.lng, m.lat])
+          .setPopup(new maplibregl.Popup({ offset: 12 }).setText(m.name))
+          .addTo(map)
+      }
+      // 타일이 다 그려지면 표시 — 목업 캔버스 그림 찍기가 이 신호를 기다렸다 찍는다
+      map.once("idle", () => {
+        el.dataset.mapReady = "1"
+      })
+      remove = () => map.remove()
+    })
+    return () => {
+      cancelled = true
+      remove?.() // 언마운트 때 지도를 없애 브라우저의 그래픽 자원(WebGL)을 풀어 준다
+    }
+  }, [center, zoom, markers])
+
+  return <div ref={box} className={className} />
+}
