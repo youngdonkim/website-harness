@@ -1,0 +1,10 @@
+import path from "node:path"
+
+// 목업 캔버스가 디스크에 읽고 쓰는 자리 — 라우트 핸들러만 부른다(브라우저 코드에서 부르지 않는다).
+// 둘 다 프로젝트 맨 위 기준이다(`npm run dev`를 프로젝트 맨 위에서 띄우므로).
+
+/** 찍어 둔 그림 폴더 — git에 안 올린다(.gitignore). scripts/canvas-shots.mjs가 채운다 */
+export const SHOTS_DIR = path.join(process.cwd(), ".canvas-shots")
+
+/** 코멘트 핀 기록 — git에 올린다(사람이 남긴 수정 요청 기록) */
+export const COMMENTS_FILE = path.join(process.cwd(), "mvp", "canvas-comments.json")

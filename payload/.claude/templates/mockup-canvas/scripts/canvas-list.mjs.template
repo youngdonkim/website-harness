@@ -1,0 +1,99 @@
+// 목업 캔버스 목록 만들기 — mvp/feature-list.md의 6절(화면 목록)·7절(상태 표)을 읽어
+// src/app/(dev)/dev/canvas/screens.generated.ts를 새로 쓴다. 이 파일은 손으로 고치지 않는다 — 돌릴 때마다 통째로 덮어쓴다.
+// 손으로 더하거나 바꿀 것(비교안·흐름 묶음 바꾸기·주소 바꾸기·목록에 없는 화면)은 screens.ts에 적는다 — 이 스크립트는 screens.ts를 건드리지 않는다.
+//
+// 쓰는 법 (프로젝트 맨 위에서):  npm run canvas:list
+// 화면 목록·상태 표를 고칠 때마다 다시 돌린다.
+//
+// 읽는 규칙 — 칸은 번호가 아니라 머리줄의 칸 이름으로 찾는다:
+//   6절 표: 「ID」·「화면 이름」·「MVP 포함」·「주소」는 꼭 있어야 하고, 「흐름 묶음」·「역할」은 있으면 쓴다.
+//     MVP 포함이 O로 시작하고 주소가 있는 행만 올린다. 주소는 칸 안 `…` 속 첫 낱말(괄호 설명은 버린다).
+//     흐름 묶음 칸이 없거나 비었으면 「<역할>: 흐름 미정」으로 묶는다(screens.ts에서 바꿀 수 있다).
+//   7절 표: 첫 칸이 화면 ID로 시작하는 행에서, 칸마다 적힌 (?state=…) 값을 모은다.
+
+import { readFile, writeFile } from "node:fs/promises"
+import path from "node:path"
+
+const SOURCE = path.join(process.cwd(), "mvp", "feature-list.md")
+const TARGET = path.join(process.cwd(), "src", "app", "(dev)", "dev", "canvas", "screens.generated.ts")
+const STATES = ["empty", "loading", "error", "forbidden"]
+
+const text = await readFile(SOURCE, "utf8").catch(() => null)
+if (text === null) {
+  console.error(`화면 목록 문서가 없습니다: ${path.relative(process.cwd(), SOURCE)}`)
+  process.exit(1)
+}
+
+/** 「## <번호>.」로 시작하는 절 안의 첫 표를 { 머리줄, 행들 }로 */
+function tableIn(sectionNumber) {
+  const lines = text.split("\n")
+  const start = lines.findIndex((l) => new RegExp(`^##\\s+${sectionNumber}\\.`).test(l))
+  if (start < 0) return null
+  const rows = []
+  for (let i = start + 1; i < lines.length && !/^##\s/.test(lines[i]); i++) {
+    const line = lines[i].trim()
+    if (line.startsWith("|")) rows.push(line)
+    else if (rows.length) break
+  }
+  if (rows.length < 2) return null
+  const cells = (line) => line.replace(/^\||\|$/g, "").split("|").map((c) => c.trim())
+  return { head: cells(rows[0]), rows: rows.slice(2).map(cells) }
+}
+
+const screensTable = tableIn(6)
+if (!screensTable) {
+  console.error("6절 화면 목록 표를 찾지 못했습니다(「## 6.」 아래 첫 표).")
+  process.exit(1)
+}
+const col = (name) => screensTable.head.findIndex((h) => h === name)
+const need = { id: col("ID"), name: col("화면 이름"), mvp: col("MVP 포함"), path: col("주소") }
+const missing = Object.entries(need).filter(([, i]) => i < 0)
+if (missing.length) {
+  console.error(`6절 표에 꼭 있어야 할 칸이 없습니다: ${missing.map(([k]) => ({ id: "ID", name: "화면 이름", mvp: "MVP 포함", path: "주소" })[k]).join(", ")}`)
+  process.exit(1)
+}
+const groupCol = col("흐름 묶음")
+const roleCol = col("역할")
+
+// 7절 — 화면 ID → 상태 목록
+const statesById = new Map()
+const stateTable = tableIn(7)
+for (const row of stateTable?.rows ?? []) {
+  const id = row[0]?.match(/^S-[0-9A-Za-z-]+/)?.[0]
+  if (!id) continue
+  const found = [...row.slice(1).join(" ").matchAll(/\?state=([a-z]+)/g)].map((m) => m[1])
+  statesById.set(id, STATES.filter((s) => found.includes(s)))
+}
+
+const pathOf = (cell) => {
+  const inTicks = cell.match(/`([^`]+)`/)?.[1] ?? cell
+  return inTicks.trim().split(/\s+/)[0] ?? ""
+}
+
+const screens = []
+const skipped = []
+for (const row of screensTable.rows) {
+  const id = row[need.id]?.replace(/\s/g, "")
+  if (!/^S-/.test(id ?? "")) continue
+  if (!/^O/.test(row[need.mvp] ?? "")) continue
+  const route = pathOf(row[need.path] ?? "")
+  if (!route.startsWith("/")) {
+    skipped.push(id)
+    continue
+  }
+  // 흐름 묶음 이름은 「역할: 흐름」 꼴이다. 칸이 비면 역할만 알 수 있으니 「역할: 흐름 미정」으로 묶는다
+  const role = roleCol >= 0 ? row[roleCol] : ""
+  const group = (groupCol >= 0 && row[groupCol]) || (role ? `${role}: 흐름 미정` : "흐름 미정")
+  const states = statesById.get(id) ?? []
+  screens.push({ id, name: row[need.name], group, path: route, ...(states.length ? { states } : {}) })
+}
+
+const body = `// 자동으로 만든 파일 — 손으로 고치지 않는다. \`npm run canvas:list\`가 mvp/feature-list.md 6절(화면 목록)·7절(상태 표)에서 다시 만든다.
+// 손으로 더하거나 바꿀 것(비교안·흐름 묶음·주소 바꾸기·목록에 없는 화면)은 screens.ts에 적는다.
+import type { CanvasScreen } from "./screens"
+
+export const GENERATED_SCREENS: CanvasScreen[] = ${JSON.stringify(screens, null, 2)}
+`
+await writeFile(TARGET, body, "utf8")
+console.log(`화면 ${screens.length}개를 ${path.relative(process.cwd(), TARGET)}에 적었습니다.`)
+if (skipped.length) console.log(`주소가 아직 없어 뺀 화면 ${skipped.length}개: ${skipped.join(", ")}`)
