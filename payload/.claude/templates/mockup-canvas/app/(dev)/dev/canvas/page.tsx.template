@@ -4,6 +4,8 @@ import { SCREENS, type CanvasScreen } from "./screens"
 // 목업 캔버스 — screens.ts를 읽어 화면을 위에서 아래로 늘어놓는다. 개발 서버에서만 열린다((dev)/layout.tsx).
 // 창 크기는 숫자 속성(width·height)으로 적는다. 데스크톱 창은 실제 폭으로 띄우고 CSS로 줄여 보여 줘서,
 // 창 안의 컨테이너 쿼리가 실제 폭 기준으로 돈다.
+// 맨 바깥은 <div>다 — 셸(루트 레이아웃)이 본문 영역에 <main>을 두는 구조가 기본이라 겹치지 않게 한다.
+// 셸이 <main>을 두지 않고 화면마다 두는 프로젝트면 맨 바깥 <div>를 <main>으로 바꾼다(한 페이지에 <main>은 하나).
 
 const DESKTOP = { width: 1440, height: 900, scale: 0.5 }
 const PHONE = { width: 390, height: 844, scale: 0.5 }
@@ -56,13 +58,21 @@ function ScreenBlock({ screen }: { screen: CanvasScreen }) {
         <Pair key={state} label={`${screen.name} · ${state}`} src={withState(screen.path, state)} />
       ))}
       {screen.drafts && screen.drafts.length > 0 && (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-6">
           <h4 className="text-h4">비교안</h4>
-          <div className="flex flex-wrap items-start gap-6">
-            {screen.drafts.map((draft) => (
-              <Pair key={draft.path} label={`${screen.name} · ${draft.label}`} src={draft.path} />
-            ))}
-          </div>
+          {screen.drafts.map((draft) => {
+            // 비교안의 상태 창 — 따로 적지 않으면 원래 화면과 같은 상태를 띄운다(비교안도 같은 저장·조회 코드를 거친다)
+            const states = draft.states ?? screen.states ?? []
+            const label = `${screen.name} · ${draft.label}`
+            return (
+              <div key={draft.path} className="flex flex-col gap-6">
+                <Pair label={label} src={draft.path} />
+                {states.map((state) => (
+                  <Pair key={state} label={`${label} · ${state}`} src={withState(draft.path, state)} />
+                ))}
+              </div>
+            )
+          })}
         </div>
       )}
     </section>
@@ -72,7 +82,7 @@ function ScreenBlock({ screen }: { screen: CanvasScreen }) {
 export default function CanvasPage() {
   const groups = [...new Set(SCREENS.map((s) => s.group))]
   return (
-    <main className="mx-auto flex max-w-content flex-col gap-12 px-4 py-12">
+    <div className="mx-auto flex max-w-content flex-col gap-12 px-4 py-12">
       <header className="flex flex-col gap-4">
         <h1 className="text-h1">목업 캔버스</h1>
         <p className="text-b1 text-muted-foreground">
@@ -104,6 +114,6 @@ export default function CanvasPage() {
           ))}
         </div>
       ))}
-    </main>
+    </div>
   )
 }

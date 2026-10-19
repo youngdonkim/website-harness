@@ -1,6 +1,6 @@
 ---
 name: project-init
-description: 프로젝트에 website-harness 하네스를 파일 복사로 적용·동기화 — 하네스 원본 저장소의 payload/(스킬·에이전트·훅·훅 등록 설정·rules·git-workflow 문서·CI 워크플로)를 프로젝트 루트에 같은 경로로 복사하고, AGENTS.md 뼈대와 mvp/ 산출물 폴더를 만든다. 신규 적용은 끝에 `github-connect`를 불러 GitHub 저장소 생성·첫 push까지 마친다. 이미 적용된 프로젝트에서 재실행하면 원본과 비교해 동기화한다. 트리거 예 "새 프로젝트 시작하자", "하네스 적용해줘", "이 repo에 하네스 세팅", "하네스 동기화해줘", "하네스 최신으로 맞춰줘".
+description: 프로젝트에 website-harness 하네스를 파일 복사로 적용·동기화 — 하네스 원본 저장소의 payload/(스킬·에이전트·훅·실행기·훅 등록 설정·rules·git-workflow 문서·CI 워크플로)를 프로젝트 루트에 같은 경로로 복사하고, AGENTS.md 뼈대·소유 선언(.claude/owner)·이 컴퓨터의 계정 장부 자리와 mvp/ 산출물 폴더를 만든다. 신규 적용은 끝에 `github-connect`를 불러 GitHub 저장소 생성·첫 push까지 마친다. 이미 적용된 프로젝트에서 재실행하면 원본과 비교해 동기화하고, 옛 프로젝트의 .env.cli 키는 계정 장부로 옮긴다. 트리거 예 "새 프로젝트 시작하자", "하네스 적용해줘", "이 repo에 하네스 세팅", "하네스 동기화해줘", "하네스 최신으로 맞춰줘".
 ---
 
 # project-init — 프로젝트에 하네스 적용·동기화
@@ -69,14 +69,16 @@ git -C <원본경로> rev-parse --short=12 HEAD
 
 사용자에게 하나만 묻는다 — 이미 대화에서 나왔으면 생략:
 
-- **이 프로젝트의 소유 — 개인이야 회사야?** — 외부 서비스(GitHub·Supabase·Vercel·OAuth·AI 키)를 어느 계정으로 만들지가 이 답으로 갈린다. 아이디어가 아니라 관리 질문이지만, 계정이 잘못 묶이면 나중에 리소스를 전부 다시 만들게 되어(idea-to-mvp `4-0-backend-prep.md` 실사고) 처음에 받는다. **개인/회사를 구분할 필요가 없는 사용자면**(모든 프로젝트를 같은 계정으로 만들면) **「개인」이다**.
+- **이 프로젝트의 소유 — 개인입니까, 회사입니까, 아니면 다른 조직입니까?** (예시 답: 「회사」, 「개인」, 「동아리 — 영문 짧은 이름은 club」) — 외부 서비스(GitHub·Supabase·Vercel·OAuth·AI 키)를 어느 계정으로 만들지가 이 답으로 갈린다. 아이디어가 아니라 관리 질문이지만, 계정이 잘못 묶이면 나중에 리소스를 전부 다시 만들게 되어(idea-to-mvp `4-0-backend-prep.md`) 처음에 받는다. **개인/회사를 구분할 필요가 없는 사용자면**(모든 프로젝트를 같은 계정으로 만들면) **「개인」이다**. 회사·개인이 아닌 조직이면 장부 파일 이름에 쓸 영문 짧은 이름(소문자·숫자·하이픈)을 함께 받는다.
 
 **서비스 이름·한 줄 정의·타겟은 여기서 묻지 않는다** — idea-to-mvp 1단계 인터뷰의 질문 1·2라, 1단계가 코칭 규칙(되묻기·고쳐 써서 확인받기·한 항목당 최대 2번)대로 받아 확정하고 `AGENTS.md`에 써넣는다. *왜*: 여기서 코칭 없이 차갑게 받으면 설치 때 대충 한 답이 `AGENTS.md`에 적히고, 1단계가 그걸 확인만 하고 넘어가 그 첫 답에 묶인 채 확정된다. 설치 단계엔 이름·타겟이 꼭 필요한 곳도 없다 — `AGENTS.md` 제목과 저장소 이름은 폴더 이름으로 충분하다.
 
 - 사용자가 대화에서 서비스 이름·정의·타겟을 **이미 말했으면** 묻지 않고 그 말을 초안으로 받아 적는다 — 프로젝트 정의 줄의 해당 자리에 그 말을 쓰고 바로 뒤에 `(초안 — 1단계에서 확정)`를 붙인다. 1단계가 이 표시를 보고 초안으로 다듬는다.
 - **안 했으면** 빈 자리 표시 `(1단계 인터뷰에서 채움)`를 그대로 둔다. 1단계가 이 표시를 보고 새로 묻는다.
 
-소유 답은 [3단계](#3-agentsmd-생성)에서 `AGENTS.md`의 「소유와 계정」 표를 채우는 데 쓴다.
+소유 답은 [3단계](#3-agentsmd-생성)에서 `AGENTS.md`의 「소유와 계정」 표·소유 문장과 `.claude/owner`를 함께 쓰는 데 쓴다. 값은 셋 중 하나다 — 개인 `personal`, 회사 `company`, 조직 `org-<영문 짧은 이름>`.
+
+**`mvp/intent.md`가 이미 있으면**(1단계를 다른 곳에서 끝내고 산출물을 들고 온 프로젝트) 그 「1. 서비스」에서 서비스 이름·한 줄 정의·타겟을 읽어 아래 「이미 말했으면」과 같은 초안으로 쓴다 — 빈 자리 표시로 두면 1단계가 이미 끝난 질문을 다시 묻는다.
 
 ### 2. CLAUDE.md 생성
 
@@ -91,8 +93,13 @@ git -C <원본경로> rev-parse --short=12 HEAD
 - 프로젝트 루트에 `AGENTS.md`가 **없으면** 원본의 `payload/AGENTS.md.template`을 프로젝트 루트에 `AGENTS.md`로 복사하고 제목 `# {{폴더 이름}}`은 프로젝트 폴더 이름으로 채운다. 프로젝트 정의 줄(서비스 이름·한 줄 정의·타겟)의 빈 자리 표시 `(1단계 인터뷰에서 채움)`는 그대로 두되, [1번](#1-시작-인터뷰-소유-1질문)에서 받아 둔 초안이 있으면 그 자리에 초안과 `(초안 — 1단계에서 확정)`를 적는다. 템플릿 구조는 **수정하지 않고 그대로** — 하네스 표준이다.
 - **idea-to-mvp 방법론 설명은 `AGENTS.md`에 넣지 않는다** — 방법론은 스킬 발동 중에만 필요하고 스킬이 전부 관리한다. `AGENTS.md`는 만드는 제품(앱)과 사용자 취향의 자리다.
 - **「소유와 계정」 표는 1번의 소유 답과 함께 사용자에게 물어 채운다** — 서비스별 계정·이메일을 아는 만큼만 받고, 모르는 항목은 `(확인 필요)`로 둔다 — 4단계 준비(4-0)에서 확정되면 채운다. 계정 값은 이 프로젝트 표에만 남는다 (하네스에는 계정을 적지 않는다).
-- **gh 인증은 이 프로젝트의 발급 토큰으로 맞춘다** — 표의 GitHub 계정 토큰을 프로젝트 루트의 깃 미추적 파일 `.env.cli`에 `GH_TOKEN=`으로 두는 일은 원격 단계의 `github-connect` ⑤가 한다(토큰 받는 길 셋과 `.gitignore` 확인 포함). 여기서는 사용자에게 따로 안내하지 않는다. 이유·이행 폴백은 `payload/docs/account-check.md`(프로젝트에 복사되면 `docs/account-check.md`) gh 항목에 있다.
-- **「커밋 작성자」 행은 표만 채우지 않고 이 저장소의 로컬 git 설정(작성자 이름·이메일)도 같이 맞춘다** — 전역 설정은 건드리지 않는다(같은 컴퓨터에 다른 소유의 프로젝트가 있다). 배포 플랫폼이 커밋 작성자로 팀원 여부를 판단해, 표와 다르면 배포가 조용히 승인 대기로 막힌다 (실사고: 회사 저장소에 개인 작성자 커밋이 들어가 Vercel Pro 배포 BLOCKED).
+- **소유 선언 `.claude/owner`를 쓴다** — 한 줄 `owner=<1번의 값>`. 커밋되는 파일이라 팀원도 같은 소유로 돈다. `AGENTS.md` 「소유와 계정」 절의 「이 프로젝트의 소유: **개인/회사/<조직 이름>**」 문장과 **같은 값**이어야 한다 — 둘을 이 자리에서 함께 쓴다. 하네스 소유물이 아니라 프로젝트 파일이라 동기화가 지우거나 덮어쓰지 않는다.
+- **이 컴퓨터의 계정 장부 자리를 만든다** — 키는 프로젝트가 아니라 `~/.config/harness/<소유>.env`(폴더 700, 파일 600, git 저장소 밖)에 둔다. 같은 소유의 프로젝트끼리 한 파일을 나눠 쓴다. 파일이 이미 있으면 그대로 쓴다(다른 프로젝트가 받아 둔 키가 들어 있다).
+  ```bash
+  o=$(sed -n 's/^owner=//p' .claude/owner); mkdir -p "$HOME/.config/harness" && chmod 700 "$HOME/.config/harness" && touch "$HOME/.config/harness/$o.env" && chmod 600 "$HOME/.config/harness/$o.env"
+  ```
+  키 값(GitHub 토큰 등)은 여기서 넣지 않는다 — 원격 단계의 `github-connect` ⑤가 채운다(토큰 받는 길 셋). 키를 부르는 법(실행기 `.claude/scripts/with-owner.sh`)과 이유는 `payload/docs/account-check.md`(프로젝트에 복사되면 `docs/account-check.md`) gh 항목에 있다.
+- **「커밋 작성자」 행은 표만 채우지 않고 이 저장소의 로컬 git 설정(작성자 이름·이메일)도 같이 맞춘다** — 장부에 `GIT_USER_NAME`·`GIT_USER_EMAIL`이 있으면 그 값을 쓰고(같은 소유의 다른 프로젝트가 넣어 둔 것), 없으면 사용자에게 받아 로컬 git 설정과 장부 두 곳에 쓴다(장부 쓰기는 `github-connect` 「장부에 키 한 줄 쓰기」 모양). 전역 설정은 건드리지 않는다(같은 컴퓨터에 다른 소유의 프로젝트가 있다). 배포 플랫폼이 커밋 작성자로 팀원 여부를 판단해, 표와 다르면 배포가 조용히 승인 대기로 막힌다.
 - **이미 있으면** 파일을 지우거나 덮어쓰지 않는다. `<!-- BEGIN:project-rules -->` 마커 구역이 없을 때만, 템플릿의 마커 구역(placeholder를 채운 상태)을 파일 맨 끝에 덧붙인다.
 - **다른 도구가 자동으로 만든 구역은 절대 건드리지 않고 그대로 둔다** — 예를 들어 `next dev`가 넣는 `<!-- BEGIN:nextjs-agent-rules -->` 구역. 우리 마커 구역만 우리가 관리하고 나머지는 그 도구 몫이다.
 - 2단계에서 만든 `CLAUDE.md`의 내용이 정확히 `@AGENTS.md`인지 확인한다.
@@ -102,7 +109,7 @@ git -C <원본경로> rev-parse --short=12 HEAD
 원본의 `payload/` 아래 파일을 프로젝트 루트에 **같은 경로로 통째로 복사**한다 (폴더 없으면 생성). 원본의 구조가 곧 프로젝트에 놓일 모양이라, 무엇을 어디로 옮길지 따로 셀 필요가 없다.
 
 ```
-<원본>/payload/.claude/  →  <프로젝트>/.claude/   (skills·agents·hooks·rules·templates)
+<원본>/payload/.claude/  →  <프로젝트>/.claude/   (skills·agents·hooks·scripts·rules·templates)
 <원본>/payload/docs/     →  <프로젝트>/docs/      (git-workflow.md·account-check.md)
 <원본>/payload/.github/  →  <프로젝트>/.github/   (workflows/ci.yml)
 ```
@@ -112,7 +119,7 @@ git -C <원본경로> rev-parse --short=12 HEAD
 - `payload/AGENTS.md.template` — 복사 대상이 아니라 가공 대상. [3단계](#3-agentsmd-생성)에서 이미 썼다.
 - `payload/.claude/settings-hooks.json` — 복사 대상이 아니라 병합 원본. 다음 단계에서 내용만 합친다.
 
-훅 스크립트에 실행 권한을 준다: `chmod +x <프로젝트>/.claude/hooks/*.sh`
+훅 스크립트와 실행기에 실행 권한을 준다: `chmod +x <프로젝트>/.claude/hooks/*.sh <프로젝트>/.claude/scripts/*.sh`
 
 이번에 들어오는 것 중 설명이 필요한 둘 — `docs/git-workflow.md`는 `no-main-push`·`auto-wip-commit` 훅과 `new-task`·`done-task`·`rewind-task` 스킬이 따르는 워크플로를 사람이 읽게 정리해둔 문서고, `.github/workflows/ci.yml`은 lint + build를 도는 CI로 `done-task`가 머지 전에 이 통과를 기다린다.
 
@@ -148,7 +155,7 @@ date=<오늘 날짜 YYYY-MM-DD>
 
 ### 8. 로컬 단계 마무리 — 비밀 파일 검사와 첫 커밋
 
-1. **`.gitignore` 확인** — 없으면 만들고, `git check-ignore -q .env.cli`가 실패하면 `.env.cli` 한 줄을 넣는다. 원격 단계에서 토큰이 들어갈 파일이라 첫 커밋 전에 막아 둔다.
+1. **`.gitignore` 확인** — 없으면 만든다. 키는 프로젝트 밖 장부에 두니 키 파일을 막을 줄은 따로 넣지 않는다. 프로젝트에 옛 `.env.cli`가 보이면 커밋하지 않고 [동기화 모드 6](#6-계정-장부로-옮기기--옛-프로젝트)대로 장부로 옮긴다.
 2. **비밀 파일 검사** — 이미 추적 중이거나 커밋 대상이 될 파일 가운데 비밀 파일이 보이면 **멈추고 보고한다.** 기준은 `auto-wip-commit` 훅의 시크릿 패턴과 같다(`.env`·`.env.*`·`*.key`·`*.pem`·`secret`·`credentials.json`·`id_rsa`·`id_ed25519` — 끝이 `.example`·`.sample`·`.template`인 예시 파일은 뺀다).
    ```bash
    { git ls-files; git status --porcelain --untracked-files=all | sed -E 's/^...//'; } \
@@ -156,18 +163,19 @@ date=<오늘 날짜 YYYY-MM-DD>
      | grep -ivE '\.(example|sample|template)$'
    ```
    출력이 있으면 그 파일을 `.gitignore`에 넣을지(이미 추적 중이면 추적에서 뺄지) 사용자에게 묻고, 정리된 뒤에 커밋한다.
-3. **첫 커밋** — 하네스가 넣은 파일만 담는다. 프로젝트에 원래 있던 다른 미커밋 파일은 건드리지 않고 마무리 안내에 적는다.
+3. **첫 커밋** — 하네스가 넣은 파일과, 이미 있던 1단계 산출물(`mvp/` 안 파일 — 들고 온 `intent.md`·`design-brief.md` 등)을 담는다. `mvp/`를 빼면 main에 미추적으로 남아 첫 `/new-task`가 따로 처리해야 한다. 그 밖에 원래 있던 미커밋 파일은 건드리지 않고 마무리 안내에 적는다.
    ```bash
    git add -- CLAUDE.md AGENTS.md .gitignore .claude docs/git-workflow.md docs/account-check.md .github/workflows/ci.yml
+   [ -d mvp ] && git add -- mvp
    git commit -m "chore: website-harness 하네스 적용 (<적용한 하네스 커밋>)"
    ```
-   **main에 바로 커밋한다 — 부트스트랩 예외다.** 프로젝트 `AGENTS.md` 브랜치 절에 적힌 "main에서 직접 작업하지 않는다"의 유일한 예외(하네스 첫 적용 커밋과 그 첫 push)다. 이번 세션엔 `/new-task`도 훅도 아직 안 잡혀 있고, 빈 저장소라 리뷰할 화면도 배포도 없다.
+   **main에 바로 커밋한다 — 부트스트랩 예외다.** 프로젝트 `AGENTS.md` 브랜치 절에 적힌 "main에서 직접 작업하지 않는다"의 유일한 예외(하네스 첫 적용 커밋과 그 첫 push)다. 빈 저장소라 리뷰할 화면도 배포도 없다. (이번 세션에 훅이 벌써 잡혀 있을 수도 있다 — `auto-wip-commit`은 main에서 쉬니 이 커밋과 부딪히지 않는다.)
 
    **예외에 안 드는 경우** — 원격 main에 이미 작업 이력이 있는 저장소(원래 쓰던 저장소에 하네스를 처음 얹는 경우)는 main이 곧 실서비스라 예외가 아니다. 원격이 있으면(`git remote get-url origin` 성공) 로컬의 `origin/main`을 본다 — `git rev-list --count origin/main`이 1이고 `git ls-tree --name-only origin/main`이 `README.md`·`.gitignore`·`LICENSE` 안에 드는 경우(GitHub에서 저장소를 만들 때 생긴 첫 커밋뿐)만 예외에 든다. 그 밖이면 `git switch -c chore/harness-apply`로 작업 브랜치를 열어 거기에 같은 커밋을 하고, 마무리 안내에서 "앱을 껐다 켠 뒤 화면을 확인하시고 '보내줘'라고 말씀하시면 `/done-task`로 합치겠습니다"라고 알린다.
 
 ### 9. 원격 단계 — `github-connect` 호출
 
-`github-connect`를 Skill 도구로 호출한다. 이번 세션에 스킬이 안 잡혀 있으면(방금 복사한 `.claude/`라 목록에 없을 수 있다) 원본의 `payload/.claude/skills/github-connect/SKILL.md`를 읽고 그대로 실행한다. git·gh 설치, GitHub 계정·토큰(`.env.cli`), 계정 확인, HTTPS push 인증 방식, 저장소 생성, 첫 push까지 거기서 끝난다. 사람 몫(가입·로그인·권한 창)이 나오면 `github-connect`가 한 단계씩 안내하고 멈췄다가 이어간다.
+`github-connect`를 Skill 도구로 호출한다. 이번 세션에 스킬이 안 잡혀 있으면(방금 복사한 `.claude/`라 목록에 없을 수 있다) 원본의 `payload/.claude/skills/github-connect/SKILL.md`를 읽고 그대로 실행한다. git·gh 설치, GitHub 계정·토큰(계정 장부), 계정 확인, HTTPS push 인증 방식, 저장소 생성, 첫 push까지 거기서 끝난다. 사람 몫(가입·로그인·권한 창)이 나오면 `github-connect`가 한 단계씩 안내하고 멈췄다가 이어간다.
 
 사용자가 GitHub 연결을 지금은 미루자고 하면 억지로 하지 않는다 — 마무리 안내에 "나중에 '깃헙 연결해줘'라고 말씀하시면 이어서 진행합니다. 그 전에는 `/new-task`·`/done-task`가 동작하지 않습니다"라고 남긴다.
 
@@ -177,16 +185,17 @@ date=<오늘 날짜 YYYY-MM-DD>
 
 `github-connect`의 마무리 보고와 합쳐 **한 번에** 알린다(재시작 안내는 한 번만):
 
-- 방금 프로젝트에 들어온 것: `CLAUDE.md`, `AGENTS.md`, `.claude/`(skills·agents·hooks·rules·templates·settings.json·harness-version), `docs/git-workflow.md`, `docs/account-check.md`, `.github/workflows/ci.yml`. **8단계에서 첫 커밋으로 main에 들어갔고, 9단계에서 GitHub에 올라갔다** — 팀원은 프로젝트를 clone하는 것만으로 하네스를 그대로 받는다. 팀원이 하네스 저장소를 따로 받을 필요는 없다. 8단계에서 건드리지 않은 원래 파일(미커밋)이 있었으면 그 목록도 알린다.
+- 방금 프로젝트에 들어온 것: `CLAUDE.md`, `AGENTS.md`, `.claude/`(skills·agents·hooks·scripts·rules·templates·settings.json·harness-version·owner), `docs/git-workflow.md`, `docs/account-check.md`, `.github/workflows/ci.yml`. **8단계에서 첫 커밋으로 main에 들어갔고, 9단계에서 GitHub에 올라갔다** — 팀원은 프로젝트를 clone하는 것만으로 하네스를 그대로 받는다. 팀원이 하네스 저장소를 따로 받을 필요는 없다. 8단계에서 건드리지 않은 원래 파일(미커밋)이 있었으면 그 목록도 알린다.
+- 키 자리: 이 컴퓨터의 `~/.config/harness/<소유>.env` — 프로젝트 밖이라 커밋되지 않고, 같은 소유의 다른 프로젝트와 나눠 쓴다. 팀원은 clone한 뒤 자기 컴퓨터에서 「깃헙 연결해줘」로 자기 장부를 채운다.
 - 훅 2개가 자동 작동: `no-main-push`(main 직접 push 차단), `auto-wip-commit`(응답 끝날 때마다 feature 브랜치에 wip 커밋 — main에서는 자동으로 건너뛴다). 뭔가 잘못돼서 되돌리고 싶으면 `/rewind-task` 스킬을 쓴다.
-- **지금 열린 세션에는 새 스킬·훅이 아직 안 잡힌다** — 새 파일이라서가 아니라 `.claude/` 폴더가 방금 처음 생겨 지금 세션의 감시 대상이 아니라서다. 처음 적용할 때는 **앱을 껐다 켜야** 잡힌다 — 껐다 켜도 대화는 안 날아간다(대화를 버리는 `/clear`와는 다르다). 나중에 하네스를 최신으로 올리는 동기화(하네스 원본 저장소에서 `git pull` → 이 프로젝트 세션에서 "하네스 동기화해줘") 때는 `.claude/`가 이미 있어 파일마다 반영 시점이 다르다 — 스킬 본문은 부를 때마다 읽어 다음 호출부터 바로 반영된다. 에이전트 정의와 훅은 세션을 새로 열어야 한다(클로드 코드는 훅 설정을 세션 시작 때 스냅샷한다 — 공식 문서 기준, 최신 확인). `AGENTS.md`는 컴팩션이나 `/clear`부터. (스킬이 플러그인이면 그 안 hooks·`.mcp.json`·agents 변경은 `/reload-plugins`가 따로 필요하다(터미널 실행 전용 명령 — 데스크톱 앱엔 없다) — 하네스 자체는 플러그인이 아니다.)
+- **지금 열린 세션에는 새 스킬·훅이 잡히지 않았을 수 있다** — `.claude/` 폴더가 방금 처음 생겨 지금 세션의 감시 대상이 아닐 수 있어서다. 이 세션 앞부분에 같은 폴더가 한 번 있었다면 훅이 바로 잡히기도 한다 — 그때는 첫 push에서 `no-main-push` 훅이 먼저 돈다(`github-connect` ⑦을 혼자 먼저 실행하라는 이유). 처음 적용할 때는 **앱을 껐다 켜면 확실히** 잡힌다 — 껐다 켜도 대화는 안 날아간다(대화를 버리는 `/clear`와는 다르다). 나중에 하네스를 최신으로 올리는 동기화(하네스 원본 저장소에서 `git pull` → 이 프로젝트 세션에서 "하네스 동기화해줘") 때는 `.claude/`가 이미 있어 파일마다 반영 시점이 다르다 — 스킬 본문은 부를 때마다 읽어 다음 호출부터 바로 반영된다. 에이전트 정의와 훅은 세션을 새로 열어야 한다(클로드 코드는 훅 설정을 세션 시작 때 스냅샷한다 — 공식 문서 기준, 최신 확인). `AGENTS.md`는 컴팩션이나 `/clear`부터. (스킬이 플러그인이면 그 안 hooks·`.mcp.json`·agents 변경은 `/reload-plugins`가 따로 필요하다(터미널 실행 전용 명령 — 데스크톱 앱엔 없다) — 하네스 자체는 플러그인이 아니다.)
 - 다음 단계: 앱을 껐다 켜면 클로드는 다음 입력을 기다리는 상태라, **사용자가 대화창에 한마디를 해야** 1단계 인터뷰가 시작된다. 둘 중 하나면 된다 — `/idea-to-mvp`를 치거나 "인터뷰 시작하자"처럼 말하거나. 1단계가 질문 다섯으로 서비스를 묻는다. 그때부터 파일을 바꾸는 작업은 `/new-task`로 브랜치를 열고 `/done-task`로 합친다 — 클로드가 알아서 부른다. (idea-to-mvp가 `mvp/` 산출물을 보고 현재 단계를 스스로 판별하니, 이미 진행한 프로젝트면 알아서 이어서 시작한다.)
 
 ## 동기화 모드 절차
 
 이미 하네스가 적용된 프로젝트에서는 신규 복사 대신, 프로젝트에 있는 파일을 원본과 비교해 갱신한다. 먼저 [하네스 원본 찾기](#하네스-원본-찾기)로 원본 위치를 확인하고 원본 검증을 마친다.
 
-**payload 미러로 온 파일은 전부 하네스 소유물**이고, **`AGENTS.md` 하나만 예외**다. `CLAUDE.md`는 `@AGENTS.md` 한 줄짜리 포인터라 하네스 소유물로 다룬다 — 다만 옛 구조로 만든 프로젝트는 여기에 규칙이 들어 있을 수 있어, 확인 없이 줄이지 않는다([4. AGENTS.md — 예외 하나, 병합이 기본](#4-agentsmd--예외-하나-병합이-기본)).
+**payload 미러로 온 파일은 전부 하네스 소유물**이고, **`AGENTS.md` 하나만 예외**다. `.claude/owner`·`.claude/harness-version`·`.claude/settings.json`(hooks 블록 밖)은 payload에 없는 프로젝트 파일이라 「원본에서 사라짐」으로 지우지 않는다. `CLAUDE.md`는 `@AGENTS.md` 한 줄짜리 포인터라 하네스 소유물로 다룬다 — 다만 옛 구조로 만든 프로젝트는 여기에 규칙이 들어 있을 수 있어, 확인 없이 줄이지 않는다([4. AGENTS.md — 예외 하나, 병합이 기본](#4-agentsmd--예외-하나-병합이-기본)).
 
 ### 1. 프로젝트 쪽 미커밋 검사
 
@@ -212,7 +221,7 @@ git status --porcelain -- .claude docs/git-workflow.md docs/account-check.md .gi
 
 프로젝트에서 고치지 않는 전제의 파일들이다. 하네스가 관리하니 **원본 내용으로 교체**하는 게 기본이다.
 
-- `payload/.claude/*` ↔ `.claude/*` (skills·agents·hooks·rules·templates)
+- `payload/.claude/*` ↔ `.claude/*` (skills·agents·hooks·scripts·rules·templates)
 - `payload/docs/*` ↔ `docs/git-workflow.md`·`docs/account-check.md`
 - `payload/.github/workflows/ci.yml` ↔ `.github/workflows/ci.yml`
 - `payload/.claude/settings-hooks.json`의 hooks 블록 ↔ `.claude/settings.json`의 hooks 블록
@@ -226,7 +235,7 @@ git status --porcelain -- .claude docs/git-workflow.md docs/account-check.md .gi
 
 `settings.json`은 파일 전체가 아니라 **hooks 블록만** 하네스 소유물이다. 나머지 키(`permissions`·`env` 등 프로젝트가 넣은 것)는 손대지 않는다.
 
-교체한 훅 스크립트에는 실행 권한을 다시 준다: `chmod +x .claude/hooks/*.sh`
+교체한 훅 스크립트와 실행기에는 실행 권한을 다시 준다: `chmod +x .claude/hooks/*.sh .claude/scripts/*.sh`
 
 ### 3. 로컬 수정 흔적 판별
 
@@ -282,20 +291,44 @@ git status --porcelain -- .claude docs/git-workflow.md docs/account-check.md .gi
 
 `mvp/`·`docs/` 폴더는 신규 모드와 동일하게, 없으면 채운다.
 
-### 6. 버전 기록 파일 갱신
+### 6. 계정 장부로 옮기기 — 옛 프로젝트
+
+키를 프로젝트의 `.env.cli`에 두던 옛 프로젝트를 이 컴퓨터의 계정 장부(`~/.config/harness/<소유>.env`)로 옮긴다. `.claude/owner`가 있고 `.env.cli`가 없으면 건너뛴다. **키 값은 어느 순간에도 화면에 내지 않는다** — 비교도 셸 안에서 하고 결과는 「같다·다르다」만 본다.
+
+1. **소유 선언** — `.claude/owner`가 없으면 `AGENTS.md` 「소유와 계정」 절의 「이 프로젝트의 소유: **…**」 문장으로 만든다(개인 → `personal`, 회사 → `company`, 그 밖의 조직 → 사용자에게 영문 짧은 이름을 받아 `org-<이름>`). 문장이 없거나 `(확인 필요)`면 [신규 1번](#1-시작-인터뷰-소유-1질문) 질문을 한 번 묻고 두 곳에 함께 쓴다.
+2. **장부 자리** — [신규 3단계](#3-agentsmd-생성)의 장부 자리 만들기 명령을 그대로 돌린다(이미 있으면 그대로).
+3. **키 비교** — `.env.cli`의 키 가운데 **장부가 다루는 이름**(`GH_LOGIN`·`GH_TOKEN`·`GIT_USER_NAME`·`GIT_USER_EMAIL`·`VERCEL_TEAM`·`VERCEL_TOKEN`·`SUPABASE_ORG`·`SUPABASE_ACCESS_TOKEN`)마다 장부에 같은 이름이 있는지, 값이 같은지 본다. 값은 출력하지 않는다. 그 밖의 이름(프로젝트마다 다른 DB 비밀번호 등)은 소유 단위 장부에 옮기지 않는다 — 「남김」으로 표시된다.
+   ```bash
+   o=$(sed -n 's/^owner=//p' .claude/owner); f="$HOME/.config/harness/$o.env"
+   while IFS='=' read -r k v || [ -n "$k" ]; do k=${k%$'\r'}; v=${v%$'\r'}; [ -z "$k" ] || [ -z "$v" ] && continue; case "$k" in \#*) continue ;; esac
+     case " GH_LOGIN GH_TOKEN GIT_USER_NAME GIT_USER_EMAIL VERCEL_TEAM VERCEL_TOKEN SUPABASE_ORG SUPABASE_ACCESS_TOKEN " in *" $k "*) ;; *) echo "$k: 장부 이름이 아님 — 남김"; continue ;; esac
+     cur=$(sed -n "s/^$k=//p" "$f" | head -1)
+     if [ -z "$cur" ]; then echo "$k: 장부에 없음 — 옮김"; elif [ "$cur" = "$v" ]; then echo "$k: 같음"; else echo "$k: 다름"; fi
+   done < .env.cli
+   ```
+   - **「다름」이 하나라도 있으면 멈추고 사용자에게 묻는다** — 값은 보여 주지 않고 「`<키 이름>`이 이 프로젝트와 장부(같은 소유의 다른 프로젝트가 넣은 것)에서 다릅니다. 어느 쪽을 남길까요? (예시 답: 「장부 것 유지」, 「이 프로젝트 것으로 바꿔」)」. 둘 다 살아 있는지 모르면 `with-owner.sh --check`(gh)·`npx vercel whoami`처럼 키 하나씩 확인해 보고 고르게 해도 된다.
+   - 「다름」이 없으면 「장부에 없음」인 줄만 장부에 덧붙인다(값을 화면에 내지 않게 셸 안에서 `grep '^<키>=' .env.cli >> "$f"`).
+4. **확인** — `.claude/scripts/with-owner.sh --check`가 장부를 읽었고(「옛 방식」이라고 나오지 않음) gh 계정이 표와 같은지 본다.
+5. **`.env.cli`에서 옮긴 줄을 뺀다** — 확인이 끝난 뒤에만. 장부로 옮긴 이름의 줄을 지운다(남겨 두면 실행기가 읽지 않는데도 누가 옛 값을 고친다). 「남김」 줄(프로젝트 전용 키 — `SUPABASE_PROJECT_REF`·`SUPABASE_DB_PASSWORD` 등)은 그대로 둔다 — 실행기가 장부 다음에 이 파일에서 읽는다. 남은 줄이 없으면 파일을 지운다. 시작 전에 「`.env.cli`의 계정 키를 장부로 옮기고 이 파일에서는 빼겠습니다」 한 줄을 알린다. `.gitignore`의 `.env.cli` 줄은 그대로 둔다.
+6. **git 자격 증명 도우미를 새 모양으로** — `git config --local --get-all credential.helper`에 옛 `.env.cli`를 읽는 함수가 있으면 `github-connect` ⑦ 「설정」 세 줄로 바꾸고 ⑦ 「설정 확인」까지 한다.
+
+마무리 보고에 「키를 계정 장부로 옮김(`~/.config/harness/<소유>.env`) / 다름이 있어 사용자가 고름 / 옮길 것 없음」 중 하나를 적는다.
+
+### 7. 버전 기록 파일 갱신
 
 반영이 끝나면 `.claude/harness-version`의 `commit=`을 이번에 적용한 원본 커밋으로, `date=`를 오늘 날짜로 갱신한다. 파일이 없으면 [7. 버전 기록 파일 쓰기](#7-버전-기록-파일-쓰기) 형식으로 새로 만든다.
 
 **사용자가 로컬 수정을 유지하기로 골라서 원본과 다른 파일이 남았어도 버전 기록 파일은 갱신한다** — 버전 기록 파일은 "언제 기준 원본과 맞춰봤나"를 가리키는 값이지 "모든 파일이 원본과 똑같다"는 보증이 아니다. 다만 남은 차이는 마무리 보고에 반드시 적는다.
 
-### 7. 마무리 보고
+### 8. 마무리 보고
 
 보고·안내는 ~입니다 체로 쓴다.
 
 **두 갈래가 드러나게** 나눠 보고한다.
 
-- **하네스 소유물** (스킬·에이전트·훅·rules·git-workflow.md·account-check.md·ci.yml·훅 등록) — 교체됨 / 새로 복사됨 / 삭제됨 / 로컬 수정 유지됨(사용자가 고름) / 전부 최신
+- **하네스 소유물** (스킬·에이전트·훅·실행기·rules·git-workflow.md·account-check.md·ci.yml·훅 등록) — 교체됨 / 새로 복사됨 / 삭제됨 / 로컬 수정 유지됨(사용자가 고름) / 전부 최신
 - **AGENTS.md** — 병합됨 / 템플릿으로 교체됨(사용자가 고름) / 그대로 유지됨(사용자가 고름) / 최신 / 새로 만듦
+- **계정 장부** — 6번 결과 한 줄
 - **CLAUDE.md** — `@AGENTS.md` 한 줄 그대로 / 옛 내용을 AGENTS.md로 옮기고 한 줄로 줄임 / 옛 내용을 그대로 둠(사용자가 고름)
 
 끝에 버전 기록 파일을 어느 커밋으로 갱신했는지 적는다. 그다음 커밋 안내는 지금 어느 브랜치에 있었는지에 따라 다르게 준다:

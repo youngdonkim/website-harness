@@ -27,18 +27,22 @@
 #   - force push 전면 차단 (대상 브랜치 무관)
 #       -f, --force, --force-with-lease(=값 포함), --force-if-includes,
 #       또는 +로 시작하는 강제 refspec (예: git push origin +feature:main)
-#   - 환경변수 접두로 검사를 우회하는 경우 (2026-09-29 추가)
+#   - 환경변수 접두·실행기 접두로 검사를 우회하는 경우
 #       (예: env GH_TOKEN=... git push origin main, env -u X git push,
-#       FOO=1 git push origin main) — 명령 조각이 env 또는 NAME=value로
-#       시작하면 그 뒤에서 첫 git 토큰을 찾아 거기서부터 판정한다.
+#       FOO=1 git push origin main, .claude/scripts/with-owner.sh git push origin main)
+#       — 명령 조각이 env·NAME=value·with-owner.sh로 시작하면 그 뒤에서
+#       첫 git 토큰을 찾아 거기서부터 판정한다.
 #       (값에 공백이 든 접두 "$(sed ... )"도 있어서 인자를 하나씩 건너뛰지
 #       않고 첫 git 토큰을 찾는다 — 오탐은 차단 쪽이라 안전하다)
 #
-# 허용 예외 — 부트스트랩 첫 push (2026-09-29 추가):
+# 허용 예외 — 부트스트랩 첫 push:
 #   main을 겨냥한 push라도 강제 push가 아니고, 그 원격에 main 브랜치가 아직
 #   없으면(git ls-remote --exit-code --heads <원격> refs/heads/main 이 "없음"
-#   으로 끝나면) 허용한다 — 하네스 첫 적용의 첫 push(github-connect ⑨).
-#   원격에 main이 있거나 조회가 실패하면(네트워크·인증 등) 지금처럼 차단한다.
+#   = 종료 코드 2로 끝나면) 허용한다 — 하네스 첫 적용의 첫 push(github-connect ⑨).
+#   원격에 main이 있으면(0) 「main 직접 push 금지」로 막고, 조회 자체가
+#   실패하면(그 밖 — 저장소를 못 찾음·인증·네트워크) 「원격 main 조회 실패」로
+#   이유를 갈라 막는다. 비공개 저장소는 키가 틀려도 「없음」이 아니라
+#   「저장소를 못 찾음」으로 실패하므로, 이때 main push 금지로 알리면 엉뚱하다.
 #   main push 조각이 한 명령에 둘 이상이면 예외 없이 차단한다.
 #
 # 정밀화: shell separator(&&, ||, ;, |, &)로 sub-command 분리 후
@@ -113,12 +117,13 @@ while IFS= read -r sub; do
   n=${#tokens[@]}
 
   # git 토큰 위치 찾기. 첫 토큰이 git이면 0.
-  # env 또는 NAME=value 접두로 시작하면 그 뒤의 첫 git 토큰 (우회 봉쇄).
+  # env·NAME=value·with-owner.sh 접두로 시작하면 그 뒤의 첫 git 토큰 (우회 봉쇄).
   first="${tokens[0]:-}"
   git_idx=-1
   if [ "$first" = "git" ]; then
     git_idx=0
-  elif [ "$first" = "env" ] || [[ "$first" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; then
+  elif [ "$first" = "env" ] || [[ "$first" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]] \
+       || [[ "$first" == *with-owner.sh* ]]; then
     k=1
     while [ "$k" -lt "$n" ]; do
       if [ "${tokens[$k]}" = "git" ]; then
@@ -240,7 +245,8 @@ $NORMALIZED
 EOF
 
 # main push 판정 — force가 아니고 조각이 하나뿐이면 부트스트랩 예외를 본다.
-# 원격에 main이 없을 때(ls-remote --exit-code가 2)만 허용. 있으면(0)·조회 실패(그 밖)는 차단.
+# 원격에 main이 없을 때(ls-remote --exit-code가 2)만 허용. 있으면(0)은 main push 금지,
+# 조회 실패(그 밖)는 이유를 갈라 막는다.
 if [ -z "$block_reason" ] && [ "$main_push_count" -gt 0 ]; then
   block_reason="main-push"
   if [ "$main_push_count" -eq 1 ]; then
@@ -249,6 +255,8 @@ if [ -z "$block_reason" ] && [ "$main_push_count" -gt 0 ]; then
     if [ "$rc" -eq 2 ]; then
       echo "no-main-push: 원격 main이 없어 첫 push를 허용 (부트스트랩 — 원격 ${main_push_remote})" >&2
       exit 0
+    elif [ "$rc" -ne 0 ]; then
+      block_reason="lookup-failed"
     fi
   fi
 fi
@@ -260,6 +268,25 @@ BLOCKED: force push 금지 (대상 브랜치 무관).
 이유: force push는 원격 기록을 덮어써서 다른 사람의 커밋이 흔적도 없이
 사라질 수 있음. 이 저장소에서 실제로 그런 사고가 있었음.
 필요하면 새 커밋을 쌓거나, 정말 필요한 경우 사람이 직접 판단해서 처리할 것.
+
+자세히: docs/git-workflow.md
+MSG
+  exit 2
+fi
+
+if [ "$block_reason" = "lookup-failed" ]; then
+  cat >&2 <<MSG
+BLOCKED: 원격 main 조회 실패 — 원격(${main_push_remote})의 저장소를 찾지 못했습니다.
+
+main 직접 push라서 막은 것이 아닙니다. 첫 push(부트스트랩)인지 확인하려고
+원격 main을 조회했는데 조회 자체가 실패했습니다. 비공개 저장소는 키가
+틀리거나 없을 때 「저장소 없음」으로 보입니다 — 키 문제일 수 있습니다.
+
+확인할 것:
+  1) .claude/scripts/with-owner.sh --check  — 소유·장부·gh 계정이 맞는지
+  2) github-connect ⑦ — 이 저장소의 git 자격 증명 도우미가 걸렸는지
+     (git credential fill 에 username=x-access-token 이 나와야 합니다)
+  3) 원격 주소(git remote get-url ${main_push_remote})와 네트워크
 
 자세히: docs/git-workflow.md
 MSG

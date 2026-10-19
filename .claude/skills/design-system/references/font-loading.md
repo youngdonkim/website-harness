@@ -111,15 +111,19 @@ grep -o '"[^"]*\.woff2"' .next/server/next-font-manifest.json | sort -u
 
 **(3) 빌드된 CSS의 `url()`이 해시 경로로 바뀌었는가**
 
+빌드된 CSS가 놓이는 폴더는 빌드 방식마다 다르다 — webpack 빌드는 `.next/static/css/`, Turbopack 빌드는 `.next/static/chunks/`다.
+그래서 폴더를 정해 두지 않고 `.next/static` 아래의 CSS 파일을 모두 찾아 본다.
+
 ```bash
-grep -ho 'url([^)]*)' .next/static/css/*.css | sort -u | head -20
+find .next/static -name '*.css' -exec grep -ho 'url([^)]*)' {} + | sort -u | head -20
 ```
 
-`/_next/static/media/…woff2` 같은 내부 해시 경로만 나와야 자체 호스팅에 성공한 것이다.
-외부 주소가 남아 있으면 실패다.
+`/_next/static/media/…woff2`나 `../media/…woff2`처럼 이 앱 안의 해시 이름 파일만 나와야 자체 호스팅에 성공한 것이다
+(Turbopack 빌드는 앞이 `../media/`인 상대 경로로 적는다 — 같은 `.next/static/media/`를 가리킨다).
+외부 주소가 남아 있으면 실패다. CSS 파일이 하나도 안 나오면 빌드를 먼저 돌렸는지 본다.
 
 ```bash
-grep -rl 'fonts.gstatic.com\|fonts.googleapis.com\|cdn.jsdelivr.net' .next/static/css/
+grep -rl --include='*.css' 'fonts.gstatic.com\|fonts.googleapis.com\|cdn.jsdelivr.net' .next/static/
 ```
 
 이 명령이 파일 이름을 하나라도 출력하면 아직 외부에서 폰트를 받아오고 있다는 뜻이다.

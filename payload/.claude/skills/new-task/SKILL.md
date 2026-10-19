@@ -1,7 +1,7 @@
 ---
 name: new-task
 description: PR 머지 후 작업 단위 전환 — main 싱크 + 머지 끝난 옛 feature 브랜치 정리(local·remote) + 새 feature 브랜치 자동 생성. 사용자 의도(args 또는 follow-up)에서 type·topic을 Claude가 추론. "다음 작업 시작", "새 브랜치 만들어줘", "PR 머지했어 다음 가자" 등에 사용.
-allowed-tools: Bash(git *) Bash(gh *) Bash(env GH_TOKEN=*)
+allowed-tools: Bash(git *) Bash(.claude/scripts/with-owner.sh *)
 context: fork
 agent: git-flow
 ---
@@ -14,7 +14,7 @@ agent: git-flow
 
 PR 없는 로컬 브랜치 삭제(§3)처럼 되살릴 수 없는 선택은 판단이 애매하면 보존 쪽으로 기울이고 사용자에게 알린다.
 
-**gh 호출은 ship-task §1-0과 같은 토큰 로더를 같은 셸 호출 앞에 단다** — `env GH_TOKEN="$(sed -n 's/^GH_TOKEN=//p' .env.cli 2>/dev/null)" gh <명령>` (환경변수는 다음 Bash 호출로 안 넘어간다). git 명령(pull·fetch·push·ls-remote)에는 로더를 달지 않는다 — 로컬 git 설정의 자격 증명 도우미가 `.env.cli`를 직접 읽는다(`github-connect` ⑦).
+**gh 호출은 ship-task §1-0과 같이 실행기를 앞에 붙인다** — `.claude/scripts/with-owner.sh gh <명령>` (이 프로젝트 소유의 계정 장부에서 `GH_TOKEN`을 읽어 같은 호출 안에서 넘긴다). git 명령(pull·fetch·push·ls-remote)에는 붙이지 않는다 — 로컬 git 설정의 자격 증명 도우미가 실행기로 토큰을 받는다(`github-connect` ⑦).
 
 ## 호출 인자
 
@@ -67,14 +67,14 @@ git status --porcelain
 
 ```bash
 # 1-c. 현재 feature 브랜치라면 PR 상태 확인
-env GH_TOKEN="$(sed -n 's/^GH_TOKEN=//p' .env.cli 2>/dev/null)" gh pr status 2>/dev/null || true
+.claude/scripts/with-owner.sh gh pr status 2>/dev/null || true
 ```
 
 - 현재 브랜치의 PR이 **미머지**면, 미머지 상태를 물어볼지 그냥 넘어갈지는 **내 권한**에 따라 갈린다. 팀원은 PR 올려두고 팀장 머지를 기다리며 다음 작업으로 넘어가는 게 정상 흐름이라 매번 물으면 마찰만 커서다.
 
   ```bash
   # 1-c-1. 내 권한 확인 (owner/repo는 gh repo view --json nameWithOwner로 구해라)
-  env GH_TOKEN="$(sed -n 's/^GH_TOKEN=//p' .env.cli 2>/dev/null)" gh api repos/{owner}/{repo} --jq '.permissions'
+  .claude/scripts/with-owner.sh gh api repos/{owner}/{repo} --jq '.permissions'
   ```
 
   - **`admin`·`maintain` 둘 다 `false` (팀원) 또는 권한 조회 자체가 실패** → 묻지 않고 그냥 진행. 이 판정은 브랜치를 지우는 게 아니라 "물어볼지 말지"만 정하는 거라, 조회가 실패해도 틀려서 잃을 게 없다. 대신 완료 보고(§5)에 다음 줄을 남겨라:
@@ -120,7 +120,7 @@ git branch --format='%(refname:short)' | grep -v '^main$'
 
 ```bash
 # 그 브랜치의 PR 상태 조회
-env GH_TOKEN="$(sed -n 's/^GH_TOKEN=//p' .env.cli 2>/dev/null)" gh pr list --head <branch> --state merged --json number,state,url --limit 1
+.claude/scripts/with-owner.sh gh pr list --head <branch> --state merged --json number,state,url --limit 1
 ```
 
 - 응답에 머지된 PR 있으면 → **자동 삭제 대상**. 머지된 PR은 내용이 GitHub에 보존돼 되돌릴 수 있는 안전한 정리 작업이라 args 지시 없이도 바로 진행:

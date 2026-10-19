@@ -141,9 +141,10 @@ git clone https://github.com/youngdonkim/website-harness.git ~/dev/website-harne
 |---|---|---|
 | 단계 스킬 | `idea-to-mvp` | 6단계: Intent(인터뷰) · Mockup · InformationArchitecture · FrontendBuild · BackendBuild · MarketResearch · MvpLaunch (통과 기준) |
 | 공통 스킬 | `project-init` | 프로젝트에 하네스 적용 — `payload/`를 프로젝트 루트에 복사 + 훅 등록 설정 병합 + AGENTS.md 뼈대 생성. 이미 적용된 프로젝트에서 재실행하면 최신 원본과 비교해 동기화 |
-| 공통 스킬 | `github-connect` | 이 컴퓨터에서 프로젝트가 GitHub에 올라가게 준비 — git·gh 설치 확인, 토큰(`.env.cli`), 계정 확인, 저장소 생성, 첫 push. 이미 된 단계는 건너뛴다. 하네스 신규 적용 끝에 자동으로 불리고, "깃헙 연결해줘"로 따로 불러도 된다 |
+| 공통 스킬 | `github-connect` | 이 컴퓨터에서 프로젝트가 GitHub에 올라가게 준비 — git·gh 설치 확인, 토큰(계정 장부 `~/.config/harness/<소유>.env`), 계정 확인, 저장소 생성, 첫 push. 이미 된 단계는 건너뛴다. 하네스 신규 적용 끝에 자동으로 불리고, "깃헙 연결해줘"로 따로 불러도 된다 |
 | 공통 스킬 | `new-task` | main 최신화 + 머지가 끝난 옛 작업 브랜치 정리 + 새 작업 브랜치 생성 |
-| 공통 스킬 | `done-task` | ship 한 흐름 — 안에서 simplify 판단을 먼저 하고, git 절차는 내부 스킬 ship-task에 넘긴다. 부르는 이름은 done-task 하나다 |
+| 공통 스킬 | `done-task` | ship 한 흐름 — 안에서 코드 정리(`code-cleanup`) 판단을 먼저 하고, git 절차는 내부 스킬 ship-task에 넘긴다. 부르는 이름은 done-task 하나다 |
+| 공통 스킬 | `code-cleanup` | 지난 정리 뒤 바뀐 `src` 코드만 정리 — 검토 하나(재사용·단순화·효율·깊이)가 한 번 읽고, 반영 하나가 화면 동작을 바꾸지 않는 것만 고친 뒤 `chore: 코드 정리 반영` 표시 커밋. `done-task`가 합치기 전에 부르고, 2-1·2-2·3단계 끝에서도 바로 부른다 |
 | 공통 스킬 | `ship-task` | done-task가 부르는 내부 스킬(fork) — push → PR 생성 → (오너면) CI 대기 → squash 머지 → 브랜치 정리. 직접 부를 일 없음 |
 | 공통 스킬 | `rewind-task` | 자동 저장 시점으로 되돌리기 — 후보 표를 보여준 뒤 파일·브랜치·되감기 중 선택 |
 | 공통 스킬 | `design-system` | 3단 토큰 계층(foundation→semantic→component) + 조립 계층(frame·pattern) 디자인 시스템 방법론 — 화면·컴포넌트·토큰을 만들거나 수정할 때 참조 |

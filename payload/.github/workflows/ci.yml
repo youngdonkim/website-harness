@@ -68,9 +68,12 @@ jobs:
       # 값이 비면 그 자리에서 예외를 던진다), 만들기만 할 뿐 요청은 하지 않기 때문이다.
       # 그래서 여기서는 자리표시자를 넣는다 — 진짜 값은 Vercel 환경변수에 있다.
       # (자리표시자를 진짜처럼 보이게 짓지 않는다. 실수로 붙여 쓰면 바로 티가 나야 한다.)
+      # 키 이름은 2-0 §2.3이 `.env.example`에 두는 이름(공개 키 = Publishable key)과 같다.
+      # ANON_KEY 줄은 옛 이름을 쓰는 프로젝트도 빌드되게 함께 둔다.
       - if: steps.node.outputs.present == 'true'
         env:
           NEXT_PUBLIC_SUPABASE_URL: http://ci-placeholder.invalid
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
         run: npm run build
 

@@ -20,7 +20,7 @@ new-task → 작업 → done-task → new-task → 작업 → ...
 - **작업**: 코드를 고치는 동안, 응답이 끝날 때마다 `auto-wip-commit` 훅이 변경된 파일을
   자동으로 `wip: ...` 커밋으로 저장합니다. **main 브랜치에서는 이 훅이 돌지 않습니다** — main을
   wip 커밋으로 더럽히지 않으려는 안전장치입니다. 그래서 wip 커밋은 항상 feature 브랜치에만 쌓입니다.
-- **`done-task`**: 안에서 simplify 판단을 먼저 하고, git 절차는 내부 스킬 ship-task(fork)에 넘깁니다 — 사용자께서 알아 두실 이름은 done-task뿐입니다. 그 절차가 쌓인 wip 커밋들을 push하고, PR(코드 합치기 요청)을 만들고, 머지
+- **`done-task`**: 안에서 코드 정리(`code-cleanup`) 판단을 먼저 하고, git 절차는 내부 스킬 ship-task(fork)에 넘깁니다 — 사용자께서 알아 두실 이름은 done-task뿐입니다. 그 절차가 쌓인 wip 커밋들을 push하고, PR(코드 합치기 요청)을 만들고, 머지
   권한이 있으면 CI(자동 검사 — push된 코드가 빌드·린트를 통과하는지 GitHub이 자동으로
   돌려 보는 것)가 끝날 때까지 기다렸다가, 통과했을 때만 **뭉쳐서 합치기(squash merge)**
   — PR 안의 여러 커밋을 하나로 뭉쳐서 main에 합치는 방식 — 로 main에 반영합니다. 그다음
@@ -54,8 +54,8 @@ main을 올립니다. git·gh 설치나 GitHub 로그인처럼 사람만 할 수
 저장소라 리뷰할 화면도 배포도 없기 때문입니다. 그다음부터는 위 흐름대로 `new-task` → 작업 →
 `done-task`입니다.
 
-push는 HTTPS + 토큰으로 합니다. 토큰은 프로젝트의 `.env.cli`(git에 올라가지 않는 파일)에 있고,
-자세한 내용은 `docs/account-check.md` gh 항목에 있습니다. GitHub 연결을 미루셨다면 나중에 "깃헙
+push는 HTTPS + 토큰으로 합니다. 토큰은 이 컴퓨터의 계정 장부(`~/.config/harness/<소유>.env`, git에 올라가지
+않는 파일)에 있고, 프로젝트의 `.claude/owner`가 어느 장부를 쓸지 정합니다. 자세한 내용은 `docs/account-check.md` gh 항목에 있습니다. GitHub 연결을 미루셨다면 나중에 "깃헙
 연결해줘"라고 하시면 됩니다 — 그 전에는 원격 저장소가 없어서 `new-task`·`done-task`가 돌지 않습니다.
 
 ## 2. 왜 뭉쳐서 합치기(squash merge)인가

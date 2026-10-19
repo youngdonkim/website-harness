@@ -133,13 +133,13 @@ Docker Desktop이 꺼진 채로 `npx supabase status`/`start`를 돌리면 **원
 **2단계 개발환경 준비에서 이미 개발용 패키지(`--save-dev`)로 깔렸다 — 여기서는 확인과 인증만 한다** (`2-0-dev-setup.md` §2.1 도구 점검표). 전역이 아니라 프로젝트 안의 것을 `npx`로 부른다.
 
 - **확인** — `npx supabase --version`이 `package.json`의 `devDependencies`에 고정된 판을 답하는지 본다. 없으면(2단계를 거치지 않은 옛 프로젝트) 여기서 `npm install --save-dev supabase`로 깐다. 판은 Docker와 맞춰 고른다 (`4-0-backend-prep.md` §3.6).
-- **인증** — 4-0 §3.2대로 발급 토큰을 CLI 전용 파일에 두고 넘긴다. 전역 `supabase login`은 하지 않는다.
+- **인증** — 4-0 §3.2대로 발급 토큰을 계정 장부(`~/.config/harness/<소유>.env`)의 `SUPABASE_ACCESS_TOKEN`에 두고, 클라우드에 닿는 명령은 `.claude/scripts/with-owner.sh npx supabase <명령>`으로 부른다(앞의 `fnm exec`는 `AGENTS.md` 「이 프로젝트가 쓰는 도구」 Node.js 줄대로 실행기 뒤에). 전역 `supabase login`은 하지 않는다.
 
 이유: 스키마를 다루는 도구라 **버전이 사람마다 다르면 사고가 난다.** `package.json`에 적어 두면 팀원이 같은 버전을 쓴다. 전역에도 깔려 있으면 어느 쪽이 실행되는지 헷갈리니 **둘 중 하나만 남긴다.**
 
 ### 3.3 gh CLI
 
-PR을 만들고 머지하는 데 쓴다. **깔기는 전역으로 하고, 인증은 프로젝트마다 따로 한다** — 4-0 §3.1대로 소유자 계정의 발급 토큰을 프로젝트의 CLI 전용 깃 미추적 파일에 `GH_TOKEN=...`으로 두고, gh를 부를 때 그 파일을 읽혀 넘긴다. `gh api user --jq .login`이 표의 계정을 답하면 준비된 것이다. 설치법은 OS마다 달라서 https://cli.github.com 을 따른다.
+PR을 만들고 머지하는 데 쓴다. **깔기는 전역으로 하고, 인증은 소유마다 따로 한다** — 4-0 §3.1대로 소유자 계정의 발급 토큰이 계정 장부의 `GH_TOKEN`에 있고, gh는 `.claude/scripts/with-owner.sh gh …`로 부른다. `.claude/scripts/with-owner.sh gh api user --jq .login`이 표의 계정을 답하면 준비된 것이다. 설치법은 OS마다 달라서 https://cli.github.com 을 따른다.
 
 이유: done-task가 위임하는 ship-task가 이 도구로 PR을 만들고 머지한다 — **없으면 ship이 아예 안 돈다.**
 
@@ -148,7 +148,7 @@ PR을 만들고 머지하는 데 쓴다. **깔기는 전역으로 하고, 인증
 **2단계 개발환경 준비에서 이미 개발용 패키지로 깔렸다 — 여기서는 확인과 인증만 한다** (`2-0-dev-setup.md` §2.1 도구 점검표). 프로젝트 안의 것을 `npx vercel`로 부른다. 배포와 환경변수 내려받기에 쓴다.
 
 - **확인** — `npx vercel --version`이 `devDependencies`에 고정된 판을 답하는지 본다. 없으면 여기서 `npm install --save-dev vercel`로 깐다.
-- **인증** — 3단계 첫 배포 때 `.env.cli`에 둔 `VERCEL_TOKEN`이 살아 있는지 `env VERCEL_TOKEN="$(sed -n 's/^VERCEL_TOKEN=//p' .env.cli 2>/dev/null)" npx vercel whoami`로 본다 (`3-frontend-build.md` §2.6 · 4-0 §3.3). `vercel login`으로 전역 로그인하지 않는다.
+- **인증** — 3단계 첫 배포 때 계정 장부에 둔 `VERCEL_TOKEN`이 살아 있는지 `.claude/scripts/with-owner.sh fnm exec --using=.nvmrc -- npx vercel whoami`로 본다 (`3-frontend-build.md` §2.6 · 4-0 §3.3). `vercel login`으로 전역 로그인하지 않는다.
 
 **2단계 개발환경 준비에서 깐 Vercel "플러그인"과는 다른 것이다** — 플러그인은 클로드 코드 안에서 쓰는 스킬 묶음이고, 이건 터미널에서 직접 치는 명령이다. 이름만 같지 하는 일이 다르니 둘 다 갖춰 둔다.
 
@@ -216,7 +216,7 @@ Supabase 공식 문서가 원격(클라우드) DB에 대해 명시한다:
 
 흐름은 이렇다: **마이그레이션 파일 작성 → 로컬에서 리셋(래퍼가 있으면 래퍼로 — 아래) → 함수를 실제로 불러 보기 → 클라우드에 `db push` → 클라우드에서 확인(§4.4)**
 
-**`db push --linked`가 EAUTHQUERY(`auth_query secret check timed out` / `unsupported secret format`) 류 서버 오류로 실패하면** CLI의 임시 역할 로그인이 서버 쪽에서 깨진 것이라 재시도로는 안 풀린다 [실측 1건: 8회 재시도 전부 실패]. `SUPABASE_DB_PASSWORD`를 CLI 전용 깃 미추적 파일(`docs/account-check.md`의 보관 원칙 — `.env.local`은 환경변수 내려받기가 통째로 덮어쓴다)에 넣어 CLI가 읽게 하면 직접 연결로 우회해 통과한다. 비밀번호를 바꿨으면 `4-0` §4 장부의 「갱신 시 같이 바꿀 곳」대로 Secret도 갱신한다.
+**`db push --linked`가 EAUTHQUERY(`auth_query secret check timed out` / `unsupported secret format`) 류 서버 오류로 실패하면** CLI의 임시 역할 로그인이 서버 쪽에서 깨진 것이라 재시도로는 안 풀린다 [실측 1건: 8회 재시도 전부 실패]. `SUPABASE_DB_PASSWORD`를 프로젝트 `.env.cli`(`docs/account-check.md`의 보관 원칙 — `.env.local`은 환경변수 내려받기가 통째로 덮어쓴다)에 넣어 CLI가 읽게 하면 직접 연결로 우회해 통과한다. 비밀번호를 바꿨으면 `4-0` §4 장부의 「갱신 시 같이 바꿀 곳」대로 Secret도 갱신한다.
 
 > **이건 그때 그렇게 겪었다는 사고 기록이다.** 오류 이름·대시보드 메뉴 위치는 Supabase 쪽 사정이라 바뀌었을 수 있다 — 같은 증상을 만나면 이 우회를 먼저 시도해 보되, 오류 문구가 다르거나 안 통하면 공식 문서에서 지금 방식을 확인한다.
 

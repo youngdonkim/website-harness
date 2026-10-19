@@ -10,6 +10,9 @@ import { Input } from "@/components/ui/input"
 // 디자인 시스템 페이지 — 실제 토큰과 실제 부품으로 그린다. 토큰의 정본은 1·2층 CSS이고, 이 페이지는 그것을 비춰 보여 주는 거울이다.
 // 색·크기 값은 코드에 적지 않고, 브라우저가 계산한 값을 읽어 보여 준다.
 // 프로젝트마다 고칠 자리: `{{…}}`와 「프로젝트에 맞게 고친다」 주석.
+// 맨 바깥은 <div>다 — 셸(루트 레이아웃)이 본문 영역에 <main>을 두는 구조가 기본이라 겹치지 않게 한다.
+// 셸이 <main>을 두지 않고 화면마다 두는 프로젝트면 맨 바깥 <div>를 <main>으로 바꾼다(한 페이지에 <main>은 하나).
+// 이 페이지의 견본은 강조색(primary)을 쓰는 자리 규칙을 지킨다 — 강조색은 주 버튼 견본과 색 역할 견본에만, 막대·칸 견본은 무채색.
 
 const SERVICE_NAME = "{{서비스 이름}}"
 
@@ -63,7 +66,7 @@ const TYPE_STEPS = [
 const COLOR_ROLES = [
   { name: "background", cls: "bg-background", use: "화면 바탕" },
   { name: "foreground", cls: "bg-foreground", use: "진한 글자" },
-  { name: "primary", cls: "bg-primary", use: "주 버튼·선택된 칩" },
+  { name: "primary", cls: "bg-primary", use: "화면의 주 버튼 하나·지금 선택된 것" },
   { name: "secondary", cls: "bg-secondary", use: "채운 바탕" },
   { name: "muted", cls: "bg-muted", use: "흐린 바탕" },
   { name: "muted-foreground", cls: "bg-muted-foreground", use: "흐린 글자" },
@@ -129,7 +132,7 @@ function Samples() {
                 {step.cls} — {step.use}
               </p>
               <Probe className={step.cls} read={TYPE_READ}>
-                {SERVICE_NAME}가 보여 주는 문장 견본
+                {SERVICE_NAME} 화면의 문장 견본입니다
               </Probe>
             </div>
           ))}
@@ -153,7 +156,7 @@ function Samples() {
           {SPACING.map((space) => (
             <div key={space.name} className="flex items-center gap-4">
               <span className="w-8 text-b2 font-semibold">{space.name}</span>
-              <Probe className={`h-4 bg-primary ${space.cls}`} read={SPACE_READ} />
+              <Probe className={`h-4 bg-foreground ${space.cls}`} read={SPACE_READ} />
             </div>
           ))}
         </div>
@@ -187,7 +190,7 @@ function Samples() {
               <p className="text-b2 font-semibold">
                 {width.name} — {width.use}
               </p>
-              <Probe className={`h-4 w-full bg-primary ${width.name}`} read={MAX_WIDTH_READ} />
+              <Probe className={`h-4 w-full bg-foreground ${width.name}`} read={MAX_WIDTH_READ} />
             </div>
           ))}
         </div>
@@ -198,7 +201,8 @@ function Samples() {
           평소와 비활성은 그대로 그립니다. 마우스 올림·누름·포커스는 아래 칸의 부품을 직접 올리고 눌러 보세요(포커스는 Tab 키로 옮겨 보세요).
         </p>
 
-        {/* 프로젝트에 맞게 고친다: 버튼 종류(variant)는 프로젝트의 button.tsx에 있는 것만 둔다 */}
+        {/* 프로젝트에 맞게 고친다: 버튼 종류(variant)는 프로젝트의 button.tsx에 있는 것만 둔다.
+            주 버튼(강조색)은 실제 화면에서 한 화면에 하나만 쓴다 — 여기는 견본이라 상태별로 나란히 둔다 */}
         <div className="flex flex-col gap-4">
           <h3 className="text-h4">버튼</h3>
           <div className="flex flex-wrap items-center gap-4">
@@ -245,7 +249,7 @@ function Samples() {
 
 export default function DesignSystemPage() {
   return (
-    <main className="@container/ds mx-auto flex max-w-content flex-col gap-12 px-4 py-12">
+    <div className="@container/ds mx-auto flex max-w-content flex-col gap-12 px-4 py-12">
       <header className="flex flex-col gap-4">
         <h1 className="text-h1">{SERVICE_NAME} 디자인 시스템</h1>
         <p className="text-b1 text-muted-foreground">
@@ -276,9 +280,9 @@ export default function DesignSystemPage() {
       <Section title="폰 배치 메모">
         {/* 프로젝트에 맞게 고친다: 어느 폭에서 무엇이 접히는지 한 줄씩 */}
         <ul className="flex list-disc flex-col gap-1 pl-6 text-b1">
-          <li>{"{{예: 본문 976 이상에서 목록 8칸 + 콘테스트 3칸, 그 아래에서는 한 칸}}"}</li>
+          <li>{"{{예: 넓을 때는 본문 + 옆 칸 두 칸, 본문 폭이 768 아래로 줄면 옆 칸이 본문 아래로 내려가 한 칸}}"}</li>
         </ul>
       </Section>
-    </main>
+    </div>
   )
 }

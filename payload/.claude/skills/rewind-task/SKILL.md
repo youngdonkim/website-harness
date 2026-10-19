@@ -2,7 +2,7 @@
 name: rewind-task
 description: 작업 중 자동으로 쌓인 wip 커밋 하나로 되돌아가기 — 후보 목록을 표로 보여주고 파일 하나만 되살리기·새 브랜치로 살리기·통째로 되감기 중에 고르게 한다. 이미 머지된 PR의 wip도 GitHub에 남은 기록에서 되살린다. "아까 그 상태로 돌려줘", "그거 하기 전으로 되돌리자", "지난 PR 중간 상태 꺼내줘" 등에 사용.
 disable-model-invocation: true
-allowed-tools: Bash(git *) Bash(gh *) Bash(env GH_TOKEN=*)
+allowed-tools: Bash(git *) Bash(.claude/scripts/with-owner.sh *)
 context: fork
 agent: git-flow
 ---
@@ -15,7 +15,7 @@ agent: git-flow
 
 이 스킬은 `context: fork`로 git-flow 서브에이전트(sonnet)에서 격리 실행된다 — 메인 세션 토큰 절약 목적. 실행 중 사용자 질문이 불가능하므로 결정 지점은 [결정 필요]로 반환한다. [결정 필요]를 반환하면 사용자가 직접 재호출한다 — 클로드 자동 호출 없음(`disable-model-invocation: true`).
 
-**gh 호출은 ship-task §1-0과 같은 토큰 로더를 같은 셸 호출 앞에 단다** — `env GH_TOKEN="$(sed -n 's/^GH_TOKEN=//p' .env.cli 2>/dev/null)" gh <명령>` (환경변수는 다음 Bash 호출로 안 넘어간다).
+**gh 호출은 ship-task §1-0과 같이 실행기를 앞에 붙인다** — `.claude/scripts/with-owner.sh gh <명령>` (이 프로젝트 소유의 계정 장부에서 `GH_TOKEN`을 읽어 같은 호출 안에서 넘긴다).
 
 ## 호출 인자
 
@@ -142,7 +142,7 @@ git show --stat --format='' <커밋번호> | tail -1
 
 ```bash
 git log main --format='%h|%ar|%s' -10          # main의 squash 커밋. 제목 끝 (#N)이 PR 번호
-env GH_TOKEN="$(sed -n 's/^GH_TOKEN=//p' .env.cli 2>/dev/null)" gh pr list --state merged --limit 20 --json number,title,mergedAt
+.claude/scripts/with-owner.sh gh pr list --state merged --limit 20 --json number,title,mergedAt
 ```
 
   뽑은 목록으로 **[결정 필요] 반환**:

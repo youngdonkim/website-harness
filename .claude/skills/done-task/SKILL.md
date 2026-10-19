@@ -1,12 +1,12 @@
 ---
 name: done-task
-description: 현재 feature 브랜치를 main에 ship. 메인 세션에서 simplify 판단 → (필요 시 /simplify) → ship-task(git-flow fork)에 위임까지 한 번에. 사용자가 "보내줘"라고 한 뒤에만 클로드가 부른다.
+description: 현재 feature 브랜치를 main에 ship. 메인 세션에서 코드 정리 판단 → (필요 시 code-cleanup으로 지난 정리 뒤 바뀐 코드만 정리) → ship-task(git-flow fork)에 위임까지 한 번에. 사용자가 "보내줘"라고 한 뒤에만 클로드가 부른다.
 ---
 
 # done-task
 
 메인 세션에서 돈다. git 작업(push·PR·머지·브랜치 정리)은 직접 하지 않고 `ship-task`에 넘긴다.
-이 스킬의 몫은 딱 하나 — ship 전에 simplify를 거칠지 판단하고, 거친다면 여기서 끝내는 것.
+이 스킬의 몫은 딱 하나 — ship 전에 코드 정리를 거칠지 판단하고, 거친다면 `code-cleanup`으로 끝내는 것.
 
 ## 호출 인자
 
@@ -17,21 +17,27 @@ description: 현재 feature 브랜치를 main에 ship. 메인 세션에서 simpl
 ## 절차
 
 1. `git branch --show-current`를 돌린다. main이거나 detached HEAD면 중단하고 사용자에게 안내한다 — ship할 브랜치가 아니다.
-2. **simplify 판단** — 아래 셋을 순서대로 본다.
-   - a. `git diff origin/main...HEAD --stat -- src` (src 폴더가 없는 프로젝트면 코드 폴더로 대체). 비어 있으면 → 4로 (코드 변경 없음, 관문 대상 아님).
-   - b. `git log origin/main..HEAD --format=%s | grep -E '^(wip: /simplify( |$)|chore: simplify 반영$)'`. 하나라도 있으면 → 4로 (이미 검토함).
-   - c. 변경이 주석·문구 한 줄처럼 자잘하면(diff --stat 기준 몇 줄 이내, 로직 없음) → 스킵으로 정하고 4로. 그 외 → 3으로.
-3. Skill 도구로 `simplify`를 실행하고 나온 지적을 반영한다. 끝나면 **이 턴 안에서 직접 커밋한다** —
-   `git add -A && git commit -m "wip: /simplify — <한 줄 요약>"`.
-   고칠 게 없어 변경이 없으면 `git commit --allow-empty -m "wip: /simplify — 변경 없음"`.
-   simplify는 코드만 고치니 시크릿 파일이 새로 생기지 않는다 — `git status`에 `.env*`·키 파일이 보이면 add 전에 멈추고 보고한다.
-   (이유: auto-wip-commit 훅은 턴이 끝날 때 커밋한다. 같은 턴에서 바로 ship-task를 부르면 그 시점엔 working tree가 더러워서 ship-task §1 안전 검사에 걸린다. 그리고 표식 제목 형식은 ship-task §1.5 관문의 정규식과 맞아야 한다.)
-4. Skill 도구로 `ship-task`를 호출한다. args = 이 스킬이 받은 인자 그대로 + (2-c에서 스킵했으면) "스킵".
-5. ship-task가 [결정 필요]를 돌려주면 판단해 결정을 args에 담아 **ship-task를** 재호출한다 (done-task를 다시 부르지 않는다 — simplify 판단은 이미 끝났다). 사실 확인이 필요한 결정(마이그레이션 종류 등)은 지어내지 말고 사용자에게 묻는다.
-6. ship-task의 완료 보고를 그대로 사용자에게 전한다.
+2. **정리 판단** — 아래 셋을 순서대로 본다. 기준은 `ship-task` §1.5 관문과 같다.
+   - a. `git fetch -q origin main` 뒤 `git diff origin/main...HEAD --stat -- src` (src 폴더가 없는 프로젝트면 코드 폴더로 대체). 비어 있으면 → 4로 (코드 변경 없음, 관문 대상 아님).
+   - b. 마지막 정리 표시 커밋을 찾고, 그 뒤에 이 브랜치가 `src`를 또 고쳤는지 본다.
+     ```bash
+     marker=$(git log origin/main..HEAD --no-merges --format='%H %s' | grep -E '^[0-9a-f]+ chore: 코드 정리 반영( |$)' | head -1 | cut -d' ' -f1)
+     [ -n "$marker" ] && git log --no-merges --format= --name-only "$marker"..HEAD -- src | sort -u
+     ```
+     표시가 있고 그 뒤 고친 `src` 파일이 없으면 → 4로 (이미 정리함). 표시가 없거나, 표시 뒤에 고친 파일이 있으면 → c로.
+   - c. 정리할 변경(표시가 없으면 브랜치 전체, 있으면 표시 뒤)이 주석·문구 한 줄처럼 자잘하면(diff --stat 기준 몇 줄 이내, 로직 없음) → 스킵으로 정하고 4로. 그 외 → 3으로.
+3. Skill 도구로 `code-cleanup`을 부른다(args: `done-task에서`). 이 스킬이 바뀐 파일만 검토(sonnet 하나)·반영(opus 하나)하고, 반영을 커밋하면서 표시 제목 `chore: 코드 정리 반영 — …`을 직접 붙인다. 표시는 반영이 끝난 뒤에만 생기니 이 스킬이 따로 커밋하지 않는다.
+   - 표시 커밋이 이 턴 안에 생겼으면 바로 4로.
+   - **변경이 커서 검토·반영을 백그라운드로 맡기고 턴이 끝났으면** — 사용자에게 「코드 정리가 끝나면 이어서 보내겠습니다」 한 줄만 남긴다. 알림이 와 표시 커밋이 생긴 다음 턴에 4로 간다(사용자의 「보내줘」는 이미 받았으니 다시 묻지 않는다).
+   - `code-cleanup`이 「바뀐 코드가 없습니다」·「자잘해 건너뜀」으로 끝났으면 4에서 "스킵"을 붙인다.
+4. Skill 도구로 `ship-task`를 호출한다. args = 이 스킬이 받은 인자 그대로 + (2-c나 3에서 건너뛰었으면) "스킵".
+5. ship-task가 [결정 필요]를 돌려주면 판단해 결정을 args에 담아 **ship-task를** 재호출한다 (done-task를 다시 부르지 않는다 — 정리 판단은 이미 끝났다). 사실 확인이 필요한 결정(마이그레이션 종류 등)은 지어내지 말고 사용자에게 묻는다.
+6. ship-task의 완료 보고를 그대로 사용자에게 전한다. 3에서 정리를 했으면 `code-cleanup`의 마무리 보고를 한 줄로 줄여 앞에 붙인다.
 
 ## 안 하는 것
 
 - git push·PR·머지를 직접 하지 않는다. 전부 ship-task 몫.
-- simplify 판단을 사용자에게 묻지 않는다 — 기준(2번)대로 스스로 정한다. 사용자가 이미 ship을 승인한 뒤라서다.
-- ship-task가 다시 simplify [결정 필요]를 돌려주는 일은 정상 흐름에선 없다. 돌아오면 2번 판단이 빠진 것이니 3번을 수행하고 재호출한다.
+- 정리 판단을 사용자에게 묻지 않는다 — 기준(2번)대로 스스로 정한다. 사용자가 이미 ship을 승인한 뒤라서다.
+- 클로드 코드 내장 `/simplify`를 쓰지 않는다 — 검토 에이전트 넷이 같은 코드를 따로 읽어 비싸다. 같은 네 관점을 `code-cleanup`이 에이전트 하나로 본다.
+- 정리 표시 커밋을 손으로 만들지 않는다 — `code-cleanup`이 반영을 커밋할 때만 생긴다.
+- ship-task가 정리 [결정 필요]를 돌려주는 일은 정상 흐름에선 없다. 돌아오면 2번 판단이 빠진 것이니 3번을 수행하고 재호출한다.
