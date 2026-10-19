@@ -44,6 +44,24 @@ git branch --show-current
 3. foundation은 **read-only** — 수정이 아니라 교체의 대상.
 4. 진입 CSS의 로딩 순서는 **`tailwindcss` → 1 → 2 → 3 고정** (순서가 바뀌면 변수 참조가 깨진다).
 
+## 강조색은 어디에 쓰나
+
+강조색(2층 `primary`, 그리고 같은 색에서 진하게·옅게 뽑은 2층 이름)은 **세 자리에만** 쓴다.
+
+1. **화면마다 그 화면의 주 행동 하나** — 강조색으로 꽉 찬 주 버튼. 한 화면에 하나다.
+2. **지금 선택된 것** — 고른 칩, 지금 탭, 지금 메뉴 항목의 표시.
+3. **키보드 포커스 표시** — 2층 `ring`.
+
+그 밖(장식 선·제목 글자·로고·아이콘·태그·배경 무늬)에는 쓰지 않는다.
+
+**왜 이렇게 좁히나** — 강조색은 사람에게 「여기를 누르세요」, 「지금 여기 있습니다」라고 알리는 신호다. 장식·제목·로고에도 같은 색이 흩어지면 신호가 여러 곳에서 동시에 켜진 셈이라, 사람은 「지금 무엇을 눌러야 하나」를 찾지 못한다. 반대로 주 행동이 있는 화면에 강조색 주 버튼이 없으면 신호가 아예 꺼져 있어, 사람이 화면을 다 읽고 나서야 할 일을 찾는다. 세 자리에만 쓰면 강조색이 보이는 곳이 곧 「누를 곳·지금 자리」라서, 처음 온 사람도 화면을 훑자마자 다음 행동을 안다.
+
+- **그 화면만의 주 행동이 없으면 상단 메뉴의 대표 행동이 주 버튼이 된다** — 예: 목록을 훑기만 하는 화면에서는 상단 메뉴의 「새로 만들기」가 강조색 주 버튼이다. 그 화면만의 주 행동이 있는 화면에서는 상단 메뉴의 대표 행동을 테두리 버튼으로 낮춰, 한 화면에 강조색 주 버튼이 하나만 남게 한다.
+- **화면마다 주 행동이 무엇인지는 프로젝트가 정한다** — idea-to-mvp 프로젝트는 `mvp/feature-list.md` 6절 화면 목록의 「주 행동」 칸이 정본이다.
+- **shadcn의 `accent`는 강조색이 아니다** — shadcn 이름 세트의 `--accent`는 마우스를 올렸을 때의 옅은 바탕이다. 이 절의 강조색은 `primary` 쪽이다.
+- **밝은 강조색을 진하게·옅게 나눠 쓸 때도 자리는 이 셋이다** — 나누는 법은 [visual-polish.md](references/visual-polish.md) D4.
+- **상태 색(성공·위험)은 강조색이 아니다** — 그 뜻을 알릴 때만 쓴다 (아래 안티패턴 표).
+
 ## 결정 트리
 
 **새 화면이 필요하다** (frame-first — 콘텐츠부터 쓰지 말 것)
@@ -57,7 +75,7 @@ git branch --show-current
 **새 UI 요소가 필요하다** (component-first)
 1. 컴포넌트 인벤토리 검색 — 동의어로도 (예: "모달?" → Dialog 항목)
 2. 있다 → 재사용. 살짝 다르면 그 부품의 cva(class-variance-authority)에 `variant`를 더한다 (새 부품 금지). 모양이 기본과 다를 때 고치는 차례는 [references/component-taxonomy.md](references/component-taxonomy.md) §4
-3. 없다 → shadcn 부품 목록에서 찾아 `npx shadcn add <이름>`으로 받는다. 같은 파일이 이미 있으면 `--diff`로 먼저 비교하고, `--overwrite`는 쓰지 않는다
+3. 없다 → shadcn 부품 목록에서 찾아 `npx shadcn add <이름>`으로 받는다. 같은 파일이 이미 있으면 `--diff`로 먼저 비교하고, `--overwrite`는 쓰지 않는다. 받은 직후 클래스 합치기 import와 누르는 영역 크기를 고친다 ([references/bootstrap-project.md](references/bootstrap-project.md) §1.1 5번)
 4. shadcn에도 없다 → 역할 분류 + 범용/전용 판정 후 `components/`에 전용 부품 신규 생성 → [references/component-taxonomy.md](references/component-taxonomy.md)
 5. 인벤토리에 등록 — 적기 전에 한 줄 색인 형식([references/component-taxonomy.md](references/component-taxonomy.md) §6)인지 확인. 값·사용법·변경 이력은 인벤토리가 아니라 부품 파일 머리 주석·git log 몫이다
 
@@ -85,6 +103,8 @@ git branch --show-current
 | 개념이 같은데 새 부품 생성 (예: `Dialog` 있는데 `Popup` 신설) | 인벤토리 정본 재사용 + `variant` |
 | 목록 항목마다 카드로 감싸기 / 카드 중첩 | 밀집 데이터는 행(row)으로 |
 | 상태색(danger/success)을 장식용으로 사용 | 상태색은 의미 전달에만 |
+| 강조색을 장식·제목·로고·아이콘에 칠함 | 강조색은 주 버튼 하나·선택된 것·포커스 표시에만 — 「강조색은 어디에 쓰나」 |
+| 주 행동이 있는 화면에 강조색 주 버튼이 없음 (또는 둘 이상) | 그 화면의 주 행동 하나를 강조색 주 버튼으로, 나머지는 테두리·글자 버튼 — 그 화면만의 주 행동이 없으면 상단 메뉴의 대표 행동이 주 버튼 |
 | 글자 크기를 계속 줄여 위계 표현 (14px 밑으로) | 굵기(`font-medium` 등)+명도(`text-muted-foreground` 등) 위계로 표현, 가장 옅은 단계도 대비 4.5:1 유지 ([naming-taxonomy.md](references/naming-taxonomy.md)) |
 | 통짜 폰트 파일 로딩 / CDN `<link>`로 웹폰트 불러오기 | 구글 폰트는 `next/font/google`, npm 폰트는 조각화 CSS `@import` ([references/font-loading.md](references/font-loading.md) §4) |
 | 하단 상시 요소(버튼 막대·입력창·탭바)를 화면에 붙여 띄우고 본문 끝을 어림 여백으로 비우기 | 셸 설계 때 하단 영역을 정하고 거기 흐름대로 — 스크롤은 본문 영역만 ([references/layout-frames.md](references/layout-frames.md) §2.2) |

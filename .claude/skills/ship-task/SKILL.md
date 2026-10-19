@@ -1,14 +1,14 @@
 ---
 name: ship-task
 description: done-task가 부르는 내부 스킬 — 현재 feature 브랜치의 wip 커밋을 push → PR → squash merge → 브랜치 정리. 사람이 직접 칠 일은 없다.
-allowed-tools: Bash(git *) Bash(gh *) Bash(npm run smoke) Bash(env GH_TOKEN=*)
+allowed-tools: Bash(git *) Bash(.claude/scripts/with-owner.sh *) Bash(npm run smoke)
 context: fork
 agent: git-flow
 ---
 
 # ship-task
 
-메인 세션의 `done-task` 스킬이 부르는 내부 스킬이다 — 사람이 직접 칠 일은 없다. 현재 브랜치의 WIP 커밋들을 PR 흐름으로 main에 ship한다. **(코드 변경 시 simplify 관문) → (조건부 origin/main 합치기) → (마이그레이션 있을 때만 마이그레이션 관문) → (`smoke` 스크립트 있을 때만 스모크 관문) → push → PR 생성 → (머지 권한 있을 때만) CI 대기 → squash merge → remote 브랜치 삭제** 한 흐름.
+메인 세션의 `done-task` 스킬이 부르는 내부 스킬이다 — 사람이 직접 칠 일은 없다. 현재 브랜치의 WIP 커밋들을 PR 흐름으로 main에 ship한다. **(코드 변경 시 코드 정리 관문) → (조건부 origin/main 합치기) → (마이그레이션 있을 때만 마이그레이션 관문) → (`smoke` 스크립트 있을 때만 스모크 관문) → push → PR 생성 → (머지 권한 있을 때만) CI 대기 → squash merge → remote 브랜치 삭제** 한 흐름.
 
 머지 권한은 사람마다 다르다 — 오너는 squash merge까지, 팀원은 PR 생성까지 (§2.5).
 
@@ -43,23 +43,23 @@ agent: git-flow
 
 **1-0. 계정 확인** (프로젝트 `AGENTS.md`에 「소유와 계정」 표가 있을 때만 — 없으면 건너뛴다) — 절차·서비스별 함정은 `docs/account-check.md`를 읽는다. 원격 저장소를 처음 만드는 일은 이 스킬이 아니라 `github-connect` 몫이다(아래 하드 ②).
 
-**먼저 gh가 어느 계정으로 도는지 정한다.** gh 인증은 프로젝트의 CLI 전용 깃 미추적 파일(`.env.cli`)에 든 `GH_TOKEN`으로 한다 — **이 스킬의 모든 `gh` 명령은 아래 로더 줄을 같은 셸 호출 앞에 달아 부른다** (환경변수는 다음 Bash 호출로 안 넘어간다).
+**먼저 gh가 어느 계정으로 도는지 정한다.** gh 인증은 이 프로젝트 소유의 계정 장부(`~/.config/harness/<소유>.env` — 소유는 `.claude/owner`)에 든 `GH_TOKEN`으로 한다. **이 스킬의 모든 `gh` 명령은 실행기를 앞에 붙여 부른다** — 실행기가 장부를 읽어 같은 호출 안에서 환경변수로 넣고 진짜 `gh` 프로그램을 띄운다(셸 함수를 거치지 않는다).
 
 ```bash
-env GH_TOKEN="$(sed -n 's/^GH_TOKEN=//p' .env.cli 2>/dev/null)" gh api user --jq .login
+.claude/scripts/with-owner.sh --check          # 소유·장부·있는 키 이름·gh 계정 (키 값은 안 나옴)
+.claude/scripts/with-owner.sh gh api user --jq .login
 ```
 
-**줄 맨 앞의 `env`를 빼지 않는다** — `GH_TOKEN=… gh …`(앞에 `env` 없이)나 `export GH_TOKEN=…` 뒤 `gh`로 부르면, 사용자가 셸에 `gh`라는 함수를 만들어 둔 컴퓨터에서는 그 함수가 먼저 받아 토큰을 다른 계정 것으로 바꿔치기할 수 있다. `env`는 셸 함수를 거치지 않고 진짜 `gh` 프로그램을 바로 띄운다. (실사고 2026-10-17: 저장소 주소로 계정을 고르는 셸 함수가 회사 저장소 주소를 못 알아보고 개인 계정 토큰을 넣어, `env` 없이 부른 PR 조회·생성이 전부 404로 실패했다. 같은 토큰을 `env` 형태로 부르면 관리자 권한까지 정상이었다.)
-
-- **`GH_TOKEN`이 있으면 (새 방식)** 위 명령이 답하는 계정이 곧 gh가 쓸 계정이다. 이 값을 표와 대조한다. **전역 활성 계정은 보지 않고 `gh auth switch`도 쓰지 않는다** — 환경변수 토큰이 저장된 자격 증명보다 우선해서 전환이 아무 효과가 없다.
-- **`GH_TOKEN`이 없으면 (이행 폴백)** 옛 방식으로 떨어진다 — `gh auth status`의 활성 계정을 표와 대조하고 아래 하드·소프트 규칙을 그대로 적용한다. 그리고 §4 완료 보고에 이 한 줄을 **반드시** 남긴다: "○ 이 프로젝트는 아직 gh 토큰 방식이 아닙니다 — `.env.cli`에 `GH_TOKEN`을 넣어 옮기는 것이 좋습니다 (`docs/account-check.md` gh 항목)."
-- **`git push`도 같은 토큰으로 인증한다** — 기본 방식은 HTTPS + 토큰이다(`github-connect` ⑦: 이 저장소의 로컬 git 설정에 걸린 자격 증명 도우미가 `.env.cli`의 `GH_TOKEN`을 직접 읽는다). 그래서 **git 명령(push·fetch·pull·ls-remote)에는 로더를 달지 않고 맨 형태로 부른다.** `env ...`를 git 앞에 붙이지 않는다 — 훅이 명령을 제대로 봐야 한다.
+- **장부에서 `GH_TOKEN`을 읽었으면** 위 명령이 답하는 계정이 곧 gh가 쓸 계정이다. 이 값을 표와 대조한다. **전역 활성 계정은 보지 않고 `gh auth switch`도 쓰지 않는다** — 환경변수 토큰이 저장된 자격 증명보다 우선해서 전환이 아무 효과가 없다.
+- **실행기가 옛 `.env.cli`를 읽었다고 알리면 (옛 프로젝트 호환)** 그대로 진행하되 §4 완료 보고에 이 한 줄을 남긴다: "○ 이 프로젝트는 아직 옛 `.env.cli`를 씁니다 — '하네스 동기화해줘'라고 말씀하시면 계정 장부로 옮깁니다."
+- **장부도 `.env.cli`도 없어 실행기가 멈추면** — 이 스킬은 토큰을 받지 않는다. 중단하고 "GitHub 키가 없습니다 — '깃헙 연결해줘'라고 말씀하시면 `github-connect`가 받아 둡니다"로 안내한다.
+- **`git push`도 같은 토큰으로 인증한다** — 기본 방식은 HTTPS + 토큰이다(`github-connect` ⑦: 이 저장소의 로컬 git 설정에 걸린 자격 증명 도우미가 실행기 `--git-credential`로 장부의 `GH_TOKEN`을 git에게만 건넨다). 그래서 **git 명령(push·fetch·pull·ls-remote)에는 실행기를 앞에 붙이지 않고 맨 형태로 부른다** — 훅이 첫 낱말 `git`으로 명령을 본다.
 - **원격 주소가 ssh 형식(`git@github.com:`·`ssh://`)인 옛 프로젝트만** push가 SSH로 인증해서 이 토큰과 무관하다 — 그때는 아래 하드 ①(원격 주소의 SSH 호스트 별칭)이 그 방식을 맡고, 두 방식이 다 표의 소유와 맞아야 한다.
 
 검사가 두 축이다.
 
-- **하드 (다르면 멈춤)**: ① 원격 주소(SSH 호스트 별칭 포함)가 표 소유자의 저장소를 가리키는가. ② 원격이 아직 없으면(`git remote get-url origin` 실패) **만들지 않고 멈춘다** — "먼저 `github-connect`로 GitHub 저장소를 이어야 합니다 ('깃헙 연결해줘'라고 말씀하시면 됩니다)"로 안내한다. 원격 생성은 저장소가 계정에 묶이는 순간이라, 표 대조 뒤에 만드는 `github-connect` ⑥·⑧ 몫이다. (근거: 첫 push 때 gh에 로그인된 개인 계정이 조용히 회사 프로젝트 저장소의 소유자가 된 실사고 — 토큰을 안 걸면 CLI 활성 계정은 전역이라 다른 소유의 프로젝트를 오가면 바뀌어 있다.)
-- **소프트 (원격이 이미 있을 때)**: **위에서 정한 gh 계정**이 표와 다를 때 — **`GH_TOKEN`으로 돌고 있으면 토큰 자체가 다른 계정 것이다.** 계정 전환으로는 못 고치니(토큰이 우선한다) 막지 말고 §4 완료 보고에 한 줄 남긴다 — "⚠ `.env.cli`의 `GH_TOKEN`이 표와 다른 계정(<계정>) 것입니다. 표의 계정 토큰으로 바꿔 주세요." **폴백(토큰 없음)으로 돌고 있고 표의 계정이 이 컴퓨터에 등록돼 있으면, 경고에 그치지 말고 표의 계정으로 전환한 뒤 진행한다** — 다시 전환하면 되돌릴 수 있고(전역 설정이라 다른 프로젝트에도 걸린다), §4 완료 보고에 전환 사실을 한 줄 남긴다. 표의 계정이 등록돼 있지 않거나(팀원이 자기 계정으로 일하는 정상 경우) 이 저장소의 커밋 작성자가 표와 다르면, 막지 않고 진행하되 §4 완료 보고에 한 줄 남긴다 — "⚠ 표의 소유자와 다른 계정(<계정>)으로 작업 중입니다. 팀원이면 정상이고, 소유자 본인이면 계정을 확인해 주세요." 하드로 막으면 팀원의 모든 ship이 오탐으로 멈추고, 잘못된 계정의 push는 어차피 GitHub이 권한 오류로 거부한다 (§3-a가 처리).
+- **하드 (다르면 멈춤)**: ① 원격 주소(SSH 호스트 별칭 포함)가 표 소유자의 저장소를 가리키는가. ② 원격이 아직 없으면(`git remote get-url origin` 실패) **만들지 않고 멈춘다** — "먼저 `github-connect`로 GitHub 저장소를 이어야 합니다 ('깃헙 연결해줘'라고 말씀하시면 됩니다)"로 안내한다. 원격 생성은 저장소가 계정에 묶이는 순간이라, 표 대조 뒤에 만드는 `github-connect` ⑥·⑧ 몫이다. (토큰을 안 걸면 CLI 활성 계정은 전역이라, 다른 소유의 프로젝트를 오가면 바뀌어 있다 — 그 계정이 조용히 저장소의 주인이 된다.)
+- **소프트 (원격이 이미 있을 때)**: **위에서 정한 gh 계정**이 표와 다를 때 — **토큰 자체가 다른 계정 것이다.** 계정 전환으로는 못 고치니(토큰이 우선한다) 막지 말고 §4 완료 보고에 한 줄 남긴다 — "⚠ 계정 장부의 `GH_TOKEN`이 표와 다른 계정(<계정>) 것입니다. 표의 계정 토큰으로 바꿔 주세요('깃헙 연결해줘')." 팀원이 자기 계정으로 일하는 정상 경우이거나 이 저장소의 커밋 작성자가 표와 다르면, 막지 않고 진행하되 §4 완료 보고에 한 줄 남긴다 — "⚠ 표의 소유자와 다른 계정(<계정>)으로 작업 중입니다. 팀원이면 정상이고, 소유자 본인이면 계정을 확인해 주세요." 하드로 막으면 팀원의 모든 ship이 오탐으로 멈추고, 잘못된 계정의 push는 어차피 GitHub이 권한 오류로 거부한다 (§3-a가 처리).
 
 ```bash
 # 1-a. 현재 브랜치 확인
@@ -97,54 +97,44 @@ git status --porcelain
   재호출 예시: `ship-task 변경은 커밋하고 진행` / `ship-task stash하고 진행`
   ```
 
-### 1.5 simplify 관문 (코드 변경이 있을 때만)
+### 1.5 코드 정리 관문 (코드 변경이 있을 때만)
 
-ship 전에 코드 품질 정리(`simplify` 스킬 — 재사용·단순화·효율·계층 리뷰 후 수정 적용)를 거쳤는지 확인하는 관문.
-**정상 흐름에선 여기 안 걸린다** — 메인의 done-task가 위임 전에 simplify 판단을 끝내고 표식 커밋을 남긴다. 이 관문은 그 판단이 빠졌을 때의 안전망이다.
+ship 전에 코드 정리(`code-cleanup` 스킬 — 지난 정리 뒤 바뀐 파일만 재사용·단순화·효율·깊이로 검토해 화면 동작을 안 바꾸는 것만 반영)를 거쳤는지 확인하는 관문.
+**정상 흐름에선 여기 안 걸린다** — 메인의 done-task가 위임 전에 정리 판단을 끝낸다. 이 관문은 그 판단이 빠졌을 때의 안전망이다.
 
 ```bash
 # 코드 파일 변경 여부 (src/** 기준 — 문서·설정만이면 관문 skip)
 # origin/main 기준 (§1-b에서 이미 fetch해뒀음)
 git diff origin/main...HEAD --name-only | grep '^src/' | head -1
 
-# 브랜치 안에 simplify 표식 커밋이 하나라도 있는지 (없으면 출력 비어 있음)
-# 제목 어딘가에 simplify가 섞였다고 표식이 아니다 — simplify 관문 자체를 고치는 작업만
-# 해도 훅이 사용자 메시지로 제목을 지어서 `/simplify`가 제목 중간에 들어간다.
-# 그래서 표식은 다음 두 형태만 인정한다:
-#   1) `wip: /simplify …`     — auto-wip-commit 훅이 슬래시 명령 턴에 붙이는 제목.
-#      훅은 제목을 `wip: <힌트> — <파일목록> (<통계>)`로 조립하므로,
-#      `/simplify`가 힌트 자리의 맨 앞일 때만 표식이다 (`wip: /simplify src/lib — …`처럼 인자는 허용).
-#      고칠 게 없어 커밋할 변경이 없던 턴도 훅이 `wip: /simplify — 변경 없음`으로 빈 표식을 남긴다.
-#   2) `chore: simplify 반영` — 사람이 손으로 남기던 옛 빈 표식 (제목 전체가 정확히 이 문구).
-#      지금은 훅이 자동으로 남기지만, 옛 브랜치·수동 사용 호환을 위해 계속 인정한다.
+# 마지막 정리 표시 커밋 — code-cleanup이 반영을 커밋할 때만 붙이는 제목이다.
+# 훅이 만드는 `wip: …` 커밋은 제목에 무엇이 들어 있어도 표시가 아니다.
 # --format='%H %s' 출력이라 줄 앞에 해시가 붙는다 — 앵커를 거기에 맞춘다.
-git log origin/main..HEAD --format='%H %s' | grep -E '^[0-9a-f]+ (wip: /simplify( |$)|chore: simplify 반영$)' | head -1
+marker=$(git log origin/main..HEAD --no-merges --format='%H %s' | grep -E '^[0-9a-f]+ chore: 코드 정리 반영( |$)' | head -1 | cut -d' ' -f1)
+
+# 표시 뒤에 이 브랜치가 src를 또 고쳤는지 (합치기 커밋으로 들어온 남의 변경은 뺀다)
+[ -n "$marker" ] && git log --no-merges --format= --name-only "$marker"..HEAD -- src | sort -u | head -1
 ```
 
 - **코드 변경 없음** (docs·.claude·설정만) → 관문 skip, §2로.
-- **simplify 표식 커밋이 하나라도 있음** → 이미 이 브랜치에서 검토를 거쳤다. skip, §2로.
+- **표시가 있고, 그 뒤 고친 `src` 파일이 없음** → 정리를 마친 코드 그대로다. skip, §2로.
 - **args에 "스킵" 류 지시 있음** → 관문 skip, §2로.
-- **simplify 표식 커밋이 없음** → **[결정 필요] 반환** (fork 안에서 simplify 스킬을 직접 실행하지 않는다 — 스킬 호출은 메인 세션 몫).
+- **표시가 없거나, 표시 뒤에 `src`가 또 바뀜** → **[결정 필요] 반환** (fork 안에서 정리를 직접 하지 않는다 — 에이전트를 띄우는 건 메인 세션 몫).
   ```
-  [결정 필요] src 코드 변경이 있습니다. ship 전에 simplify(재사용·단순화·효율 리뷰)를 거칠지 결정이 필요합니다.
+  [결정 필요] 아직 정리하지 않은 src 코드 변경이 있습니다 (<표시 없음 / 표시 뒤에 바뀐 파일 N개>).
 
   선택지:
-  ① 메인 세션(done-task)이 /simplify를 돌리고 표식 커밋을 남긴 뒤 ship-task 재호출.
-     고친 게 있으면 `wip: /simplify …`, 고칠 게 없으면 `wip: /simplify — 변경 없음` 빈 커밋으로.
+  ① 메인 세션(done-task)이 code-cleanup을 돌려 반영 커밋(`chore: 코드 정리 반영 — …`)을 남긴 뒤 ship-task 재호출.
+     표시 뒤 바뀐 파일만 다시 보므로 두 번째 정리는 작다.
   ② 스킵하고 바로 ship
 
   재호출 예시: `ship-task 스킵`
   ```
 
 > 근거: 유저가 브라우저로 검증한 코드와 main에 들어가는 코드가 달라지면 안 됨 — 화면 검증은
-> 사람 몫이고 Claude가 스스로 결과를 승인하지 않는다는 원칙. simplify 수정분도 예외 없이 사람 눈을 거친다.
+> 사람 몫이고 Claude가 스스로 결과를 승인하지 않는다는 원칙. 그래서 정리는 화면 동작을 바꾸지 않는 것만 반영한다.
 
-> **왜 재발동이 없나 (2026-08-20)**: 예전엔 "표식 커밋 이후로 `src/**`가 또 바뀌면 관문을 다시 건다"는
-> 규칙이 있었다. 그런데 관문의 목적은 **브랜치당 1회 검토를 보장**하는 것이지 검토 결과물을 또
-> 검토시키는 게 아니다. `/simplify`는 코드를 고치는 스킬이라, 고친 결과에 다시 `/simplify`를 요구하면
-> 정의상 끝나지 않는다 — 실제로 사고가 두 번 났다. 고치는 데 여러 턴이 걸리면 후속 턴 커밋 제목이
-> `/simplify`로 안 시작해서 반드시 걸렸다. 지금은 **브랜치에 표식이 하나라도 있으면 통과**다.
-> 여러 턴이 걸려도 첫 `/simplify` 턴의 커밋이 표식으로 남으니 깨지지 않는다.
+> **왜 표시 뒤의 변경을 다시 보나**: 표시는 반영을 커밋하는 그 커밋에 붙어서, 정리 자신이 고친 코드는 늘 표시 **앞**에 있다 — 정리 결과를 또 정리하라고 요구하는 일은 생기지 않는다. 표시 **뒤**의 `src` 변경은 정리 뒤에 새로 한 작업이라, 그것만 한 번 더 본다.
 
 ### 1.6 조건부 동기화 — origin/main 합치기(merge)
 
@@ -252,7 +242,7 @@ git diff --name-only origin/main...HEAD -- supabase/migrations/
 
 ship 전에 핵심 계약이 살아 있는지 스모크 테스트(smoke test)로 확인하는 관문. §1.6 합치기 **뒤**에 두는 이유 — origin/main을 합친 최종 코드로 돌아야, main에 실릴 코드 그대로를 검사한다.
 
-simplify 관문(§1.5)과 달리 **fork 안에서 직접 실행한다** — simplify가 [결정 필요]로 미루는 건 스킬 호출이 메인 세션 몫이라서고, 스모크는 `npm run smoke` 단일 명령이라 마이그레이션 관문처럼 fork가 스스로 판정까지 할 수 있다.
+코드 정리 관문(§1.5)과 달리 **fork 안에서 직접 실행한다** — 정리가 [결정 필요]로 미루는 건 에이전트를 띄우는 일이 메인 세션 몫이라서고, 스모크는 `npm run smoke` 단일 명령이라 마이그레이션 관문처럼 fork가 스스로 판정까지 할 수 있다.
 
 ```
 package.json에 "smoke" 스크립트가 있나? (package.json을 Read로 확인)
@@ -333,14 +323,14 @@ git log origin/main..HEAD --pretty=format:'%s' | head -30
 
 ```bash
 # 저장소 경로는 하드코딩하지 말고 매번 조회
-# gh 호출은 §1-0의 토큰 로더를 같은 셸 호출 앞에 단다: env GH_TOKEN="$(sed -n 's/^GH_TOKEN=//p' .env.cli 2>/dev/null)"
-REPO=$(gh repo view --json nameWithOwner --jq .nameWithOwner)
-gh api repos/$REPO --jq '.permissions'
+# gh 호출은 §1-0대로 실행기를 앞에 붙인다: .claude/scripts/with-owner.sh gh …
+REPO=$(.claude/scripts/with-owner.sh gh repo view --json nameWithOwner --jq .nameWithOwner)
+.claude/scripts/with-owner.sh gh api repos/$REPO --jq '.permissions'
 ```
 
 - **`admin` 또는 `maintain`이 `true`** → 오너/메인테이너 경로. §3을 지금까지처럼 끝까지(머지 포함) 실행.
 - **`admin`·`maintain`은 `false`고 `push`만 `true`** → 팀원 경로. §3에서 PR 생성까지만 하고 멈춘다(머지 안 함).
-  - 이 경우 오너를 리뷰어로 지정한다. 오너는 `gh repo view --json owner --jq .owner.login`으로 구한다.
+  - 이 경우 오너를 리뷰어로 지정한다. 오너는 `.claude/scripts/with-owner.sh gh repo view --json owner --jq .owner.login`으로 구한다.
 - **조회 자체가 실패함** (네트워크 오류 등) → **안전한 쪽 = 팀원 경로**로 판정하고, 조회가 실패해서 보수적으로 처리했다는 사실을 완료 보고에 남긴다. 머지는 되돌리기 번거로운 작업이라, 권한이 확인 안 되면 안 하는 쪽을 택한다.
 - **args에 "머지까지" 류 지시** → 위 판정과 상관없이 오너/메인테이너 경로로 진행 (주로 권한 조회가 실패했지만 실제로는 머지 권한이 있는 걸 아는 경우에 씀).
 - **args에 "머지하지 마" / "PR까지만" 류 지시** → 위 판정과 상관없이 팀원 경로로 진행 (오너라도 이번엔 리뷰를 먼저 받고 싶을 때 씀).
@@ -357,18 +347,18 @@ push한다 (tracking 없으면 `-u`).
 #### 3-b. PR 생성
 
 ```bash
-# gh 호출은 §1-0의 토큰 로더를 같은 셸 호출 앞에 단다: env GH_TOKEN="$(sed -n 's/^GH_TOKEN=//p' .env.cli 2>/dev/null)"
-gh pr create --title "..." --body "$(cat <<'EOF'
+# gh 호출은 §1-0대로 실행기를 앞에 붙인다: .claude/scripts/with-owner.sh gh …
+.claude/scripts/with-owner.sh gh pr create --title "..." --body "$(cat <<'EOF'
 ...
 EOF
 )"
 ```
 
 - 생성 성공 시 PR 번호·URL 보고.
-- 실패 시 (이미 PR 존재 등) → `gh pr view --json number,url` 로 기존 PR 가져와서 사용. 새로 안 만듦.
+- 실패 시 (이미 PR 존재 등) → `.claude/scripts/with-owner.sh gh pr view --json number,url` 로 기존 PR 가져와서 사용. 새로 안 만듦.
 - **팀원 경로일 때만** (§2.5) — PR 생성 뒤에 오너를 리뷰어로 지정한다:
   ```bash
-  gh pr edit <N> --add-reviewer <OWNER>
+  .claude/scripts/with-owner.sh gh pr edit <N> --add-reviewer <OWNER>
   ```
   이건 best-effort다 — 권한·설정 문제로 실패해도 PR 생성 자체는 그대로 유지하고, 리뷰어 지정만 실패했다는 사실을 완료 보고에 남긴다. 여기서 중단하지 않는다.
 
@@ -379,8 +369,8 @@ EOF
 머지 전에 CI가 끝날 때까지 기다린다.
 
 ```bash
-# gh 호출은 §1-0의 토큰 로더를 같은 셸 호출 앞에 단다: env GH_TOKEN="$(sed -n 's/^GH_TOKEN=//p' .env.cli 2>/dev/null)"
-gh pr checks <N> --watch --interval 10
+# gh 호출은 §1-0대로 실행기를 앞에 붙인다: .claude/scripts/with-owner.sh gh …
+.claude/scripts/with-owner.sh gh pr checks <N> --watch --interval 10
 ```
 
 - **통과 (exit 0)** → 3-d로 진행해서 머지.
@@ -397,14 +387,14 @@ gh pr checks <N> --watch --interval 10
 # --subject 로 §2-b 확정 PR 제목을 명시 → 커밋이 1개뿐이어도 main에 wip 메시지 대신 PR 제목이 들어감
 # (미지정 시 gh는 단일 커밋 PR에서 그 커밋 메시지를 squash 제목으로 써버려 main이 지저분해짐)
 # --delete-branch 는 머지 뒤 원격 브랜치를 지우고, 로컬도 main으로 옮겨 앉은 뒤 그 브랜치를 치운다
-# gh 호출은 §1-0의 토큰 로더를 같은 셸 호출 앞에 단다: env GH_TOKEN="$(sed -n 's/^GH_TOKEN=//p' .env.cli 2>/dev/null)"
-gh pr merge <N> --squash --delete-branch --subject "<PR title> (#<N>)"
+# gh 호출은 §1-0대로 실행기를 앞에 붙인다: .claude/scripts/with-owner.sh gh …
+.claude/scripts/with-owner.sh gh pr merge <N> --squash --delete-branch --subject "<PR title> (#<N>)"
 ```
 
 **머지 여부는 종료코드가 아니라 PR 상태로 판정한다.** 명령이 0이 아닌 코드로 끝나도 서버 쪽 머지는 성공했을 수 있어서다 — 머지는 GitHub에서 이미 끝났는데 그 뒤 로컬 정리에서 걸려 넘어지면, 종료코드만 보고 "머지 실패"로 잘못 읽게 된다:
 
 ```bash
-gh pr view <N> --json state,mergedAt --jq '.state'
+.claude/scripts/with-owner.sh gh pr view <N> --json state,mergedAt --jq '.state'
 ```
 
 - `MERGED` → **성공이다.** 명령이 실패했더라도 그대로 다음 단계로 간다. 명령 쪽 오류 메시지는 §4 보고에 참고로만 한 줄 남긴다.
@@ -441,9 +431,8 @@ git rev-parse main origin/main               # 두 값이 같아야 로컬 main�
 
 ```
 [§1-0 계정 확인에서 남길 줄이 있으면 여기에 (없으면 통째로 생략):
-  "○ 이 프로젝트는 아직 gh 토큰 방식이 아닙니다 — `.env.cli`에 `GH_TOKEN`을 넣어 옮기는 것이 좋습니다
-   (`docs/account-check.md` gh 항목)" / "○ gh 활성 계정을 <계정>으로 전환하고 진행했습니다"
-  / "⚠ `.env.cli`의 `GH_TOKEN`이 표와 다른 계정(<계정>) 것입니다" / "⚠ 표의 소유자와 다른 계정(<계정>)으로 작업 중입니다"]
+  "○ 이 프로젝트는 아직 옛 `.env.cli`를 씁니다 — '하네스 동기화해줘'라고 말씀하시면 계정 장부로 옮깁니다"
+  / "⚠ 계정 장부의 `GH_TOKEN`이 표와 다른 계정(<계정>) 것입니다" / "⚠ 표의 소유자와 다른 계정(<계정>)으로 작업 중입니다"]
 ✓ [§1.6 판정 결과 한 줄 — 아래 둘 중 하나를 그대로]
   "origin/main 대비 최신이라 맞출 것이 없었습니다"
   "origin/main이 앞서 있어서 `git merge origin/main`으로 맞췄습니다 (커밋 <N>개 앞서 있었음)"
@@ -528,10 +517,11 @@ CI의 밀림 감지는 다음 main push 때나 돌아서, 그때까지는 DB에 
 | CI 검사가 하나도 없음 (§3-c)                            | 20초 기다렸다 재확인 → 그래도 없으면 머지 진행 + 완료 보고에 한 줄 (§3-c) |
 | 사용자 working tree 변경이 _이번 작업 일부_             | (a) 옵션으로 추가 commit하고 진행 권장 ([결정 필요] 반환에 명시)         |
 | 사용자 working tree 변경이 _별개_                       | (b) stash 권장 ([결정 필요] 반환에 명시)                                 |
-| simplify 재호출 감지                                    | 표식 커밋이 하나라도 있으면 관문 skip (§1.5)                           |
-| simplify 표식 뒤에 `src/**`가 또 바뀜                     | 재발동 없음 — 표식 하나면 통과 (§1.5)                                    |
-| `/simplify`가 검토했는데 고칠 게 없었음                   | 훅이 `wip: /simplify — 변경 없음` 빈 표식을 자동으로 남김 (§1.5)         |
-| 제목에 simplify나 `/simplify`가 섞였지만 맨 앞이 아님 (예: `wip: simplify 관문 고치기 — …`, `wip: "/simplify" 이게 마지막 커밋에 — …`) | 표식 아님 — 표식 없는 것으로 판정 (§1.5)                                 |
+| 정리 표시 뒤 이 브랜치가 고친 `src` 없음                | 관문 skip (§1.5)                                                       |
+| 정리 표시 뒤에 `src/**`가 또 바뀜                        | [결정 필요] — 표시 뒤 바뀐 파일만 다시 정리 (§1.5)                       |
+| 정리했는데 고칠 게 없었음                                | code-cleanup이 검토를 마친 뒤 `chore: 코드 정리 반영 — 고칠 것 없음` 빈 커밋을 남김 → 표시로 인정 (§1.5) |
+| `wip: …` 커밋 제목에 정리·simplify 같은 말이 섞임         | 표시 아님 — 표시는 `chore: 코드 정리 반영`으로 시작하는 제목뿐 (§1.5)    |
+| 계정 장부도 옛 `.env.cli`도 없어 실행기가 멈춤           | 중단, `github-connect` 안내 (§1-0)                                      |
 | `supabase/migrations/`에 새 파일 없음 (대부분의 브랜치)  | 관문 통과 (§1.7)                                                       |
 | `supabase/migrations/`에 새 파일 있음                   | [결정 필요]로 멈춤 (§1.7)                                                |
 | "없애는 거라 머지 후에 민다"로 통과                     | 그대로 ship, 완료 보고 끝에 `db push --linked` 안내 (§1.7, §4)           |
@@ -554,7 +544,7 @@ CI의 밀림 감지는 다음 main push 때나 돌아서, 그때까지는 DB에 
 
 - `ship-task` — args 없음. PR title·body는 자동 추출(branch명·diff·wip 메시지)만으로 초안 짜서 바로 ship.
 - `ship-task <자연어 의도>` — 자연어를 *사용자의 핵심 강조 hint*로 받음. Claude가 자동 추출 + hint 종합해 초안 짬. hint가 _title 그 자체가 되는 건 아님_ — 다른 변경도 함께 묶어서 종합 title 만듦. 예: `ship-task 다크모드 토글 추가` → "다크모드 토글 + 색 토큰 정리" 식으로 종합.
-- `ship-task 스킵` — §1.5 simplify 관문 [결정 필요]에 대한 결정. 코드 변경 있어도 simplify 없이 바로 ship.
+- `ship-task 스킵` — §1.5 코드 정리 관문 [결정 필요]에 대한 결정. 정리하지 않은 코드 변경이 있어도 바로 ship.
 - `ship-task 변경은 커밋하고 진행` — §1-c working tree [결정 필요]에 대한 결정을 담아 재호출.
 - `ship-task 머지로 진행` — §1.6 충돌 [결정 필요]에 대한 결정(선택지 ①). 사용자가 로컬에서 `git merge origin/main`으로 충돌을 이미 풀었을 때 씀. 이 경우 내 브랜치가 origin/main을 이미 품고 있어서 §1.6 판정이 "앞서 있지 않음"으로 나와 자연히 통과한다.
 - `ship-task 동기화 없이 진행` — §1.6 충돌 [결정 필요]에 대한 결정(선택지 ②). origin/main과 맞추지 않고 그냥 PR만 올림. **옛 표현 `리베이스 없이 진행`도 같은 뜻으로 받는다** (판정이 리베이스에서 합치기로 바뀌기 전 이름).
@@ -569,8 +559,7 @@ CI의 밀림 감지는 다음 main push 때나 돌아서, 그때까지는 DB에 
 - ❌ 다른(옛) 브랜치 정리·새 브랜치 생성 — 그건 `new-task` 스킬 몫. 이번에 머지한 브랜치의 뒷정리(원격·로컬 삭제 + main 최신화)는 §3-d에서 직접 끝낸다
 - ❌ done-task를 거치지 않은 호출 — 이 스킬은 사용자 ship 신호를 받은 메인의 done-task만 부른다. 처음 방아쇠는 사람 몫이다. main 머지 = 실서비스 배포라, "사람이 화면을 봤다"는 증거가 사용자의 그 한마디뿐이다
 - ❌ stage·commit 자동화 — *현재 commit된 wip*만 ship. 추가 변경은 사용자가 commit 또는 §1-c (a) 옵션 선택.
-- ❌ simplify 스킬 직접 실행 — fork 안에는 Skill 도구가 없다. §1.5에서 [결정 필요] 반환만 하고, 실제 `/simplify` 실행과 표식 커밋은 메인 세션(done-task) 몫이다
-- ❌ simplify 관문 재발동 — 브랜치에 표식 하나면 통과 (§1.5)
+- ❌ 코드 정리 직접 실행 — fork 안에서는 Skill 도구·에이전트를 쓰지 않는다. §1.5에서 [결정 필요] 반환만 하고, 실제 정리와 표시 커밋은 메인 세션(done-task → code-cleanup) 몫이다
 - ❌ PR title·body 별도 확인 — §호출 인자 아래 승인 규칙
 - ❌ 마이그레이션 직접 밀기 — `supabase` 명령은 이 스킬이 실행하지 않는다 (권한 밖이고, 지운 데이터는 못 되돌려서 미는 건 사람 몫). §1.7은 순서를 묻고 안내만 한다
 - ❌ 스모크 없는 프로젝트에서 스모크 만들라고 요구 — `smoke` 스크립트가 없으면(4단계 이전 프로젝트) 아무 말 없이 통과한다. 스모크를 만드는 건 4-3-backend-deploy 단계 몫 (§1.8)
