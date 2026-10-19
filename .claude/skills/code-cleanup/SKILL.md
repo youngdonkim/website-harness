@@ -1,6 +1,6 @@
 ---
 name: code-cleanup
-description: 지난 정리 뒤 이 브랜치에서 바뀐 코드 파일만 골라 한 번 검토하고(재사용·단순화·효율·깊이 네 관점을 한 보고서로), 화면 동작을 바꾸지 않는 것만 반영해 「chore: 코드 정리 반영」 커밋으로 남긴다. done-task가 합치기 전에 부르고, idea-to-mvp가 단계 끝(2-1 끝·2-2 끝·3단계 끝)마다 「정리만」 하려고 부른다. 트리거 예 "코드 정리해줘", "/code-cleanup".
+description: 지난 정리 뒤 이 브랜치에서 바뀐 코드 파일만 골라 한 번 검토하고(재사용·단순화·효율·깊이 네 관점을 한 보고서로), 화면 동작을 바꾸지 않는 것만 반영해 「chore: 코드 정리 반영」 커밋으로 남긴다. done-task가 합치기 전에 부르고, idea-to-mvp가 3단계 끝에 한 번 「정리만」 하려고 부른다. 트리거 예 "코드 정리해줘", "/code-cleanup".
 ---
 
 # code-cleanup — 바뀐 코드만 한 번 정리하기
@@ -13,7 +13,7 @@ description: 지난 정리 뒤 이 브랜치에서 바뀐 코드 파일만 골�
 
 이번 호출의 인자: **$ARGUMENTS**
 
-비어 있으면 인자 없이 호출된 것. 부른 쪽이 「done-task에서」·「2-1 끝」처럼 어디서 불렀는지 적어 줄 수 있다 — 마무리 보고에만 쓴다.
+비어 있으면 인자 없이 호출된 것. 부른 쪽이 「done-task에서」·「3단계 끝」처럼 어디서 불렀는지 적어 줄 수 있다 — 마무리 보고에만 쓴다.
 
 ## 정리 표시 커밋
 
@@ -39,11 +39,11 @@ base=$(git log origin/main..HEAD --no-merges --format='%H %s' | grep -E '^[0-9a-
 [ -n "$base" ] || base=$(git merge-base origin/main HEAD 2>/dev/null || git merge-base main HEAD)
 # 기준점 뒤 이 브랜치가 직접 고친 파일(합치기 커밋으로 들어온 남의 변경은 뺀다) + 아직 커밋 안 된 변경
 { git log --no-merges --format= --name-only "$base"..HEAD -- src; git status --porcelain --untracked-files=all -- src | sed -E 's/^...//'; } \
-  | sed -E 's/.* -> //' | sort -u | grep -vE '^src/components/ui/|^src/app/\(dev\)/' | while IFS= read -r f; do [ -f "$f" ] && printf '%s\n' "$f"; done
+  | sed -E 's/.* -> //' | sort -u | grep -vE '^src/components/ui/|^src/app/\(dev\)/|^src/lib/dev-state\.ts$|\.(ico|png|jpe?g|webp|gif|svg)$' | while IFS= read -r f; do [ -f "$f" ] && printf '%s\n' "$f"; done
 ```
 
 - `src/`가 없는 프로젝트면 코드 폴더로 바꿔 읽는다.
-- **복사본은 대상이 아니다** — `src/components/ui/`(shadcn 부품 복사본)와 `src/app/(dev)/`(목업 캔버스 틀 복사본)는 정리하지 않는다. 틀은 하네스 동기화로, shadcn 부품은 연결 정보의 「고친 shadcn 부품 목록」으로 관리한다. 프로젝트의 폴더 이름이 다르면 그 이름으로 바꿔 거른다.
+- **복사본과 그림은 대상이 아니다** — `src/components/ui/`(shadcn 부품 복사본)·`src/app/(dev)/`와 `src/lib/dev-state.ts`(목업 캔버스 틀 복사본)는 정리하지 않는다. 그림 파일(`.ico`·`.png`·`.jpg`·`.webp`·`.gif`·`.svg`)은 코드가 아니라 뺀다. 틀은 하네스 동기화로, shadcn 부품은 연결 정보의 「고친 shadcn 부품 목록」으로 관리한다. 프로젝트의 폴더 이름이 다르면 그 이름으로 바꿔 거른다.
 - **목록이 비었으면** 정리할 코드가 없다 — 표시 커밋 없이 「지난 정리 뒤 바뀐 코드가 없습니다」로 끝낸다.
 - **자잘하면 건너뛴다** — `git diff "$base" --stat -- <목록>` 기준 주석·문구 몇 줄뿐이고 로직이 없으면 「자잘해 건너뜀」으로 끝낸다. 표시 커밋을 남기지 않으니, 다음 정리 때 이 파일들도 다시 대상에 든다.
 
@@ -117,7 +117,7 @@ base=$(git log origin/main..HEAD --no-merges --format='%H %s' | grep -E '^[0-9a-
 
 ## 한 대화 안에 안 끝날 때 (큰 변경)
 
-2의 목록이 크면(파일 40개 넘게, 바뀐 줄 수천 줄) 한 턴에 끝내려 하지 않는다.
+2의 목록이 크면(파일 40개 넘게, 바뀐 줄 수천 줄) 한 턴에 끝내려 하지 않는다. idea-to-mvp의 3단계 끝 정리는 2·3단계 코드 전체가 대상이라 대개 여기에 든다 — 그때는 아래 묶음 나누기가 기본이다.
 
 - **파일이 40개를 넘으면 검토를 폴더 묶음으로 나눈다** — 한 묶음 20~30개, 묶음마다 검토 에이전트 하나, 같은 파일이 두 묶음에 들지 않게. 보고서는 메인이 합친다.
 - 검토·반영 에이전트를 백그라운드로 띄우고 턴을 끝내도 된다. 알림이 오면 다음 턴에 4·6을 잇는다.

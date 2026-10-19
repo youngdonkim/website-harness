@@ -82,8 +82,13 @@ BASE_DIR="${HOOK_CWD:-${CLAUDE_PROJECT_DIR:-.}}"
 
 [ -z "$COMMAND" ] && exit 0
 
+# 리다이렉션(2>&1, >/dev/null, 2>>로그 등)을 먼저 지운다 — 남겨 두면 `>&1`의 `&`가
+# 구분자로 잘리고, `2>` 같은 조각이 원격·refspec 토큰으로 읽혀 엉뚱하게 판정한다.
+# (실측 2026-10-19: `git push -q 2>&1 | tail -1`에서 `2>`를 원격으로 읽어 「원격 main 조회 실패」로 막음)
+STRIPPED=$(printf '%s' "$COMMAND" | sed -E 's/[0-9]*[<>]&[0-9-]+//g; s/[0-9]*>>?[[:space:]]*[^[:space:];&|]+//g')
+
 # shell separator로 sub-command 분리
-NORMALIZED=$(printf '%s' "$COMMAND" | sed -E 's/(&&|\|\||;|\| |&[^&])/\n/g')
+NORMALIZED=$(printf '%s' "$STRIPPED" | sed -E 's/(&&|\|\||;|\| |&[^&])/\n/g')
 
 # main 겨냥 여부 판정: 정확히 main / *:main / refs/heads/main / *:refs/heads/main
 is_main_target() {
@@ -115,6 +120,19 @@ while IFS= read -r sub; do
   tokens=()
   IFS=$' \t' read -r -a tokens <<< "$sub_trimmed"
   n=${#tokens[@]}
+
+  # `cd <폴더>` 조각은 뒤 조각이 실행될 폴더를 바꾼다 — refspec 미지정 push의
+  # 폴백 검사가 세션 폴더가 아니라 cd한 폴더의 브랜치를 보게 기억해 둔다.
+  # (실측 2026-10-19: `cd 다른저장소 && git push`를 세션 폴더(main)의 push로 오판)
+  if [ "${tokens[0]:-}" = "cd" ]; then
+    cd_to="${tokens[1]:-$HOME}"
+    cd_to="${cd_to/#\~/$HOME}"
+    case "$cd_to" in
+      /*) BASE_DIR="$cd_to" ;;
+      *)  BASE_DIR="$BASE_DIR/$cd_to" ;;
+    esac
+    continue
+  fi
 
   # git 토큰 위치 찾기. 첫 토큰이 git이면 0.
   # env·NAME=value·with-owner.sh 접두로 시작하면 그 뒤의 첫 git 토큰 (우회 봉쇄).
