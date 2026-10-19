@@ -1,0 +1,13 @@
+import { devOnly } from "../../dev-only"
+import { SCREENS } from "../screens"
+import { buildFrames, VIEWPORTS } from "../model"
+
+// 창 목록 — 그림 찍기 스크립트(scripts/canvas-shots.mjs)가 이 주소에서 어떤 창을 찍을지 받아 간다.
+// GET /dev/canvas/frames
+export const dynamic = "force-dynamic"
+
+export function GET() {
+  const blocked = devOnly()
+  if (blocked) return blocked
+  return Response.json({ viewports: VIEWPORTS, frames: buildFrames(SCREENS) })
+}

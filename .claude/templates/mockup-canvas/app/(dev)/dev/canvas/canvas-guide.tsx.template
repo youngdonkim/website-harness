@@ -1,0 +1,272 @@
+"use client"
+
+import { useEffect, useRef, useState } from "react"
+
+// 목업 캔버스의 쓰는 법 — 왼쪽 「쓰는 법」 묶음과 오른쪽 코멘트 목록의 「Claude Code에 말하기」 안내.
+// 고치는 흐름 둘(코멘트로 고치기 · 바로 말로 고치기)은 「캔버스에서 → Claude Code에서」 차례로 이어 보여 준다.
+// 키는 접속한 운영체제의 것만 키 모양 칩으로 보여 준다. 색·글자·간격은 틀이 쓰는 이름만 쓴다(README 「지켜야 할 것」).
+
+/** Claude Code 대화창에 말할 문구 — 2-1-mockup.md §2.7 「코멘트 반영」이 이 말을 받는다 */
+export const APPLY_PHRASE = "코멘트 반영해줘"
+
+/** 운영체제별 키 — 칩 하나에 키 하나 */
+export type KeySet = { mod: string; alt: string }
+export const KEY_SETS: Record<"mac" | "other", KeySet> = {
+  mac: { mod: "⌘", alt: "⌥ Option" },
+  other: { mod: "Ctrl", alt: "Alt" },
+}
+
+/** 개수 배지 — 동그라미 안 숫자. 두 자리 이상이면 알약형으로 늘어난다. 화면 읽기 프로그램에는 「화면 4개」처럼 읽힌다 */
+export function CountBadge({ count, unit }: { count: number; unit: string }) {
+  return (
+    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-control bg-foreground px-1 align-middle text-b2 leading-none font-semibold text-background tabular-nums">
+      <span aria-hidden>{count}</span>
+      <span className="sr-only">
+        {unit} {count}개
+      </span>
+    </span>
+  )
+}
+
+/** 이름 끝에 개수 배지를 붙인다 — 이름이 길어 줄이 바뀌어도 배지가 마지막 낱말과 함께 다닌다 */
+export function NameWithCount({ name, count, unit }: { name: string; count: number; unit: string }) {
+  const cut = name.lastIndexOf(" ")
+  const head = cut >= 0 ? name.slice(0, cut + 1) : ""
+  const last = cut >= 0 ? name.slice(cut + 1) : name
+  return (
+    <span>
+      {head}
+      <span className="whitespace-nowrap">
+        {last}
+        {"\u00a0"}
+        <CountBadge count={count} unit={unit} />
+      </span>
+    </span>
+  )
+}
+
+/** 키 모양 칩 */
+export function Kbd({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd className="inline-flex items-center rounded-control border border-border bg-muted px-2 font-sans text-b2 font-semibold text-foreground">
+      {children}
+    </kbd>
+  )
+}
+
+/** 키 여럿을 「+」로 잇는다 */
+export function Keys({ keys }: { keys: string[] }) {
+  return (
+    <span className="inline-flex items-center gap-1 whitespace-nowrap">
+      {keys.map((key, i) => (
+        <span key={key} className="inline-flex items-center gap-1">
+          {i > 0 && <span aria-hidden>+</span>}
+          <Kbd>{key}</Kbd>
+        </span>
+      ))}
+    </span>
+  )
+}
+
+/** 말할 문구와 복사 단추 — 누르면 클립보드에 넣고 「복사됨」을 알린다(화면 읽기 프로그램에도) */
+export function CopyPhrase({ text = APPLY_PHRASE }: { text?: string }) {
+  const [result, setResult] = useState<"idle" | "copied" | "failed">("idle")
+  const timer = useRef<number | null>(null)
+  useEffect(
+    () => () => {
+      if (timer.current) window.clearTimeout(timer.current)
+    },
+    [],
+  )
+  const copy = async () => {
+    let ok = false
+    try {
+      await navigator.clipboard.writeText(text)
+      ok = true
+    } catch {
+      ok = false
+    }
+    setResult(ok ? "copied" : "failed")
+    if (timer.current) window.clearTimeout(timer.current)
+    timer.current = window.setTimeout(() => setResult("idle"), 2000)
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="rounded-control border border-border bg-background px-3 py-1 text-b2 font-semibold text-foreground">
+        「{text}」
+      </span>
+      <button
+        type="button"
+        onClick={() => void copy()}
+        className="rounded-control border border-foreground px-3 py-1 text-b2 font-semibold text-foreground hover:bg-muted"
+      >
+        {result === "copied" ? "복사됨" : "복사"}
+      </button>
+      <span aria-live="polite" className="text-b2 text-muted-foreground">
+        {result === "copied" ? "클립보드에 넣었습니다" : result === "failed" ? "복사하지 못했습니다. 직접 입력해 주세요" : ""}
+      </span>
+    </div>
+  )
+}
+
+function StepNumber({ n }: { n: number }) {
+  return (
+    <span
+      aria-hidden
+      className="flex size-6 shrink-0 items-center justify-center rounded-control bg-foreground text-b2 font-semibold text-background"
+    >
+      {n}
+    </span>
+  )
+}
+
+function Step({ n, children }: { n: number; children: React.ReactNode }) {
+  return (
+    <li className="flex gap-3">
+      <StepNumber n={n} />
+      <div className="flex flex-col gap-1 text-b2 text-foreground">{children}</div>
+    </li>
+  )
+}
+
+/** 「캔버스에서」·「Claude Code에서」 같은 자리 이름 */
+function Where({ children }: { children: React.ReactNode }) {
+  return <li className="pt-1 text-b2 font-semibold text-muted-foreground">{children}</li>
+}
+
+function Section({ title, lead, open, children }: { title: string; lead: string; open?: boolean; children: React.ReactNode }) {
+  return (
+    <details open={open} className="group rounded-card border border-border">
+      <summary className="flex cursor-pointer list-none flex-col gap-1 p-3">
+        <span className="flex items-center justify-between gap-2 text-b1 font-semibold text-foreground">
+          {title}
+          <span aria-hidden className="text-b2 text-muted-foreground group-open:hidden">
+            펼치기
+          </span>
+          <span aria-hidden className="hidden text-b2 text-muted-foreground group-open:inline">
+            접기
+          </span>
+        </span>
+        <span className="text-b2 text-muted-foreground">{lead}</span>
+      </summary>
+      <div className="flex flex-col gap-3 border-t border-border p-3">{children}</div>
+    </details>
+  )
+}
+
+/** 왼쪽 「쓰는 법」 — 기능별 묶음. 처음에는 「코멘트로 고치기」만 펼쳐 둔다 */
+export function UsageGuide({ keys }: { keys: KeySet }) {
+  return (
+    <section aria-labelledby="canvas-usage" className="flex flex-col gap-3">
+      <h2 id="canvas-usage" className="text-h4">
+        쓰는 법
+      </h2>
+
+      <Section title="코멘트로 고치기" lead="화면에 핀을 꽂아 두면 Claude Code가 모아서 고칩니다." open>
+        <ol className="flex flex-col gap-3">
+          <Where>캔버스에서</Where>
+          <Step n={1}>
+            <p>
+              오른쪽 위 「코멘트 달기」 단추를 켭니다. 단축키는 <Kbd>C</Kbd>입니다.
+            </p>
+          </Step>
+          <Step n={2}>
+            <p>고칠 자리를 클릭합니다.</p>
+            <p className="text-muted-foreground">작은 그림을 누르면 그 화면이 크게 열립니다. 거기서 다시 클릭하세요.</p>
+          </Step>
+          <Step n={3}>
+            <p>
+              메모를 적고 「핀 꽂기」를 누릅니다(<Keys keys={[keys.mod, "Enter"]} />).
+            </p>
+            <p className="text-muted-foreground">여러 개 모아 둬도 됩니다.</p>
+          </Step>
+          <Where>Claude Code에서</Where>
+          <Step n={4}>
+            <p>대화창에 이렇게 말합니다.</p>
+            <CopyPhrase />
+          </Step>
+          <Step n={5}>
+            <p>다 고쳤다는 답이 오면 이 페이지를 새로 고칩니다.</p>
+            <p className="text-muted-foreground">끝난 핀은 목록에서 빠집니다. 처리 메모는 「코멘트 보기」의 「끝난 것도 보기」에서 봅니다.</p>
+          </Step>
+        </ol>
+        <p className="text-b2 text-muted-foreground">
+          코멘트는 프로젝트 파일에 저장되니 내용을 복사해 붙일 필요가 없습니다.
+        </p>
+        <p className="text-b2 text-muted-foreground">
+          지름길: 단추를 켜지 않고 <Keys keys={[keys.alt, "클릭"]} />으로 바로 남길 수 있습니다.
+        </p>
+      </Section>
+
+      <Section title="바로 말로 고치기" lead="요소 하나를 집어 Claude Code에 바로 말합니다.">
+        <ol className="flex flex-col gap-3">
+          <Where>캔버스에서</Where>
+          <Step n={1}>
+            <p>확대하거나 크게 보기로 실제 화면을 띄우고, 고칠 요소에 마우스를 올립니다.</p>
+            <p className="text-muted-foreground">작은 그림에서는 되지 않습니다.</p>
+          </Step>
+          <Step n={2}>
+            <p>
+              <Keys keys={[keys.mod, "C"]} />를 누릅니다.
+            </p>
+          </Step>
+          <Where>Claude Code에서</Where>
+          <Step n={3}>
+            <p>대화창에 붙여 넣고 「이거 더 크게 고쳐줘」처럼 말합니다.</p>
+            <p className="text-muted-foreground">붙여 넣은 글에 코드 위치가 들어 있어 바로 찾아 고칩니다.</p>
+          </Step>
+        </ol>
+      </Section>
+
+      <Section title="보기 조작" lead="판을 옮기고 확대하는 키입니다.">
+        <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-b2">
+          <dt className="text-muted-foreground">판 옮기기</dt>
+          <dd className="flex flex-wrap items-center gap-1 text-foreground">
+            빈 곳 끌기, <Keys keys={["Space"]} />+끌기
+          </dd>
+          <dt className="text-muted-foreground">확대·축소</dt>
+          <dd className="flex flex-wrap items-center gap-1 text-foreground">
+            휠, 트랙패드 벌리기, <Keys keys={[keys.mod]} />+휠
+          </dd>
+          <dt className="text-muted-foreground">휠 바꾸기</dt>
+          <dd className="text-foreground">오른쪽 아래 「휠」에서 확대·이동</dd>
+          <dt className="text-muted-foreground">크게 보기</dt>
+          <dd className="flex flex-wrap items-center gap-1 text-foreground">
+            두 번 누르기, 돌아오기 <Keys keys={["Esc"]} />
+          </dd>
+          <dt className="text-muted-foreground">코멘트 달기</dt>
+          <dd className="flex flex-wrap items-center gap-1 text-foreground">
+            켜고 끄기 <Keys keys={["C"]} />
+          </dd>
+        </dl>
+        <p className="text-b2 text-muted-foreground">
+          「휠: 확대」면 휠이 확대, 「휠: 이동」이면 휠이 판을 옮깁니다. 트랙패드 벌리기는 언제나 확대입니다.
+        </p>
+      </Section>
+    </section>
+  )
+}
+
+/** 오른쪽 코멘트 목록 위 안내 — 열린 코멘트가 있으면 Claude Code에 말할 문구를, 없으면 남기는 차례를 보여 준다 */
+export function ApplyCommentsHint({ openCount }: { openCount: number }) {
+  if (openCount === 0) {
+    return (
+      <div className="flex flex-col gap-2 rounded-card border border-border p-3 text-b2">
+        <p className="font-semibold text-foreground">열린 코멘트가 없습니다</p>
+        <p className="text-muted-foreground">
+          오른쪽 위 「코멘트 달기」(<Kbd>C</Kbd>)를 켜고 화면을 클릭해 남긴 뒤, Claude Code에 「{APPLY_PHRASE}」라고 말하면 됩니다.
+        </p>
+      </div>
+    )
+  }
+  return (
+    <div className="flex flex-col gap-2 rounded-card border border-foreground p-3 text-b2">
+      <p className="font-semibold text-foreground">
+        <NameWithCount name="열린 코멘트" count={openCount} unit="열린 코멘트" />
+      </p>
+      <p className="text-foreground">Claude Code에 이렇게 말하면 모두 고칩니다.</p>
+      <CopyPhrase />
+      <p className="text-muted-foreground">다 고쳤다는 답이 오면 이 페이지를 새로 고치세요.</p>
+    </div>
+  )
+}

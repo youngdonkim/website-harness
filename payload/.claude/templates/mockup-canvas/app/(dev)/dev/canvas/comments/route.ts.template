@@ -1,0 +1,91 @@
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises"
+import path from "node:path"
+import { devOnly } from "../../dev-only"
+import type { CanvasComment } from "../model"
+import { COMMENTS_FILE } from "../server-paths"
+
+// 코멘트 핀 저장소 — mvp/canvas-comments.json 한 파일에 배열로 쌓는다(git에 올라간다).
+// GET   /dev/canvas/comments                → { comments: [...] }
+// POST  /dev/canvas/comments  { 새 코멘트 }  → { comment }   (id·status·createdAt은 여기서 붙인다)
+// PATCH /dev/canvas/comments  { id, status?, resolution? } → { comment }
+// 개발 서버 한 대가 혼자 쓰는 파일이라 잠금 없이 「읽고 → 고치고 → 임시 파일에 쓴 뒤 바꿔치기」로 쓴다.
+export const dynamic = "force-dynamic"
+
+async function load(): Promise<CanvasComment[]> {
+  try {
+    const parsed: unknown = JSON.parse(await readFile(COMMENTS_FILE, "utf8"))
+    return Array.isArray(parsed) ? (parsed as CanvasComment[]) : []
+  } catch {
+    return []
+  }
+}
+
+async function save(comments: CanvasComment[]) {
+  await mkdir(path.dirname(COMMENTS_FILE), { recursive: true })
+  const temp = `${COMMENTS_FILE}.tmp`
+  await writeFile(temp, `${JSON.stringify(comments, null, 2)}\n`, "utf8")
+  await rename(temp, COMMENTS_FILE)
+}
+
+const text = (value: unknown, max = 2000) => (typeof value === "string" ? value.slice(0, max) : "")
+const num = (value: unknown) => (typeof value === "number" && Number.isFinite(value) ? value : 0)
+
+export async function GET() {
+  const blocked = devOnly()
+  if (blocked) return blocked
+  return Response.json({ comments: await load() })
+}
+
+export async function POST(request: Request) {
+  const blocked = devOnly()
+  if (blocked) return blocked
+  const body = (await request.json().catch(() => null)) as Partial<CanvasComment> | null
+  if (!body || !text(body.comment).trim() || !text(body.url) || !text(body.screenId)) {
+    return Response.json({ error: "screenId·url·comment가 필요합니다" }, { status: 400 })
+  }
+  const target = body.target ?? ({} as Partial<CanvasComment["target"]>)
+  const position = body.position ?? ({} as Partial<CanvasComment["position"]>)
+  const comment: CanvasComment = {
+    id: `c-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+    screenId: text(body.screenId, 40),
+    screenName: text(body.screenName, 200),
+    draft: body.draft ? text(body.draft, 200) : null,
+    url: text(body.url, 500),
+    viewport: body.viewport === "phone" ? "phone" : "desktop",
+    state: body.state ? (text(body.state, 40) as CanvasComment["state"]) : null,
+    target: {
+      selector: text(target.selector, 500),
+      text: text(target.text, 120),
+      source: target.source ? text(target.source, 300) : null,
+      component: target.component ? text(target.component, 200) : null,
+    },
+    position: { x: num(position.x), y: num(position.y), rx: num(position.rx), ry: num(position.ry) },
+    comment: text(body.comment).trim(),
+    status: "open",
+    resolution: "",
+    createdAt: new Date().toISOString(),
+    resolvedAt: null,
+  }
+  const comments = await load()
+  comments.push(comment)
+  await save(comments)
+  return Response.json({ comment }, { status: 201 })
+}
+
+export async function PATCH(request: Request) {
+  const blocked = devOnly()
+  if (blocked) return blocked
+  const body = (await request.json().catch(() => null)) as
+    | { id?: string; status?: string; resolution?: string }
+    | null
+  const comments = await load()
+  const found = comments.find((c) => c.id === body?.id)
+  if (!body || !found) return Response.json({ error: "그 id의 코멘트가 없습니다" }, { status: 404 })
+  if (body.status === "open" || body.status === "done") {
+    found.status = body.status
+    found.resolvedAt = body.status === "done" ? new Date().toISOString() : null
+  }
+  if (typeof body.resolution === "string") found.resolution = text(body.resolution)
+  await save(comments)
+  return Response.json({ comment: found })
+}

@@ -1,0 +1,23 @@
+import { readdir, stat } from "node:fs/promises"
+import path from "node:path"
+import { devOnly } from "../../dev-only"
+import { SHOTS_DIR } from "../server-paths"
+
+// 찍어 둔 그림 목록 — 캔버스가 어느 창에 그림이 있는지 알아 간다. 그림은 프로젝트 맨 위 `.canvas-shots/`에 있다(git에 안 올린다).
+// GET /dev/canvas/shots → { files: { "<창 열쇠>": 고친 시각(밀리초) } }
+export const dynamic = "force-dynamic"
+
+export async function GET() {
+  const blocked = devOnly()
+  if (blocked) return blocked
+  const files: Record<string, number> = {}
+  try {
+    for (const name of await readdir(SHOTS_DIR)) {
+      if (!name.endsWith(".jpg")) continue
+      files[name.slice(0, -4)] = Math.round((await stat(path.join(SHOTS_DIR, name))).mtimeMs)
+    }
+  } catch {
+    // 폴더가 없으면 아직 한 번도 안 찍은 것 — 빈 목록
+  }
+  return Response.json({ files })
+}

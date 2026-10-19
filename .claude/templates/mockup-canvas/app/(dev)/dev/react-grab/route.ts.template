@@ -1,0 +1,25 @@
+import { readFile } from "node:fs/promises"
+import path from "node:path"
+import { devOnly } from "../dev-only"
+
+// 요소 복사 도구(React Grab) 스크립트 — 개발 의존성으로 깐 판을 이 주소로 내보낸다.
+// 루트 레이아웃이 개발 서버에서만 <Script src="/dev/react-grab">로 싣는다(README 「요소 복사」).
+// 바깥 주소(CDN)에서 받지 않고 package.json에 적힌 판을 쓰려는 것이다.
+// GET /dev/react-grab
+export const dynamic = "force-dynamic"
+
+export async function GET() {
+  const blocked = devOnly()
+  if (blocked) return blocked
+  try {
+    const file = path.join(process.cwd(), "node_modules", "react-grab", "dist", "index.global.js")
+    return new Response(await readFile(file), {
+      headers: { "Content-Type": "text/javascript; charset=utf-8", "Cache-Control": "no-cache" },
+    })
+  } catch {
+    return new Response("// react-grab이 깔려 있지 않다 — npm install -D react-grab", {
+      status: 404,
+      headers: { "Content-Type": "text/javascript; charset=utf-8" },
+    })
+  }
+}

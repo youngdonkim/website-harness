@@ -1,0 +1,5 @@
+// 자동으로 만든 파일 — 손으로 고치지 않는다. `npm run canvas:list`가 mvp/feature-list.md 6절(화면 목록)·7절(상태 표)에서 다시 만든다.
+// 손으로 더하거나 바꿀 것(비교안·흐름 묶음·주소 바꾸기·목록에 없는 화면)은 screens.ts에 적는다.
+import type { CanvasScreen } from "./screens"
+
+export const GENERATED_SCREENS: CanvasScreen[] = []

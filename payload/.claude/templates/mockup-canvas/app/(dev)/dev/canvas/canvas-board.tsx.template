@@ -1,0 +1,902 @@
+"use client"
+
+import Link from "next/link"
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, useSyncExternalStore } from "react"
+import { ApplyCommentsHint, KEY_SETS, NameWithCount, UsageGuide } from "./canvas-guide"
+import { attachFrameBridge, type CommentClickInfo, type FrameBridge, type PinItem } from "./frame-bridge"
+import { buildFrames, VIEWPORTS, type CanvasComment, type CanvasFrame, type Viewport } from "./model"
+import { SCREENS } from "./screens"
+
+// 목업 캔버스 — 무한 캔버스 위에 모든 창(화면 × 폭 × 상태 × 판)을 펼친다.
+// · 멀리서는 미리 찍어 둔 그림(.canvas-shots/, scripts/canvas-shots.mjs가 찍는다)을, 그림이 없으면 화면 이름 카드를 보여 준다.
+// · 확대해서 창이 충분히 커지고 화면 안에 들어오면 그 창만 실제 화면(iframe)으로 바꾼다 — 한 번에 하나씩 차례로 불러오고,
+//   동시에 떠 있는 실제 창은 MAX_LIVE개까지, 멀어지면 내린다. 개발 서버가 처음 여는 주소를 그때 만들기 때문에 한꺼번에 띄우지 않는다.
+// · 창을 두 번 누르면(또는 창 이름 옆 「크게」) 그 화면 하나를 창 가득 실제 크기로 띄운다. Esc로 돌아온다.
+// · 코멘트 — 오른쪽 위 코멘트 묶음의 「코멘트 달기」(단축키 C)를 켜고 화면을 클릭하면 메모 칸이 뜨고 핀이 꽂힌다(mvp/canvas-comments.json, comments/route.ts가 쓴다).
+//   작은 그림을 클릭하면 그 화면을 크게 보기로 연다. 지름길로 Alt/Option(⌥)+클릭도 듣는다.
+// · 휠 — 도구 줄 「휠: 확대 / 이동」에서 사람이 고른다(브라우저에 기억, 기본은 확대). 트랙패드 벌리기는 언제나 확대.
+// · 키 안내는 접속한 운영체제의 키로만 보여 준다(맥은 ⌘·⌥, 그 밖은 Ctrl·Alt).
+// 숫자 크기는 숫자 속성·숫자 스타일로만 적는다(디자인 규칙 검사가 단위 글자를 찾는다). 색·글자는 2층 이름 클래스만 쓴다.
+
+const FRAMES = buildFrames(SCREENS)
+
+/** 동시에 떠 있는 실제 창 수 상한 */
+const MAX_LIVE = 4
+/** 이 배율 이상으로 확대해야 실제 창으로 바꾼다 (데스크톱 창이 화면에서 대략 430 이상) */
+const LIVE_MIN_SCALE = 0.3
+/** 창 하나가 불러오기를 끝내지 않아도 다음 창으로 넘어가는 시간(밀리초) */
+const LIVE_LOAD_TIMEOUT = 20000
+/** 확대·이동이 멈춘 뒤 실제 창을 고르기까지 기다리는 시간(밀리초) */
+const LIVE_SETTLE = 300
+const MIN_SCALE = 0.01
+const MAX_SCALE = 2
+
+// 캔버스 배치 단위(창의 실제 크기와 같은 단위)
+const PAIR_GAP = 80 // 데스크톱 창과 폰 창 사이
+const ROW_GAP = 160 // 기본·상태·비교안 줄 사이
+const COL_GAP = 240 // 화면 사이
+const LINE_GAP = 560 // 화면 줄을 접어 넘길 때 줄 사이
+const GROUP_GAP = 1200 // 흐름 묶음 사이
+const COL_WIDTH = VIEWPORTS.desktop.width + PAIR_GAP + VIEWPORTS.phone.width
+const ROW_HEIGHT = Math.max(VIEWPORTS.desktop.height, VIEWPORTS.phone.height) + ROW_GAP
+const TARGET_ASPECT = 16 / 10
+/** 이름표 한 줄 높이(화면 단위) */
+const LABEL_LINE = 28
+
+type View = { x: number; y: number; s: number }
+type Box = { x: number; y: number; w: number; h: number }
+type Placed = Box & { frame: CanvasFrame }
+type Label = { text: string; x: number; y: number; w: number }
+type Layout = { placed: Placed[]; screens: Label[]; groups: Label[]; bounds: Box }
+
+const ALL = "__all__"
+
+// ── 운영체제별 키 이름 ──────────────────────────────────────────
+const KEYS = {
+  mac: { comment: "Option(⌥)+클릭", copy: "⌘+C", save: "⌘+Enter", zoom: "⌘+휠" },
+  other: { comment: "Alt+클릭", copy: "Ctrl+C", save: "Ctrl+Enter", zoom: "Ctrl+휠" },
+}
+function detectMac() {
+  const nav = navigator as Navigator & { userAgentData?: { platform?: string } }
+  return /mac|iphone|ipad/i.test(nav.userAgentData?.platform || nav.platform || nav.userAgent)
+}
+const subscribeNothing = () => () => {}
+/** 서버에서 그릴 때는 운영체제를 모르니 그 밖(Ctrl·Alt)으로 그리고, 브라우저에서 맞는 키로 바꾼다 */
+function useKeys() {
+  return useSyncExternalStore(subscribeNothing, detectMac, () => false) ? KEYS.mac : KEYS.other
+}
+
+// ── 휠 동작 설정 — 사람이 고르고 브라우저에 기억한다(저장소를 못 쓰면 이 탭에서만 기억) ─────────
+type WheelMode = "zoom" | "pan"
+const WHEEL_KEY = "mockup-canvas:wheel"
+let wheelMemory: WheelMode | null = null
+const wheelListeners = new Set<() => void>()
+function readWheelMode(): WheelMode {
+  if (wheelMemory) return wheelMemory
+  try {
+    return window.localStorage.getItem(WHEEL_KEY) === "pan" ? "pan" : "zoom"
+  } catch {
+    return "zoom"
+  }
+}
+function writeWheelMode(mode: WheelMode) {
+  wheelMemory = mode
+  try {
+    window.localStorage.setItem(WHEEL_KEY, mode)
+  } catch {
+    // 저장소를 못 쓰는 브라우저 — 이 탭에서만 기억한다
+  }
+  for (const listener of wheelListeners) listener()
+}
+function subscribeWheel(listener: () => void) {
+  wheelListeners.add(listener)
+  return () => {
+    wheelListeners.delete(listener)
+  }
+}
+function useWheelMode() {
+  return useSyncExternalStore(subscribeWheel, readWheelMode, (): WheelMode => "zoom")
+}
+
+/** 고른 페이지(흐름 묶음 하나 또는 전체)의 창을 배치한다 — 화면은 왼쪽→오른쪽(흐름 순서), 한 화면의 기본·상태·비교안은 위→아래.
+ *  화면 줄이 너무 길어지지 않게, 전체 모양이 화면 비율에 가깝도록 한 줄에 놓을 화면 수를 정해 접는다. */
+function layoutFrames(page: string): Layout {
+  const frames = page === ALL ? FRAMES : FRAMES.filter((f) => f.group === page)
+  const groups = [...new Set(frames.map((f) => f.group))]
+  const byScreen = new Map<string, CanvasFrame[]>()
+  for (const f of frames) byScreen.set(`${f.group}\n${f.screenId}`, [...(byScreen.get(`${f.group}\n${f.screenId}`) ?? []), f])
+  const rowsOf = (list: CanvasFrame[]) => Math.max(...list.map((f) => f.row)) + 1
+  const area = [...byScreen.values()].reduce((sum, list) => sum + (COL_WIDTH + COL_GAP) * rowsOf(list) * ROW_HEIGHT, 0)
+  const perLine = Math.max(1, Math.round(Math.sqrt(area * TARGET_ASPECT) / (COL_WIDTH + COL_GAP)))
+
+  const placed: Placed[] = []
+  const screens: Label[] = []
+  const groupLabels: Label[] = []
+  let y = 0
+  let maxX = 0
+  for (const group of groups) {
+    groupLabels.push({ text: group, x: 0, y, w: perLine * (COL_WIDTH + COL_GAP) })
+    const columns = [...byScreen.entries()].filter(([k]) => k.startsWith(`${group}\n`)).map(([, list]) => list)
+    for (let start = 0; start < columns.length; start += perLine) {
+      const line = columns.slice(start, start + perLine)
+      let lineHeight = 0
+      line.forEach((list, i) => {
+        const x = i * (COL_WIDTH + COL_GAP)
+        screens.push({ text: `${list[0].screenId} ${list[0].screenName}`, x, y, w: COL_WIDTH })
+        for (const frame of list) {
+          const size = VIEWPORTS[frame.viewport]
+          placed.push({
+            frame,
+            x: x + (frame.viewport === "desktop" ? 0 : VIEWPORTS.desktop.width + PAIR_GAP),
+            y: y + frame.row * ROW_HEIGHT,
+            w: size.width,
+            h: size.height,
+          })
+        }
+        lineHeight = Math.max(lineHeight, rowsOf(list) * ROW_HEIGHT - ROW_GAP)
+        maxX = Math.max(maxX, x + COL_WIDTH)
+      })
+      y += lineHeight + LINE_GAP
+    }
+    y += GROUP_GAP - LINE_GAP
+  }
+  return { placed, screens, groups: groupLabels, bounds: { x: 0, y: 0, w: maxX, h: Math.max(0, y - GROUP_GAP) } }
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value))
+}
+
+function fitView(box: Box, width: number, height: number, padding = 64): View {
+  const s = clamp(Math.min((width - padding * 2) / box.w, (height - padding * 2) / box.h), MIN_SCALE, MAX_SCALE)
+  return { s, x: (width - box.w * s) / 2 - box.x * s, y: (height - box.h * s) / 2 - box.y * s }
+}
+
+function frameLabel(frame: CanvasFrame) {
+  return [frame.draft, VIEWPORTS[frame.viewport].label, frame.state].filter(Boolean).join(" · ")
+}
+
+// 실제 창 고르기 — desired: 지금 띄우고 싶은 창, mounted: 떠 있는 창, loading: 불러오는 중인 창(한 번에 하나)
+type LiveState = { desired: string[]; mounted: string[]; loading: string | null }
+type LiveAction = { type: "desire"; keys: string[] } | { type: "loaded"; key: string }
+
+function advance(state: LiveState): LiveState {
+  const mounted = state.mounted.filter((k) => state.desired.includes(k))
+  let loading = state.loading && mounted.includes(state.loading) ? state.loading : null
+  if (!loading) {
+    const next = state.desired.find((k) => !mounted.includes(k))
+    if (next) {
+      mounted.push(next)
+      loading = next
+    }
+  }
+  return { desired: state.desired, mounted, loading }
+}
+
+function liveReducer(state: LiveState, action: LiveAction): LiveState {
+  if (action.type === "desire") return advance({ ...state, desired: action.keys })
+  if (action.key !== state.loading) return state
+  return advance({ ...state, loading: null })
+}
+
+/** 코멘트 모드 단추 — 캔버스 도구 줄과 크게 보기 위 줄이 같이 쓴다 */
+function CommentModeButton({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      onClick={onToggle}
+      title="코멘트 달기 (단축키 C)"
+      aria-keyshortcuts="c"
+      className={`rounded-control border px-4 py-2 text-b2 font-semibold ${on ? "border-foreground bg-foreground text-background" : "border-border bg-background hover:bg-muted"}`}
+    >
+      코멘트 달기
+    </button>
+  )
+}
+
+/** 휠 동작 고르기 — 확대 / 이동 */
+function WheelModeSwitch({ mode }: { mode: WheelMode }) {
+  return (
+    <div role="group" aria-label="휠 동작" className="flex items-center gap-1">
+      <span className="px-2 text-muted-foreground">휠</span>
+      {(["zoom", "pan"] as const).map((m) => (
+        <button
+          key={m}
+          type="button"
+          aria-pressed={mode === m}
+          onClick={() => writeWheelMode(m)}
+          className={`rounded-control px-3 py-1 ${mode === m ? "bg-muted font-semibold" : ""}`}
+        >
+          {m === "zoom" ? "확대" : "이동"}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+type CommentDraft = { frame: CanvasFrame; info: CommentClickInfo; left: number; top: number }
+
+export function CanvasBoard() {
+  const boardRef = useRef<HTMLDivElement>(null)
+  const [size, setSize] = useState({ w: 0, h: 0 })
+  const [page, setPage] = useState(ALL)
+  const [view, setView] = useState<View>({ x: 0, y: 0, s: 0.05 })
+  const [panning, setPanning] = useState(false)
+  const [shots, setShots] = useState<Record<string, number>>({})
+  const [comments, setComments] = useState<CanvasComment[]>([])
+  const [panelOpen, setPanelOpen] = useState(false)
+  const [showDone, setShowDone] = useState(false)
+  const [activeComment, setActiveComment] = useState<string | null>(null)
+  const [full, setFull] = useState<CanvasFrame | null>(null)
+  const [draft, setDraft] = useState<CommentDraft | null>(null)
+  const [draftText, setDraftText] = useState("")
+  const [live, dispatchLive] = useReducer(liveReducer, { desired: [], mounted: [], loading: null })
+  const [commentMode, setCommentMode] = useState(false)
+  const [spaceHeld, setSpaceHeld] = useState(false)
+  const keys = useKeys()
+  const wheelMode = useWheelMode()
+
+  const layout = useMemo(() => layoutFrames(page), [page])
+  const openComments = useMemo(() => comments.filter((c) => c.status === "open"), [comments])
+
+  // ── 처음 불러오기: 그림 목록·코멘트 ─────────────────────────────
+  useEffect(() => {
+    fetch("/dev/canvas/shots")
+      .then((r) => (r.ok ? r.json() : { files: {} }))
+      .then((data: { files: Record<string, number> }) => setShots(data.files))
+      .catch(() => setShots({}))
+    fetch("/dev/canvas/comments")
+      .then((r) => (r.ok ? r.json() : { comments: [] }))
+      .then((data: { comments: CanvasComment[] }) => setComments(data.comments))
+      .catch(() => setComments([]))
+  }, [])
+
+  // 요소 복사 도구(React Grab)는 캔버스 페이지 자신에서는 끈다 — 켜 두면 창(iframe) 안의 도구가 제 것을 띄우지 않고
+  // 캔버스 쪽 것을 빌려 쓰는데, 그러면 창 안 요소의 코드 자리(파일:줄)를 잘못 짚는다. 창마다 제 도구가 떠야 맞게 짚는다.
+  useEffect(() => {
+    const host = window as Window & { __REACT_GRAB__?: { dispose?: () => void } }
+    host.__REACT_GRAB__?.dispose?.()
+    host.__REACT_GRAB__ = undefined
+  }, [])
+
+  // 캔버스가 셸(헤더·푸터) 위를 덮는 동안 뒤 페이지가 굴러가지 않게 막는다
+  useEffect(() => {
+    const root = document.documentElement
+    const before = root.style.overflow
+    root.style.overflow = "hidden"
+    return () => {
+      root.style.overflow = before
+    }
+  }, [])
+
+  // ── 크기 재기 — 처음 잴 때 전체를 화면에 맞춘다 ─────────────────────
+  const fittedOnce = useRef(false)
+  useEffect(() => {
+    const board = boardRef.current
+    if (!board) return
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect
+      setSize({ w: width, h: height })
+      if (!fittedOnce.current && width > 0) {
+        fittedOnce.current = true
+        setView(fitView(layoutFrames(ALL).bounds, width, height))
+      }
+    })
+    observer.observe(board)
+    return () => observer.disconnect()
+  }, [])
+
+  const choosePage = (next: string) => {
+    setPage(next)
+    setView(fitView(layoutFrames(next).bounds, size.w, size.h))
+  }
+
+  // ── 확대·이동 ─────────────────────────────────────────────
+  const zoomAt = useCallback((px: number, py: number, factor: number) => {
+    setView((v) => {
+      const s = clamp(v.s * factor, MIN_SCALE, MAX_SCALE)
+      return { s, x: px - (px - v.x) * (s / v.s), y: py - (py - v.y) * (s / v.s) }
+    })
+  }, [])
+
+  // 휠 한 번 처리 — 캔버스 위 좌표(px, py)에서. 캔버스 빈 곳과 캔버스 위 실제 창(창 안에서 넘겨받음)이 같이 쓴다.
+  // Ctrl/⌘+휠과 트랙패드 벌리기(브라우저가 ctrlKey를 붙여 보낸다)는 설정과 상관없이 확대, 나머지는 「휠」 설정대로.
+  const handleWheel = useCallback(
+    (px: number, py: number, e: WheelEvent) => {
+      const unit = e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? 800 : 1
+      const dx = e.deltaX * unit
+      const dy = e.deltaY * unit
+      if (e.ctrlKey || e.metaKey) zoomAt(px, py, Math.exp(-dy * (Math.abs(dy) >= 50 ? 0.002 : 0.01)))
+      else if (wheelMode === "zoom") zoomAt(px, py, Math.exp(-dy * 0.002))
+      else if (e.shiftKey && dx === 0) setView((v) => ({ ...v, x: v.x - dy }))
+      else setView((v) => ({ ...v, x: v.x - dx, y: v.y - dy }))
+    },
+    [zoomAt, wheelMode],
+  )
+
+  useEffect(() => {
+    const board = boardRef.current
+    if (!board) return
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      const rect = board.getBoundingClientRect()
+      handleWheel(e.clientX - rect.left, e.clientY - rect.top, e)
+    }
+    board.addEventListener("wheel", onWheel, { passive: false })
+    return () => board.removeEventListener("wheel", onWheel)
+  }, [handleWheel])
+
+  const drag = useRef<{ id: number; x: number; y: number; moved: boolean } | null>(null)
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0 || (!spaceHeld && (e.target as Element).closest("[data-canvas-ui]"))) return
+    // 끌기가 시작될 때 붙잡는다(setPointerCapture) — 누르자마자 붙잡으면 두 번 누르기가 창에 닿지 않는다
+    drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: false }
+  }
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = drag.current
+    if (!d || d.id !== e.pointerId) return
+    const dx = e.clientX - d.x
+    const dy = e.clientY - d.y
+    if (!d.moved && Math.hypot(dx, dy) < 3) return
+    if (!d.moved) {
+      setPanning(true)
+      e.currentTarget.setPointerCapture(e.pointerId)
+    }
+    d.moved = true
+    d.x = e.clientX
+    d.y = e.clientY
+    setView((v) => ({ ...v, x: v.x + dx, y: v.y + dy }))
+  }
+  const endDrag = () => {
+    drag.current = null
+    setPanning(false)
+  }
+
+  const zoomToFrame = (frame: CanvasFrame) => {
+    const target = layout.placed.find((p) => p.frame.key === frame.key) ?? layoutFrames(ALL).placed.find((p) => p.frame.key === frame.key)
+    if (!target) return
+    if (!layout.placed.includes(target)) setPage(ALL)
+    setView(fitView(target, size.w, size.h, 48))
+  }
+
+  // ── 화면 안에 보이는 창과 실제로 띄울 창 고르기 ─────────────────────
+  const onScreen = useMemo(() => {
+    const margin = 200
+    return layout.placed.filter((p) => {
+      const left = p.x * view.s + view.x
+      const top = p.y * view.s + view.y
+      return left + p.w * view.s > -margin && top + p.h * view.s > -margin && left < size.w + margin && top < size.h + margin
+    })
+  }, [layout, view, size])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (full || view.s < LIVE_MIN_SCALE) {
+        dispatchLive({ type: "desire", keys: [] })
+        return
+      }
+      const cx = size.w / 2
+      const cy = size.h / 2
+      const keys = onScreen
+        .map((p) => {
+          const left = p.x * view.s + view.x
+          const top = p.y * view.s + view.y
+          const w = p.w * view.s
+          const h = p.h * view.s
+          const visible = Math.max(0, Math.min(left + w, size.w) - Math.max(left, 0)) * Math.max(0, Math.min(top + h, size.h) - Math.max(top, 0))
+          // 창이 화면보다 크게 확대됐으면 화면 넓이를 기준으로 본다
+          return { key: p.frame.key, ratio: visible / Math.min(w * h, size.w * size.h), distance: Math.hypot(left + w / 2 - cx, top + h / 2 - cy) }
+        })
+        .filter((c) => c.ratio >= 0.5)
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, MAX_LIVE)
+        .map((c) => c.key)
+      dispatchLive({ type: "desire", keys })
+    }, LIVE_SETTLE)
+    return () => window.clearTimeout(timer)
+  }, [onScreen, view, size, full])
+
+  // 불러오기가 멈춘 창이 있으면 기다리지 않고 다음 창으로 넘어간다
+  useEffect(() => {
+    if (!live.loading) return
+    const key = live.loading
+    const timer = window.setTimeout(() => dispatchLive({ type: "loaded", key }), LIVE_LOAD_TIMEOUT)
+    return () => window.clearTimeout(timer)
+  }, [live.loading])
+
+  // ── 창 문서에 장치 걸기(코멘트·핀·Esc·확대) ────────────────────────
+  const bridges = useRef(new Map<string, { bridge: FrameBridge; viewport: Viewport }>())
+  const pinsFor = useCallback(
+    (viewport: Viewport): PinItem[] =>
+      openComments.flatMap((comment, i) => (comment.viewport === viewport ? [{ comment, number: i + 1 }] : [])),
+    [openComments],
+  )
+  useEffect(() => {
+    for (const { bridge, viewport } of bridges.current.values()) bridge.setPins(pinsFor(viewport))
+  }, [pinsFor])
+
+  // Esc — 메모 칸 → 크게 보기 → 코멘트 모드 차례로 닫는다
+  const escape = () => {
+    if (draft) setDraft(null)
+    else if (full) setFull(null)
+    else setCommentMode(false)
+  }
+  const latest = useRef({ pinsFor, handleWheel, view, commentMode, escape })
+  useEffect(() => {
+    latest.current = { pinsFor, handleWheel, view, commentMode, escape }
+  })
+  useEffect(() => {
+    for (const { bridge } of bridges.current.values()) bridge.setCommentMode(commentMode)
+  }, [commentMode])
+
+  const connect = (iframe: HTMLIFrameElement, frame: CanvasFrame, bridgeKey: string, inCanvas: boolean) => {
+    bridges.current.get(bridgeKey)?.bridge.detach()
+    bridges.current.delete(bridgeKey)
+    const bridge = attachFrameBridge(iframe, {
+      onCommentClick: (info) => {
+        const rect = iframe.getBoundingClientRect()
+        const scale = rect.width / (iframe.offsetWidth || rect.width || 1)
+        setDraftText("")
+        setDraft({
+          frame,
+          info,
+          left: clamp(rect.left + info.clientX * scale, 16, window.innerWidth - 336),
+          top: clamp(rect.top + info.clientY * scale, 16, window.innerHeight - 220),
+        })
+      },
+      onPinClick: (id) => {
+        setActiveComment(id)
+        setPanelOpen(true)
+      },
+      onEscape: () => latest.current.escape(),
+      onToggleComment: () => setCommentMode((on) => !on),
+      onSpace: (down) => setSpaceHeld(down),
+      // 캔버스 위의 창에서는 휠이 창 안 화면을 굴리지 않고 캔버스를 확대·이동한다 — 화면 안을 굴려 보려면 크게 보기로 연다
+      onWheel: inCanvas
+        ? (e) => {
+            const board = boardRef.current
+            if (!board) return
+            const boardRect = board.getBoundingClientRect()
+            const rect = iframe.getBoundingClientRect()
+            const s = latest.current.view.s
+            latest.current.handleWheel(rect.left - boardRect.left + e.clientX * s, rect.top - boardRect.top + e.clientY * s, e)
+          }
+        : undefined,
+    })
+    if (!bridge) return
+    bridge.setPins(latest.current.pinsFor(frame.viewport))
+    bridge.setCommentMode(latest.current.commentMode)
+    bridges.current.set(bridgeKey, { bridge, viewport: frame.viewport })
+  }
+  // 내린 창의 장치를 뗀다
+  useEffect(() => {
+    for (const [bridgeKey, { bridge }] of bridges.current) {
+      const keep = bridgeKey === "full" ? full !== null : live.mounted.includes(bridgeKey.slice("canvas:".length))
+      if (!keep) {
+        bridge.detach()
+        bridges.current.delete(bridgeKey)
+      }
+    }
+  }, [live.mounted, full])
+
+  // 실제 창에 마우스를 올리면 그 창에 키보드 초점을 넘긴다 — 요소 복사(⌘+C·Ctrl+C)가 창 안에서 듣게
+  const focusFrame = (iframe: HTMLIFrameElement | null) => {
+    const active = document.activeElement
+    if (active && (active.tagName === "TEXTAREA" || active.tagName === "INPUT")) return
+    iframe?.contentWindow?.focus()
+  }
+
+  // ── 코멘트 저장·고치기 ────────────────────────────────────────
+  const saveDraft = async () => {
+    if (!draft || !draftText.trim()) return
+    const here = FRAMES.find((f) => f.url === draft.info.url && f.viewport === draft.frame.viewport)
+    const source = here ?? draft.frame
+    const response = await fetch("/dev/canvas/comments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        screenId: source.screenId,
+        screenName: here ? source.screenName : `${source.screenName}에서 옮겨 간 화면`,
+        draft: source.draft,
+        url: draft.info.url,
+        viewport: draft.frame.viewport,
+        state: here ? here.state : new URLSearchParams(draft.info.url.split("?")[1] ?? "").get("state"),
+        target: draft.info.target,
+        position: draft.info.position,
+        comment: draftText,
+      }),
+    })
+    if (response.ok) {
+      const { comment } = (await response.json()) as { comment: CanvasComment }
+      setComments((list) => [...list, comment])
+    }
+    setDraft(null)
+  }
+  const setStatus = async (id: string, status: "open" | "done") => {
+    const response = await fetch("/dev/canvas/comments", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, status }),
+    })
+    if (response.ok) {
+      const { comment } = (await response.json()) as { comment: CanvasComment }
+      setComments((list) => list.map((c) => (c.id === id ? comment : c)))
+    }
+  }
+
+  // 키 — Esc(닫기), C(코멘트 모드), Space(누르고 있는 동안 끌기). 글을 적는 칸에서는 듣지 않는다
+  useEffect(() => {
+    const editing = (target: EventTarget | null) =>
+      Boolean((target as Element | null)?.closest?.('input, textarea, select, [contenteditable="true"]'))
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") return latest.current.escape()
+      if (editing(e.target) || e.metaKey || e.ctrlKey || e.altKey) return
+      if (e.key === "c" || e.key === "C") setCommentMode((on) => !on)
+      if (e.key === " ") {
+        e.preventDefault()
+        setSpaceHeld(true)
+      }
+    }
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === " ") setSpaceHeld(false)
+    }
+    window.addEventListener("keydown", onKey)
+    window.addEventListener("keyup", onKeyUp)
+    return () => {
+      window.removeEventListener("keydown", onKey)
+      window.removeEventListener("keyup", onKeyUp)
+    }
+  }, [])
+
+  const openCountFor = (frame: CanvasFrame) =>
+    openComments.filter((c) => c.url === frame.url && c.viewport === frame.viewport).length
+
+  // 이름표 줄 — 보이는 줄만큼 위로 쌓는다(한 줄 높이 LABEL_LINE). 창 이름 줄은 줄 사이가 충분히 벌어질 때만 보인다
+  const showFrameLabels = view.s >= 0.18
+  const showScreenLabels = COL_WIDTH * view.s >= 96
+  const frameLines = showFrameLabels ? 1 : 0
+  const screenLines = showScreenLabels ? 1 : 0
+  const labelTop = {
+    frame: -LABEL_LINE,
+    screen: -(frameLines + 1) * LABEL_LINE,
+    group: -(frameLines + screenLines + 1) * LABEL_LINE - 4,
+  }
+
+  const groups = [...new Set(FRAMES.map((f) => f.group))]
+  const listed = showDone ? comments : openComments
+
+  return (
+    <div className="fixed inset-0 z-50 flex bg-background text-foreground">
+      {/* 왼쪽 — 페이지(흐름 묶음) 고르기와 쓰는 법 */}
+      {/* 왼쪽 아래 모서리는 Next.js 개발 표시(둥근 N 단추) 자리라 비워 둔다(pb-16) — 쓰는 법은 위쪽에 둔다 */}
+      <aside data-canvas-ui className="flex w-80 shrink-0 flex-col gap-6 overflow-y-auto border-r border-border p-4 pb-16">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-h3">목업 캔버스</h1>
+          <Link href="/dev/design-system" className="w-fit text-b2 text-muted-foreground underline underline-offset-4">
+            디자인 시스템 페이지
+          </Link>
+        </div>
+        <UsageGuide keys={keys === KEYS.mac ? KEY_SETS.mac : KEY_SETS.other} />
+        <nav aria-label="페이지" className="flex flex-col gap-1">
+          {[ALL, ...groups].map((g) => {
+            const count = new Set(FRAMES.filter((f) => g === ALL || f.group === g).map((f) => f.screenId)).size
+            return (
+              <button
+                key={g}
+                type="button"
+                onClick={() => choosePage(g)}
+                aria-current={page === g ? "page" : undefined}
+                className={`block w-full rounded-card px-3 py-2 text-left text-b2 ${page === g ? "bg-muted font-semibold" : "hover:bg-muted"}`}
+              >
+                {/* 화면 수는 이름 끝 낱말에 붙여(줄 바꿈 없는 띄어쓰기) 이름이 길어 줄이 바뀌어도 따라 내려가게 한다 */}
+                <NameWithCount name={g === ALL ? "전체 보기" : g} count={count} unit="화면" />
+              </button>
+            )
+          })}
+        </nav>
+      </aside>
+
+      {/* 가운데 — 캔버스 */}
+      <div
+        ref={boardRef}
+        className={`relative flex-1 touch-none overflow-hidden bg-muted select-none ${panning ? "cursor-grabbing" : spaceHeld ? "cursor-grab" : commentMode ? "cursor-crosshair" : "cursor-grab"}`}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+      >
+        <div
+          className={`absolute top-0 left-0 origin-top-left ${panning || spaceHeld ? "pointer-events-none" : ""}`}
+          style={{ transform: `matrix(${view.s}, 0, 0, ${view.s}, ${view.x}, ${view.y})` }}
+        >
+          {onScreen.map(({ frame, x, y, w, h }) => {
+            const shot = shots[frame.key]
+            const mounted = live.mounted.includes(frame.key)
+            return (
+              <div
+                key={frame.key}
+                className="absolute overflow-hidden rounded-card border border-border bg-background"
+                style={{ left: x, top: y, width: w, height: h }}
+                onDoubleClick={() => setFull(frame)}
+                // 코멘트 모드에서 작은 그림을 누르면 그 화면을 크게 보기로 연다 — 찍을 자리는 거기서 클릭한다
+                onClick={() => {
+                  if (commentMode) setFull(frame)
+                }}
+              >
+                {shot ? (
+                  // 미리 찍어 둔 그림 — 개발용 라우트(/dev/canvas/shots)가 내보낸다. next/image 최적화는 쓰지 않는다
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={`/dev/canvas/shots/${frame.key}.jpg?v=${shot}`}
+                    alt=""
+                    width={w}
+                    height={h}
+                    draggable={false}
+                    decoding="async"
+                    className="block size-full object-cover object-top"
+                  />
+                ) : (
+                  <div className="flex size-full flex-col items-center justify-center gap-4 text-center text-muted-foreground">
+                    <p style={{ fontSize: frame.viewport === "desktop" ? 72 : 40 }} className="font-semibold text-foreground">
+                      {frame.screenId} {frame.screenName}
+                    </p>
+                    <p style={{ fontSize: frame.viewport === "desktop" ? 48 : 28 }}>{frameLabel(frame)}</p>
+                  </div>
+                )}
+                {mounted && (
+                  <iframe
+                    title={`${frame.screenName} · ${frameLabel(frame)}`}
+                    src={frame.url}
+                    width={w}
+                    height={h}
+                    className={`absolute inset-0 border-0 bg-background transition-opacity duration-base ease-standard ${live.loading === frame.key ? "opacity-0" : "opacity-100"}`}
+                    onLoad={(e) => {
+                      connect(e.currentTarget, frame, `canvas:${frame.key}`, true)
+                      dispatchLive({ type: "loaded", key: frame.key })
+                    }}
+                    onPointerEnter={(e) => focusFrame(e.currentTarget)}
+                  />
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* 이름표 — 확대 배율과 상관없이 같은 글자 크기로 보이게 캔버스 밖 층에 그린다.
+            줄은 위에서부터 흐름 묶음 → 화면 ID·이름 → 창 이름(폭·상태)·「크게」 차례로, 보이는 줄만큼 위로 쌓아 겹치지 않게 한다 */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {layout.groups.map((g) => (
+            <p
+              key={g.text}
+              className="absolute truncate text-h4"
+              style={{ left: g.x * view.s + view.x, top: g.y * view.s + view.y + labelTop.group, maxWidth: Math.max(240, g.w * view.s) }}
+            >
+              {g.text}
+            </p>
+          ))}
+          {showScreenLabels &&
+            layout.screens.map((sc) => (
+              <p
+                key={`${sc.text}-${sc.y}`}
+                className="absolute truncate text-b2 font-semibold"
+                style={{ left: sc.x * view.s + view.x, top: sc.y * view.s + view.y + labelTop.screen, maxWidth: sc.w * view.s }}
+              >
+                {sc.text}
+              </p>
+            ))}
+        </div>
+        {showFrameLabels && (
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            {onScreen.map(({ frame, x, y, w }) => {
+              const count = openCountFor(frame)
+              return (
+                <div
+                  key={frame.key}
+                  data-canvas-ui
+                  className="pointer-events-auto absolute flex items-center gap-2 text-b2 text-muted-foreground"
+                  style={{ left: x * view.s + view.x, top: y * view.s + view.y + labelTop.frame, maxWidth: Math.max(160, w * view.s) }}
+                >
+                  <span className="truncate">{frameLabel(frame)}</span>
+                  {count > 0 && <NameWithCount name="코멘트" count={count} unit="코멘트" />}
+                  <button type="button" className="underline underline-offset-4" onClick={() => setFull(frame)}>
+                    크게
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* 조작 묶음 둘 — 묶음 안은 붙이고 묶음 사이는 떨어뜨린다.
+            보기 묶음(오른쪽 아래): 휠 설정 · 축소 · 배율 · 확대 · 화면에 맞추기 / 코멘트 묶음(오른쪽 위): 코멘트 달기 · 코멘트 보기 */}
+        <div
+          data-canvas-ui
+          role="group"
+          aria-label="보기"
+          className="absolute right-4 bottom-4 flex items-center gap-3 rounded-control border border-border bg-background p-1 text-b2"
+        >
+          <WheelModeSwitch mode={wheelMode} />
+          <span aria-hidden className="h-6 border-l border-border" />
+          <div className="flex items-center gap-1">
+            <button type="button" className="rounded-control px-3 py-1 hover:bg-muted" onClick={() => zoomAt(size.w / 2, size.h / 2, 1 / 1.25)} aria-label="한 단계 축소">
+              −
+            </button>
+            <span className="w-12 text-center tabular-nums">{Math.round(view.s * 100)}%</span>
+            <button type="button" className="rounded-control px-3 py-1 hover:bg-muted" onClick={() => zoomAt(size.w / 2, size.h / 2, 1.25)} aria-label="한 단계 확대">
+              +
+            </button>
+            <button type="button" className="rounded-control px-3 py-1 hover:bg-muted" onClick={() => setView(fitView(layout.bounds, size.w, size.h))}>
+              화면에 맞추기
+            </button>
+          </div>
+        </div>
+
+        <div className="pointer-events-none absolute top-4 right-4 flex flex-col items-end gap-2">
+          <div data-canvas-ui role="group" aria-label="코멘트" className="pointer-events-auto flex items-center gap-1 text-b2">
+            <CommentModeButton on={commentMode} onToggle={() => setCommentMode((on) => !on)} />
+            <button
+              type="button"
+              className="flex items-center gap-2 rounded-control border border-border bg-background px-4 py-2 font-semibold hover:bg-muted"
+              onClick={() => setPanelOpen((open) => !open)}
+              aria-expanded={panelOpen}
+            >
+              <NameWithCount name="코멘트 보기" count={openComments.length} unit="열린 코멘트" />
+            </button>
+          </div>
+          {commentMode && !full && (
+            <p data-canvas-ui className="pointer-events-auto rounded-control bg-foreground px-3 py-1 text-b2 text-background">
+              코멘트를 남길 화면을 클릭하세요. 작은 그림이면 크게 열립니다. 끄려면 C 또는 Esc
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* 오른쪽 — 코멘트 목록 */}
+      {panelOpen && (
+        <aside data-canvas-ui className="flex w-80 shrink-0 flex-col gap-4 overflow-y-auto border-l border-border p-4">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-h4">코멘트</h2>
+            <label className="flex items-center gap-2 text-b2 text-muted-foreground">
+              <input type="checkbox" checked={showDone} onChange={(e) => setShowDone(e.target.checked)} />
+              끝난 것도 보기
+            </label>
+          </div>
+          <ApplyCommentsHint openCount={openComments.length} />
+          <ol className="flex flex-col gap-3">
+            {listed.map((c) => {
+              const number = openComments.indexOf(c) + 1
+              const frame = FRAMES.find((f) => f.url === c.url && f.viewport === c.viewport)
+              return (
+                <li
+                  key={c.id}
+                  ref={(node) => {
+                    if (node && c.id === activeComment) node.scrollIntoView({ block: "nearest" })
+                  }}
+                  className={`flex flex-col gap-2 rounded-card border p-3 ${c.id === activeComment ? "border-foreground" : "border-border"}`}
+                >
+                  <p className="text-b2 text-muted-foreground">
+                    {number > 0 ? `${number}. ` : "끝남 · "}
+                    {c.screenId} {c.screenName} · {VIEWPORTS[c.viewport].label}
+                    {c.state ? ` · ${c.state}` : ""}
+                  </p>
+                  <p className="text-b2 whitespace-pre-wrap">{c.comment}</p>
+                  {c.target.source && <p className="text-b2 break-all text-muted-foreground">{c.target.source}</p>}
+                  {c.resolution && <p className="text-b2 text-muted-foreground">처리: {c.resolution}</p>}
+                  <div className="flex gap-2 text-b2">
+                    {frame && (
+                      <>
+                        <button type="button" className="underline underline-offset-4" onClick={() => zoomToFrame(frame)}>
+                          캔버스에서 찾기
+                        </button>
+                        <button type="button" className="underline underline-offset-4" onClick={() => setFull(frame)}>
+                          크게
+                        </button>
+                      </>
+                    )}
+                    <button
+                      type="button"
+                      className="ml-auto underline underline-offset-4"
+                      onClick={() => setStatus(c.id, c.status === "open" ? "done" : "open")}
+                    >
+                      {c.status === "open" ? "완료 표시" : "다시 열기"}
+                    </button>
+                  </div>
+                </li>
+              )
+            })}
+          </ol>
+        </aside>
+      )}
+
+      {/* 크게 보기 — 화면 하나를 창 가득 실제 크기로 */}
+      {full && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-muted">
+          <div data-canvas-ui className="flex items-center gap-4 border-b border-border bg-background px-4 py-2 text-b2">
+            <p className="font-semibold">
+              {full.screenId} {full.screenName}
+            </p>
+            <p className="text-muted-foreground">{frameLabel(full)}</p>
+            <CommentModeButton on={commentMode} onToggle={() => setCommentMode((on) => !on)} />
+            {commentMode && <p className="rounded-control bg-foreground px-3 py-1 text-background">찍을 자리를 클릭하세요</p>}
+            <div className="ml-auto flex items-center gap-2">
+              {(["desktop", "phone"] as const).map((vp) => {
+                const other = FRAMES.find((f) => f.url === full.url && f.viewport === vp)
+                return (
+                  <button
+                    key={vp}
+                    type="button"
+                    disabled={!other}
+                    onClick={() => other && setFull(other)}
+                    className={`rounded-control border border-border px-3 py-1 ${full.viewport === vp ? "bg-muted font-semibold" : ""}`}
+                  >
+                    {VIEWPORTS[vp].label}
+                  </button>
+                )
+              })}
+              <a href={full.url} target="_blank" rel="noreferrer" className="underline underline-offset-4">
+                새 탭에서 열기
+              </a>
+              <button type="button" className="rounded-control border border-border px-3 py-1" onClick={() => setFull(null)}>
+                닫기 (Esc)
+              </button>
+            </div>
+          </div>
+          <div className="flex flex-1 justify-center overflow-hidden">
+            <iframe
+              key={`${full.key}`}
+              title={`${full.screenName} · ${frameLabel(full)}`}
+              src={full.url}
+              className={`h-full border-0 bg-background ${full.viewport === "phone" ? "" : "w-full"}`}
+              style={full.viewport === "phone" ? { width: VIEWPORTS.phone.width } : undefined}
+              onLoad={(e) => {
+                connect(e.currentTarget, full, "full", false)
+                e.currentTarget.contentWindow?.focus()
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* 코멘트 메모 칸 — Alt+클릭한 자리 옆에 뜬다 */}
+      {draft && (
+        <form
+          data-canvas-ui
+          className="fixed z-50 flex w-80 flex-col gap-2 rounded-card border border-border bg-background p-3"
+          style={{ left: draft.left, top: draft.top }}
+          onSubmit={(e) => {
+            e.preventDefault()
+            void saveDraft()
+          }}
+        >
+          <p className="text-b2 text-muted-foreground">
+            {draft.info.target.component ?? draft.info.target.selector.split(" > ").pop()}
+            {draft.info.target.text ? ` · 「${draft.info.target.text.slice(0, 24)}」` : ""}
+          </p>
+          <textarea
+            autoFocus
+            rows={3}
+            value={draftText}
+            onChange={(e) => setDraftText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && !e.nativeEvent.isComposing) {
+                e.preventDefault()
+                void saveDraft()
+              }
+            }}
+            placeholder="무엇을 고치면 좋을지 적어 주세요"
+            className="rounded-card border border-border bg-background p-2 text-b1"
+          />
+          <div className="flex justify-end gap-2 text-b2">
+            <button type="button" className="rounded-control px-3 py-1" onClick={() => setDraft(null)}>
+              취소
+            </button>
+            <button type="submit" className="rounded-control border border-border px-3 py-1 font-semibold" disabled={!draftText.trim()}>
+              핀 꽂기 ({keys.save})
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  )
+}

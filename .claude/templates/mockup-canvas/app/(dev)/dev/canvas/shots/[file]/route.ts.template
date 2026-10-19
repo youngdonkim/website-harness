@@ -1,0 +1,21 @@
+import { readFile } from "node:fs/promises"
+import path from "node:path"
+import { devOnly } from "../../../dev-only"
+import { SHOTS_DIR } from "../../server-paths"
+
+// 그림 한 장 — GET /dev/canvas/shots/<창 열쇠>.jpg
+export const dynamic = "force-dynamic"
+
+export async function GET(_request: Request, { params }: { params: Promise<{ file: string }> }) {
+  const blocked = devOnly()
+  if (blocked) return blocked
+  const { file } = await params
+  // 폴더 밖 파일을 못 읽게 이름 모양을 좁힌다
+  if (!/^[A-Za-z0-9_-]+\.jpg$/.test(file)) return new Response("Not Found", { status: 404 })
+  try {
+    const body = await readFile(path.join(SHOTS_DIR, file))
+    return new Response(body, { headers: { "Content-Type": "image/jpeg", "Cache-Control": "no-cache" } })
+  } catch {
+    return new Response("Not Found", { status: 404 })
+  }
+}
