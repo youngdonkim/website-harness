@@ -8,7 +8,7 @@ AI 빌더를 위한 Claude Code 하네스의 원본 저장소. 각 프로젝트�
 
 ## 소유와 계정
 
-이 저장소의 소유: **개인**. 이 저장소가 쓰는 외부 서비스는 GitHub뿐이라 표도 그만큼만 둔다 — push·PR 전에 gh가 도는 계정이 표와 일치하는지 대조한다 — 대조 방법과 다를 때의 갈래(원격을 새로 만들 때는 멈추고, 이미 있으면 진행하며 보고)는 `ship-task` §1-0 계정 확인이 정한다. gh 인증은 이 컴퓨터의 계정 장부 `~/.config/harness/<소유>.env`(소유는 `.claude/owner` — 개인이면 `personal.env`)의 `GH_TOKEN`으로 한다 — gh 명령은 `.claude/scripts/with-owner.sh gh <명령>`으로 부르고, git push는 이 저장소의 자격 증명 도우미가 같은 실행기로 토큰을 받는다. 지금 계정은 `.claude/scripts/with-owner.sh --check`로 본다. 전역 활성 계정 전환은 쓰지 않는다 (`docs/account-check.md` gh 항목). 포크해서 쓰는 사람은 자기 계정으로 바꾼다.
+이 저장소의 소유: **개인**. 이 저장소가 쓰는 외부 서비스는 GitHub뿐이라 표도 그만큼만 둔다 — push·PR 전에 gh가 도는 계정이 표와 일치하는지 대조한다 — 대조 방법과 다를 때의 갈래(원격을 새로 만들 때는 멈추고, 이미 있으면 진행하며 보고)는 `ship-task` §1-0 계정 확인이 정한다. gh 인증은 이 컴퓨터의 계정 장부 `~/.config/harness/<소유>.env`(소유는 `.claude/owner` — 개인이면 `personal.env`)의 `GH_TOKEN`으로 한다 — gh 명령은 `.claude/scripts/with-owner.sh gh <명령>`으로 부르고(빼면 `owner-runner-guard` 훅이 막는다), git push는 이 저장소의 자격 증명 도우미가 같은 실행기로 토큰을 받는다. 지금 계정은 `.claude/scripts/with-owner.sh --check`로 본다. 전역 활성 계정 전환은 쓰지 않는다 (`docs/account-check.md` gh 항목). 포크해서 쓰는 사람은 자기 계정으로 바꾼다.
 
 | 서비스 | 계정 |
 |---|---|
