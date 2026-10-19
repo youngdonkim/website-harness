@@ -116,7 +116,7 @@ SKILL.md 「새 UI 요소」 갈래를 따른다 — 여기서는 반복하지 �
 ````markdown
 ## 전체 부품 색인
 
-_부품 파일이나 `3-components.css` 클래스를 더하거나 지울 때 다시 만든다._
+_부품 파일이나 `3-components.css` 클래스를 더하거나 지울 때 이 구간을 지우고 다시 만든다. 목록은 `find src/components -name '*.tsx' | sort`와 `grep -hoE '^\.[A-Za-z][A-Za-z0-9_-]*' src/styles/3-components.css | sed 's/^\.//' | sort -u`의 출력이다._
 
 ```
 src/components/site-header.tsx
