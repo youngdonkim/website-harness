@@ -68,15 +68,7 @@ git clone https://github.com/youngdonkim/website-harness.git ~/dev/website-harne
 
 **2. 프로젝트에서 세션 열기** — 하네스를 쓰려는 프로젝트 폴더에서
 
-- **새 프로젝트 폴더는 시작 스크립트로 만든다** — 세션을 열기 전에 먼저 한 번 돌린다.
-
-  ```
-  ~/dev/website-harness/new-project.sh <새 폴더 경로>
-  ```
-
-  세션을 열기 전에 `.claude/` 아래 빈 폴더를 만들어 두어야 하네스를 깐 뒤 스킬·에이전트가 같은 세션에서 잡힌다. 이 스크립트가 빈 `.claude/skills/`·`.claude/agents/`·`.claude/hooks/`와 내용이 `{}`뿐인 `.claude/settings.json`을 만든다. 이미 코드가 있는 프로젝트에 적용할 때는 스크립트 대신 그 폴더에 `.claude/skills/`·`.claude/agents/`·`.claude/hooks/` 빈 폴더만 먼저 만든다.
-
-그다음 그 폴더에서 세션을 연다.
+그 폴더에서 세션을 연다.
 
 - **터미널이면** 그 폴더로 옮겨 가 `claude`를 실행한다.
 
@@ -305,7 +297,7 @@ git clone https://github.com/youngdonkim/website-harness.git ~/dev/website-harne
 다만 **지금 열려 있는 세션에 들어오는 시점은 파일마다 다르다.**
 
 - **스킬 본문** — 부를 때마다 읽어서 다음 호출부터 바로 반영된다.
-- **에이전트 정의와 훅** — 세션을 열 때 `.claude/agents/`·`.claude/settings.json`이 있었으면 몇 초 뒤 지금 세션에 잡힌다(훅은 바뀐 다음 명령부터). 세션을 연 뒤에 그 폴더가 처음 생겼으면 앱을 껐다 켜야 한다 — 그래서 새 프로젝트는 `new-project.sh`로 폴더부터 만든다. 바뀔 수 있으니 최신은 공식 문서로 확인한다.
+- **에이전트 정의와 훅** — 세션을 열 때 `.claude/agents/`·`.claude/settings.json`이 있었으면 몇 초 뒤 지금 세션에 잡힌다(훅은 바뀐 다음 명령부터). 빈 폴더에 하네스를 처음 깔면 세션을 연 뒤에 그 폴더가 생긴 것이라, 하네스 적용이 끝난 뒤 앱을 한 번 껐다 켜야 한다(대화는 안 날아간다). 바뀔 수 있으니 최신은 공식 문서로 확인한다.
 - **`AGENTS.md`** — 컴팩션이나 `/clear`부터 반영된다. 방법은 [§1](#1-두-가지-사용-환경) 표의 '대화 비우기' 행.
 
 ### 6.4 적용한 버전이 파일로 남는다
