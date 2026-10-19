@@ -108,6 +108,7 @@ const GRID_WIDTHS = [
 
 // ── 비교안 값 (2-2처럼 토큰 값을 바꿔 보는 동안만) ──
 // 2층 파일 맨 끝의 비교안 범위 클래스(예: `.draft-home-b`)를 적으면, 아래 견본을 그 클래스로 감싸 「지금 값」 옆에 나란히 그린다.
+// 그동안은 페이지가 본문 최대 폭을 벗어나 창 폭을 다 쓰고, 칸들이 가로로 나란히 선다(창이 아주 좁을 때만 위아래로 쌓인다).
 // 비교안을 고르거나 지우면 이 목록에서도 지운다. 비어 있으면 「지금 값」 하나만 그린다.
 const DRAFT_SCOPES: { label: string; cls: string }[] = [
   // {{예: { label: "B안 값", cls: "draft-home-b" }}}
@@ -248,8 +249,10 @@ function Samples() {
 }
 
 export default function DesignSystemPage() {
+  // 비교안 값이 있으면 창 폭을 다 쓴다 — 본문 최대 폭 안에서는 칸이 좁아 「지금 값 | 비교안 값」이 나란히 서지 못한다
+  const comparing = DRAFT_SCOPES.length > 0
   return (
-    <div className="@container/ds mx-auto flex w-full max-w-content flex-col gap-12 px-4 py-12">
+    <div className={`@container/ds mx-auto flex w-full flex-col gap-12 px-4 py-12${comparing ? "" : " max-w-content"}`}>
       <header className="flex flex-col gap-4">
         <h1 className="text-h1">{SERVICE_NAME} 디자인 시스템</h1>
         <p className="text-b1 text-muted-foreground">
@@ -260,16 +263,16 @@ export default function DesignSystemPage() {
         </Link>
       </header>
 
-      {DRAFT_SCOPES.length === 0 ? (
+      {!comparing ? (
         <Samples />
       ) : (
-        <div className="grid gap-12 @5xl/ds:grid-cols-2 @5xl/ds:gap-x-6">
-          <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-12 @3xl/ds:flex-row @3xl/ds:gap-6">
+          <div className="flex min-w-0 flex-1 flex-col gap-6">
             <p className="text-h3">지금 값</p>
             <Samples />
           </div>
           {DRAFT_SCOPES.map((draft) => (
-            <div key={draft.cls} className={`flex flex-col gap-6 ${draft.cls}`}>
+            <div key={draft.cls} className={`flex min-w-0 flex-1 flex-col gap-6 ${draft.cls}`}>
               <p className="text-h3">{draft.label}</p>
               <Samples />
             </div>

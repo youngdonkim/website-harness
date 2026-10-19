@@ -112,7 +112,8 @@ c4() {
 
 c5() {
   ex "${PRODUCT[@]}"; [ ${#EX[@]} -eq 0 ] && return
-  g -rn --exclude-dir=ui 'key === "Enter"' "${EX[@]}"
+  # 같은 줄에 isComposing 확인(e.isComposing · e.nativeEvent.isComposing 꼴)이 있으면 가드로 보고 뺀다
+  g -rn --exclude-dir=ui 'key === "Enter"' "${EX[@]}" | g -v 'isComposing'
 }
 
 c6() {

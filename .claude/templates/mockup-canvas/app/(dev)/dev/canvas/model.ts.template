@@ -2,9 +2,11 @@ import type { CanvasScreen } from "./screens"
 
 // 목업 캔버스의 「창」 목록과 코멘트 모양 — 캔버스 화면(canvas-board.tsx)·창 목록 라우트(frames/route.ts)·
 // 코멘트 라우트(comments/route.ts)·그림 찍기 스크립트(scripts/canvas-shots.mjs, 창 목록 라우트로 받는다)가 같은 정의를 쓴다.
-// 창 하나 = 화면 하나 × 폭 하나(데스크톱·폰) × 상태 하나(기본·?state=…) × 판 하나(원래 화면·비교안).
+// 창 하나 = 화면 하나 × 폭 하나(데스크톱·폰 — 화면의 widths가 ["phone"]이면 폰만) × 상태 하나(기본·?state=…) × 판 하나(원래 화면·비교안).
 
-export type Viewport = "desktop" | "phone"
+export type Viewport = NonNullable<CanvasScreen["widths"]>[number]
+/** 폭 차례 — 한 줄 안에서 데스크톱 창이 왼쪽, 폰 창이 오른쪽 */
+export const VIEWPORT_ORDER: Viewport[] = ["desktop", "phone"]
 /** 상태 이름 — screens.ts의 states에 적는 값 */
 export type CanvasState = NonNullable<CanvasScreen["states"]>[number]
 
@@ -44,11 +46,13 @@ export function buildFrames(screens: CanvasScreen[]): CanvasFrame[] {
   const frames: CanvasFrame[] = []
   for (const screen of screens) {
     let row = 0
+    // 띄울 폭 — 안 적었거나 비었으면 둘 다
+    const widths = VIEWPORT_ORDER.filter((viewport) => !screen.widths?.length || screen.widths.includes(viewport))
     const add = (draft: { label: string; path: string } | null, states: CanvasState[]) => {
       const path = draft ? draft.path : screen.path
       const variant = draft ? `draft-${slug(draft.path)}` : "main"
       for (const state of [null, ...states]) {
-        for (const viewport of ["desktop", "phone"] as const) {
+        for (const viewport of widths) {
           frames.push({
             key: `${slug(screen.id)}__${variant}__${viewport}__${state ?? "base"}`,
             screenId: screen.id,

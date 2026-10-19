@@ -8,6 +8,7 @@
 // package.json의 canvas:shots는 먼저 `playwright install --only-shell chromium`을 돌린다 — 첫 실행 때만 브라우저를 내려받고, 그 뒤엔 바로 넘어간다.
 //
 // 찍을 창 목록은 서버의 /dev/canvas/frames에서 받는다(screens.ts를 창 목록으로 편 것). 그림 이름은 `<창 열쇠>.jpg`.
+// 폰 폭만 띄우는 화면(screens.ts의 widths: ["phone"])은 목록에 데스크톱 창이 없으니 폰 그림만 찍는다.
 
 import { mkdir, readdir, rm } from "node:fs/promises"
 import path from "node:path"

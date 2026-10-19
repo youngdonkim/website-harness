@@ -37,7 +37,7 @@ const ROW_GAP = 160 // 기본·상태·비교안 줄 사이
 const COL_GAP = 240 // 화면 사이
 const LINE_GAP = 560 // 화면 줄을 접어 넘길 때 줄 사이
 const GROUP_GAP = 1200 // 흐름 묶음 사이
-const COL_WIDTH = VIEWPORTS.desktop.width + PAIR_GAP + VIEWPORTS.phone.width
+const COL_WIDTH = VIEWPORTS.desktop.width + PAIR_GAP + VIEWPORTS.phone.width // 데스크톱·폰 한 쌍인 화면의 칸 폭
 const ROW_HEIGHT = Math.max(VIEWPORTS.desktop.height, VIEWPORTS.phone.height) + ROW_GAP
 const TARGET_ASPECT = 16 / 10
 /** 이름표 한 줄 높이(화면 단위) */
@@ -99,15 +99,22 @@ function useWheelMode() {
 }
 
 /** 고른 페이지(흐름 묶음 하나 또는 전체)의 창을 배치한다 — 화면은 왼쪽→오른쪽(흐름 순서), 한 화면의 기본·상태·비교안은 위→아래.
- *  화면 줄이 너무 길어지지 않게, 전체 모양이 화면 비율에 가깝도록 한 줄에 놓을 화면 수를 정해 접는다. */
+ *  화면 줄이 너무 길어지지 않게, 전체 모양이 화면 비율에 가깝도록 한 줄에 놓을 화면 수를 정해 접는다.
+ *  폭 하나만 띄우는 화면(screens.ts의 widths)은 칸도 그 창 폭만큼만 차지한다. */
 function layoutFrames(page: string): Layout {
   const frames = page === ALL ? FRAMES : FRAMES.filter((f) => f.group === page)
   const groups = [...new Set(frames.map((f) => f.group))]
   const byScreen = new Map<string, CanvasFrame[]>()
   for (const f of frames) byScreen.set(`${f.group}\n${f.screenId}`, [...(byScreen.get(`${f.group}\n${f.screenId}`) ?? []), f])
   const rowsOf = (list: CanvasFrame[]) => Math.max(...list.map((f) => f.row)) + 1
-  const area = [...byScreen.values()].reduce((sum, list) => sum + (COL_WIDTH + COL_GAP) * rowsOf(list) * ROW_HEIGHT, 0)
-  const perLine = Math.max(1, Math.round(Math.sqrt(area * TARGET_ASPECT) / (COL_WIDTH + COL_GAP)))
+  const hasDesktop = (list: CanvasFrame[]) => list.some((f) => f.viewport === "desktop")
+  const hasPhone = (list: CanvasFrame[]) => list.some((f) => f.viewport === "phone")
+  const widthOf = (list: CanvasFrame[]) =>
+    hasDesktop(list) && hasPhone(list) ? COL_WIDTH : VIEWPORTS[hasDesktop(list) ? "desktop" : "phone"].width
+  const lists = [...byScreen.values()]
+  const area = lists.reduce((sum, list) => sum + (widthOf(list) + COL_GAP) * rowsOf(list) * ROW_HEIGHT, 0)
+  const meanWidth = lists.reduce((sum, list) => sum + widthOf(list) + COL_GAP, 0) / Math.max(1, lists.length)
+  const perLine = Math.max(1, Math.round(Math.sqrt(area * TARGET_ASPECT) / meanWidth))
 
   const placed: Placed[] = []
   const screens: Label[] = []
@@ -115,27 +122,32 @@ function layoutFrames(page: string): Layout {
   let y = 0
   let maxX = 0
   for (const group of groups) {
-    groupLabels.push({ text: group, x: 0, y, w: perLine * (COL_WIDTH + COL_GAP) })
+    groupLabels.push({ text: group, x: 0, y, w: perLine * meanWidth })
     const columns = [...byScreen.entries()].filter(([k]) => k.startsWith(`${group}\n`)).map(([, list]) => list)
     for (let start = 0; start < columns.length; start += perLine) {
       const line = columns.slice(start, start + perLine)
       let lineHeight = 0
-      line.forEach((list, i) => {
-        const x = i * (COL_WIDTH + COL_GAP)
-        screens.push({ text: `${list[0].screenId} ${list[0].screenName}`, x, y, w: COL_WIDTH })
+      let x = 0
+      for (const list of line) {
+        const width = widthOf(list)
+        // 폰 창은 데스크톱 창이 있으면 그 오른쪽, 없으면 칸 왼쪽 끝에 놓는다
+        const phoneX = hasDesktop(list) ? VIEWPORTS.desktop.width + PAIR_GAP : 0
+        // 이름표는 다음 화면 칸 앞까지 쓴다 — 폰 창 하나뿐인 칸에서도 이름이 너무 일찍 잘리지 않게
+        screens.push({ text: `${list[0].screenId} ${list[0].screenName}`, x, y, w: width + COL_GAP })
         for (const frame of list) {
           const size = VIEWPORTS[frame.viewport]
           placed.push({
             frame,
-            x: x + (frame.viewport === "desktop" ? 0 : VIEWPORTS.desktop.width + PAIR_GAP),
+            x: x + (frame.viewport === "desktop" ? 0 : phoneX),
             y: y + frame.row * ROW_HEIGHT,
             w: size.width,
             h: size.height,
           })
         }
         lineHeight = Math.max(lineHeight, rowsOf(list) * ROW_HEIGHT - ROW_GAP)
-        maxX = Math.max(maxX, x + COL_WIDTH)
-      })
+        maxX = Math.max(maxX, x + width)
+        x += width + COL_GAP
+      }
       y += lineHeight + LINE_GAP
     }
     y += GROUP_GAP - LINE_GAP
