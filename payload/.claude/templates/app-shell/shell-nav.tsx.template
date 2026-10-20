@@ -1,0 +1,80 @@
+"use client"
+
+// 셸 메뉴 — 탭 목록 하나를 폰 폭은 하단 고정 탭바(variant="tabbar"), 넓은 화면은 헤더 안 상단 메뉴(variant="top")로 그린다.
+// 프로젝트에 넣는 자리: src/components/shell-nav.tsx. 넣는 차례와 채울 자리는 틀의 README.md.
+// 폭으로 갈리는 자리는 이 파일의 메뉴 전환 두 줄뿐이다(Tailwind md 단계, VARIANT의 frame): 미만은 탭바만, 이상은 상단 메뉴만.
+// 로고와 알림·내 정보 단추는 셸 헤더(app-shell.tsx)가 둔다 — 폰 폭에서도 보여야 해서다.
+// 탭 이름은 mvp/design-brief.md 「3. 「문자 그대로」 고정 문구」의 하단 탭 이름 그대로, 어느 화면이 어느 탭인지는 mvp/feature-list.md 8절.
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { {{쓰는 아이콘}}, type LucideIcon } from "lucide-react"
+
+export type ShellNavItem = {
+  label: string
+  href: string
+  icon: LucideIcon
+}
+
+// 채울 자리는 이 배열 하나다 — 첫 줄이 첫 탭(홈)이고, 로고와 뒤로 가기의 갈 곳도 첫 줄의 주소를 쓴다.
+// 주소는 2-1이 주소 모음(src/lib/paths.ts)을 만들면 PATHS["S-xx"]로 바꾼다. 그 전엔 임시 주소를 둔다.
+export const TABS: ShellNavItem[] = [
+  { label: "{{첫 탭 이름}}", href: "/", icon: {{첫 탭 아이콘}} },
+  { label: "{{탭 이름}}", href: "{{탭 주소}}", icon: {{탭 아이콘}} },
+]
+
+/** 첫 탭(홈) 주소 — 로고 링크와 「앱 안 이전 화면이 없을 때」 뒤로 가기의 갈 곳 */
+export const HOME_HREF = TABS[0].href
+
+/** 지금 주소가 이 메뉴 항목의 자리인가 — 그 탭 아래 쌓인 주소도 그 탭이다 */
+export function isCurrentNav(pathname: string, href: string) {
+  if (!href.startsWith("/")) return false
+  return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`)
+}
+
+/** 모양별 클래스 — frame: 셸 안 자리(메뉴 전환), nav: 메뉴 줄, link: 메뉴 하나, icon: 아이콘을 글자 위에 둘지 */
+const VARIANT = {
+  top: {
+    frame: "hidden h-full md:block",
+    nav: "flex h-full items-center gap-1",
+    link: "flex min-h-11 items-center rounded-control px-3 text-b1 font-medium text-muted-foreground outline-none press hover:bg-accent hover:text-accent-foreground focus-visible:ring-3 focus-visible:ring-ring/50 aria-[current=page]:text-primary",
+    icon: false,
+  },
+  tabbar: {
+    frame: "shell__bottom shrink-0 border-t border-border bg-background md:hidden",
+    // 탭 수만큼 같은 폭으로 나눈다 — 탭을 더하거나 빼도 이 줄은 그대로다
+    nav: "shell__tabbar grid auto-cols-fr grid-flow-col",
+    link: "flex min-h-11 flex-col items-center justify-center gap-1 text-b2 text-muted-foreground outline-none press focus-visible:ring-3 focus-visible:ring-ring/50 aria-[current=page]:text-primary",
+    icon: true,
+  },
+} as const
+
+export function ShellNav({ variant }: { variant: keyof typeof VARIANT }) {
+  const pathname = usePathname()
+  const look = VARIANT[variant]
+  return (
+    <div className={look.frame}>
+      <nav aria-label="주 메뉴" className={look.nav}>
+        {TABS.map((item) => {
+          const Icon = item.icon
+          return (
+            <Link
+              key={item.label}
+              href={item.href}
+              aria-current={isCurrentNav(pathname, item.href) ? "page" : undefined}
+              className={look.link}
+            >
+              {look.icon ? (
+                <>
+                  <Icon aria-hidden className="size-5" />
+                  <span>{item.label}</span>
+                </>
+              ) : (
+                item.label
+              )}
+            </Link>
+          )
+        })}
+      </nav>
+    </div>
+  )
+}

@@ -1,0 +1,118 @@
+"use client"
+
+// 공통 셸 — 모든 화면에 씌우는 틀. 헤더 / 본문 / 하단 세 영역이고, 스크롤은 본문 영역만 한다.
+// 프로젝트에 넣는 자리: src/components/app-shell.tsx. 넣는 차례와 채울 자리는 틀의 README.md.
+// 폭으로 갈리는 자리는 둘이다(Tailwind md 단계):
+//   ① 셸 메뉴(shell-nav.tsx)의 메뉴 전환 — 미만은 하단 탭바만, 이상은 상단 메뉴만.
+//   ② 셸 헤더의 모양 전환(아래 SHELL_WIDTH) — 화면이 앱바 모양을 등록했을 때만 갈린다.
+// 헤더 모양(mvp/feature-list.md 8절):
+//   - 넓은 화면 — 모든 화면이 로고 · 상단 메뉴 · 알림·내 정보. 쌓이는 화면은 본문 맨 위에 뒤로 가기 줄, 탭 화면은 본문 맨 위에 큰 제목.
+//   - 폰 폭 첫 탭(홈)·없는 주소 — 로고(왼쪽)와 알림·내 정보(오른쪽). 아무것도 등록하지 않은 화면이 이 모양이다.
+//   - 폰 폭 나머지 탭 화면 — 「빈 자리 · 탭 이름 · 알림·내 정보」(kind "tab", 탭 제목 TabHeading이 등록).
+//   - 폰 폭 쌓이는 화면 — 「뒤로 · 화면 제목 · 오른쪽 동작 하나」(kind "stack", 화면 제목 줄 PageHeader가 등록).
+//   등록한 화면의 폰 폭 제목은 이 헤더가 화면 읽기 제목(h1)을 맡는다 — 본문 쪽 제목은 넓은 화면에만 보인다.
+// 본문 영역이 <main>을 둔다 — 화면은 <main>을 두지 않는다. 본문 틀은 좌우 여백(px-screen-x)을 늘 남긴다.
+// 본문 틀은 세로 줄(flex)이고 최소 높이가 본문 영역만큼이다 — 지도처럼 남은 높이를 다 채우는 화면이 flex-1로 늘어난다.
+// 셸 헤더에는 대표 행동 버튼이 없다 — 화면의 주 버튼은 화면이 하나만 둔다.
+import Link from "next/link"
+import { createContext, useContext, useLayoutEffect, useState } from "react"
+import { ChevronLeft } from "lucide-react"
+import { ShellActions } from "@/components/shell-actions"
+import { HOME_HREF, ShellNav } from "@/components/shell-nav"
+import { Button } from "@/components/ui/button"
+import { Toaster } from "@/components/ui/sonner"
+import { cn } from "@/lib/utils"
+
+/** 셸 헤더 모양 전환 — 앱바를 등록한 화면에서 폰 폭에만 보일 것 / 넓은 화면에만 보일 것. 이 파일의 뷰포트 접두어는 이 두 줄뿐이다 */
+export const SHELL_WIDTH = {
+  phoneOnly: "flex md:hidden",
+  wideOnly: "hidden md:flex",
+} as const
+
+/** 화면이 폰 폭 헤더에 올리는 것 — 쌓이는 화면(stack)은 뒤로·제목·동작, 탭 화면(tab)은 탭 이름 */
+export type ShellBar =
+  | {
+      kind: "stack"
+      title: string
+      /** 제목을 화면 제목(h1)으로 둘지 — 본문이 더 큰 제목(h1)을 따로 두는 화면은 false */
+      heading: boolean
+      onBack: () => void
+      /** 오른쪽 동작 하나 — 없으면 빈 자리 */
+      action?: React.ReactNode
+    }
+  | {
+      kind: "tab"
+      /** 탭 이름 — 하단 탭 고정 문구 그대로 */
+      title: string
+    }
+
+// 값과 등록 함수를 따로 둔다 — 등록하는 화면은 값이 바뀌어도 다시 그려지지 않는다(등록 → 다시 그림 → 재등록 고리를 막는다)
+const ShellBarValue = createContext<ShellBar | null>(null)
+const ShellBarSetter = createContext<(bar: ShellBar | null) => void>(() => {})
+
+/** 화면이 셸 헤더에 폰 폭 모양을 올린다. 화면이 사라지면 내린다. bar가 null이면 올리지 않는다 */
+export function useShellBar(bar: ShellBar | null) {
+  const setBar = useContext(ShellBarSetter)
+  // 화면이 처음 그려지는 순간에 헤더도 함께 바뀌게 — 그리기 전에 올린다
+  useLayoutEffect(() => {
+    setBar(bar)
+  })
+  useLayoutEffect(() => () => setBar(null), [setBar])
+}
+
+const brandRow = "mx-auto h-full w-full max-w-content items-center gap-8 px-screen-x"
+
+function ShellHeader() {
+  const bar = useContext(ShellBarValue)
+  const Title = bar?.kind === "stack" && !bar.heading ? "p" : "h1"
+  return (
+    <header className="shell__top shrink-0 border-b border-border bg-background">
+      {/* 로고 · (넓은 화면) 상단 메뉴 · 알림·내 정보 — 모양을 등록한 화면이면 폰 폭에서 숨는다 */}
+      <div className={cn(brandRow, bar ? SHELL_WIDTH.wideOnly : "flex")}>
+        {/* 로고 자리 — 로고가 정해지기 전까지 서비스 이름 글자 */}
+        <Link href={HOME_HREF} className="flex min-h-11 items-center rounded-control text-h4 text-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+          {{서비스 이름}}
+        </Link>
+        <ShellNav variant="top" />
+        <div className="ml-auto">
+          <ShellActions />
+        </div>
+      </div>
+      {/* 폰 폭 헤더 — 왼쪽 · 제목 · 오른쪽. 양옆 칸 폭을 같게 둬 제목이 가운데 온다
+          쌓이는 화면: 뒤로 · 화면 제목 · 동작 하나 / 탭 화면: 빈 자리 · 탭 이름 · 알림·내 정보 */}
+      {bar && (
+        <div className={cn(SHELL_WIDTH.phoneOnly, "h-full w-full items-center gap-2 px-screen-x")}>
+          <div className="flex flex-1 basis-0 items-center">
+            {bar.kind === "stack" && (
+              <Button variant="ghost" size="icon" onClick={bar.onBack} aria-label="뒤로" className="-ml-3">
+                <ChevronLeft aria-hidden className="size-5" />
+              </Button>
+            )}
+          </div>
+          <Title className="min-w-0 truncate text-center text-h4">{bar.title}</Title>
+          <div className="flex flex-1 basis-0 items-center justify-end">{bar.kind === "stack" ? bar.action : <ShellActions />}</div>
+        </div>
+      )}
+    </header>
+  )
+}
+
+export function AppShell({ children }: { children: React.ReactNode }) {
+  const [bar, setBar] = useState<ShellBar | null>(null)
+  return (
+    <ShellBarSetter.Provider value={setBar}>
+      <ShellBarValue.Provider value={bar}>
+        <div className="flex h-dvh flex-col">
+          <ShellHeader />
+          <main className="@container min-h-0 w-full flex-1 overflow-y-auto">
+            {/* 본문 틀 — 화면 전환 움직임을 붙이면(README 「있으면 쓰고 없으면 뺀다」) 이 div가 그 부품으로 바뀐다 */}
+            <div className="mx-auto flex min-h-full w-full max-w-content flex-col px-screen-x">{children}</div>
+          </main>
+          <ShellNav variant="tabbar" />
+          {/* 알림 띠 — 폰 하단 탭바를 가리지 않게 위쪽 가운데에 뜬다 */}
+          <Toaster position="top-center" />
+        </div>
+      </ShellBarValue.Provider>
+    </ShellBarSetter.Provider>
+  )
+}

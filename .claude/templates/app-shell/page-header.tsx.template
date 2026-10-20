@@ -1,0 +1,59 @@
+"use client"
+
+// 화면 제목 부품 둘 — 화면은 <h1>을 직접 두지 않고 이 둘 중 하나로 시작한다.
+// 프로젝트에 넣는 자리: src/components/common/page-header.tsx. 넣는 차례와 지키는 규칙은 틀의 README.md.
+//
+// PageHeader — 쌓이는 화면(메뉴 → 상세처럼 들어간 화면)의 화면 제목 줄: 뒤로 가기 + 화면 제목(h1) + 오른쪽 보조 행동 자리.
+//   뒤로 가기: 이 탭에 이전 화면이 있으면 그리로, 공유 링크로 새 탭에서 바로 들어왔으면 fallbackHref(기본은 첫 탭)로 간다.
+//   폰 폭에서는 이 줄을 그리지 않고 같은 「뒤로·제목·행동」을 셸 헤더에 올린다(app-shell.tsx useShellBar) — 넓은 화면만 이 줄이 보인다.
+//   appBar={false}인 화면(로그인·온보딩 같은 전체 화면)은 셸 헤더를 바꾸지 않고 두 폭 모두 이 줄을 그린다.
+// TabHeading — 첫 탭(홈)을 뺀 탭 화면의 본문 큰 제목.
+import { ChevronLeft } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { SHELL_WIDTH, useShellBar } from "@/components/app-shell"
+import { HOME_HREF } from "@/components/shell-nav"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+
+type Props = {
+  /** 화면 제목 — 화면 목록(mvp/feature-list.md 6절)의 「화면 이름」 그대로. 폰 폭 앱바 제목이 된다 */
+  title: string
+  /** 앱 안 이전 화면이 없을 때 갈 곳 */
+  fallbackHref?: string
+  /** 오른쪽 보조 행동(글자형·아이콘 버튼) — 폰 폭 셸 헤더 오른쪽에도 같은 것이 뜬다. 하나만 둔다 */
+  actions?: React.ReactNode
+  /** 제목 줄에 제목을 두지 않는다 — 본문이 더 큰 제목(h1)을 따로 둘 때(예: 상세 화면의 상품 이름). 폰 폭 셸 헤더에는 제목 글자로 뜬다 */
+  titleHidden?: boolean
+  /** 폰 폭에서 셸 헤더를 「뒤로·제목·동작」으로 바꿀지 — 전체 화면(로그인·온보딩)만 false */
+  appBar?: boolean
+  className?: string
+}
+
+export function PageHeader({ title, fallbackHref = HOME_HREF, actions, titleHidden = false, appBar = true, className }: Props) {
+  const router = useRouter()
+  const goBack = () => {
+    if (window.history.length > 1) router.back()
+    else router.push(fallbackHref)
+  }
+  useShellBar(appBar ? { kind: "stack", title, heading: !titleHidden, onBack: goBack, action: actions } : null)
+  return (
+    <div className={cn(appBar ? SHELL_WIDTH.wideOnly : "flex", "min-h-11 items-center gap-1", className)}>
+      <Button variant="ghost" size="icon" onClick={goBack} aria-label="뒤로 가기" className="-ml-3 shrink-0">
+        <ChevronLeft aria-hidden className="size-5" />
+      </Button>
+      {!titleHidden && <h1 className="min-w-0 flex-1 truncate text-h4">{title}</h1>}
+      {actions && <div className={cn("flex shrink-0 items-center gap-1", titleHidden && "ml-auto")}>{actions}</div>}
+    </div>
+  )
+}
+
+/**
+ * 탭 화면의 본문 큰 제목 — 넓은 화면에만 보인다.
+ * 폰 폭에서는 셸 헤더 가운데에 탭 이름(tab)이 뜨고 화면 읽기 제목(h1)도 그쪽이 맡는다.
+ * 본문 제목 글자가 탭 이름과 다르면 children으로 준다.
+ * 첫 탭(홈)은 쓰지 않는다 — 폰 폭에서도 로고를 두는 첫 화면이다(브리프 「6」 「첫 탭의 앱바」가 「모든 탭에 탭 이름」이면 홈도 쓴다).
+ */
+export function TabHeading({ tab, children }: { tab: string; children?: React.ReactNode }) {
+  useShellBar({ kind: "tab", title: tab })
+  return <h1 className={cn(SHELL_WIDTH.wideOnly, "text-h2")}>{children ?? tab}</h1>
+}
