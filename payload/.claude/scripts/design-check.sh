@@ -158,6 +158,8 @@ c11() {
   g -rnoE --exclude-dir=ui '(duration|delay|ease)-\[[^]]+\]|(duration|delay)-[0-9]+|[0-9]+ms|cubic-bezier\(|(^|[^a-z-])ease-(linear|in-out|in|out)\b' "${EX[@]}"
 }
 
+# 12번 못 세는 모양: 조건식 variant(`variant={started ? "secondary" : "default"}`)는 주 버튼으로 세지 않는다 — 0개로 나오면 눈으로 본다.
+# 위에 뜨는 창(확인 창 등)이 여는 화면과 같은 폴더에 있으면 그 창의 주 버튼까지 더해 2개로 나온다 — 문서 통과 조건으로 설명한다.
 c12() {
   ex "$FEATURE_LIST" "$APP_DIR"
   echo "  (참고) 12-가. 화면 목록의 주 행동 칸 (MVP 포함 = O)"

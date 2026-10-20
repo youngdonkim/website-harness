@@ -13,7 +13,7 @@ type Props = {
   center: [number, number] // [경도, 위도] — 구글 지도와 순서가 반대다
   zoom: number
   markers: SampleMarker[]
-  className?: string // 높이가 꼭 있어야 한다(없으면 0이라 안 보인다). 부모 크기를 따르게 h-full을 권한다
+  className?: string // 부모는 relative여야 한다 — 지도 칸이 absolute로 부모를 채운다
 }
 
 // 공개 무료 스타일. 서비스가 커지면 이 주소 한 줄만 바꿔 자체 호스팅·유료 타일로 옮긴다
@@ -67,5 +67,12 @@ export function SampleMap({ center, zoom, markers, className }: Props) {
     }
   }, [center, zoom, markers])
 
-  return <div ref={box} className={className} />
+  // 바깥 틀이 부모(relative)를 absolute로 꽉 채우고, 지도는 그 안에서 h-full로 따른다.
+  // 지도를 바로 absolute로 두면 지도 라이브러리의 CSS(.maplibregl-map { position: relative } — 층 없는 스타일)가
+  // 우리 유틸리티 클래스를 이겨 높이가 0이 된다. 부모 높이가 flex로 정해지면 h-full(100%)만으로도 0이 된다.
+  return (
+    <div className={`absolute inset-0 ${className ?? ""}`}>
+      <div ref={box} className="h-full w-full" />
+    </div>
+  )
 }
