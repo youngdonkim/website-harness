@@ -13,6 +13,7 @@ design-system 스킬 `references/common-patterns.md` §1(홈 첫 화면)을 넓�
 5. [규칙 후보](#5-규칙-후보)
 6. [판정 못한 것](#6-판정-못한-것)
 7. [스킬 반영 제안](#7-스킬-반영-제안)
+8. [유형 재분류 (2026-10-20)](#8-유형-재분류-2026-10-20)
 
 ---
 
@@ -306,3 +307,33 @@ design-system 스킬 `references/common-patterns.md` §1(홈 첫 화면)을 넓�
 - §1.3: 「로그인 전후 홈을 다르게 둘지」 결정 항목 추가
 - §1.3: 커뮤니티라면 「로그인 전에 콘텐츠를 먼저 보여줄지, 가입부터 받을지」 결정 항목 추가
 - §1.3: SaaS라면 「히어로 주 단추를 무료 시작으로 할지, 도입 문의로 할지」 결정 항목 추가
+
+## 8. 유형 재분류 (2026-10-20)
+
+design-system 스킬 `common-patterns.md` §1의 서비스 유형을 다섯에서 여덟로 나누면서, 위 3절 원자료를 새 유형으로 다시 셌습니다. 3절 표는 고치지 않았습니다 — 관찰 사실은 그대로이고 묶는 이름만 바뀌었습니다.
+
+**나눈 기준**
+
+- 「커뮤니티·SNS」 → 주제·게시판으로 모이면 **커뮤니티**, 사람·관계(팔로우·친구)로 이어지면 **SNS**.
+- 「마켓플레이스·O2O」 → 위치·날짜 조건으로 찾아 현장 서비스를 쓰면 **O2O**, 사는 사람과 파는 사람이 물건·매물을 올리고 찾으면 **마켓플레이스**.
+
+**서비스별 새 유형**
+
+| 옛 묶음 | 새 유형 | 서비스 |
+|---|---|---|
+| 커뮤니티·SNS | 커뮤니티 (9) | dcinside.com, theqoo.net, fmkorea.com, clien.net, bbs.ruliweb.com, ppomppu.co.kr, teamblind.com/kr, reddit.com, stackoverflow.com |
+| 커뮤니티·SNS | SNS (7) | band.us, x.com, instagram.com, linkedin.com, pinterest.com, quora.com, discord.com — quora.com·discord.com은 커뮤니티와 경계가 애매함 |
+| 마켓플레이스·O2O | 마켓플레이스 (2) | zigbang.com, daangn.com/kr |
+| 마켓플레이스·O2O | O2O (5) | yeogi.com, airbnb.com, booking.com, zillow.com, doordash.com |
+
+**다시 센 수치 (로그인 전, 데스크톱)**
+
+- **커뮤니티 9곳** — 로그인 전 첫 화면에 글이 보임 9곳 중 9곳(reddit.com은 글 옆에 가입 패널). 형태는 편집형 5 · 목록형 3(fmkorea.com·reddit.com·stackoverflow.com) · 허브형 1. 자동으로 도는 배너 0곳.
+- **SNS 7곳** — 가입을 먼저 받음 7곳 중 7곳: 가입 화면 3(x.com·instagram.com·quora.com) · 가입 랜딩 4(band.us·linkedin.com·pinterest.com·discord.com). 자동으로 도는 배너 0곳. 로그인 후 관찰 0곳.
+- **O2O 5곳** — 맨 위가 위치·날짜 입력 5곳 중 5곳. 제목 문장 5곳 중 4곳(airbnb.com만 없음), 그중 사진 배경 3곳(yeogi.com·zillow.com·doordash.com). 자동으로 도는 큰 배너 0곳.
+- **마켓플레이스 2곳** — 맨 위가 카테고리 1곳(zigbang.com) · 검색창 + 카테고리 1곳(daangn.com/kr). 위치·날짜 입력 0곳. 자동으로 도는 큰 배너 0곳. 표본이 적어 후보로만 씁니다.
+
+**무엇이 달라졌나**
+
+- 4절을 지역으로 나눠 읽어 세운 규칙 「커뮤니티 로그인 전 화면은 지역(한국 = 글 먼저 / 해외 = 가입 먼저)으로 갈린다」는 유형 차이로 설명됩니다. 한국 쪽 예외였던 band.us는 SNS(가입 랜딩), 해외 쪽 예외였던 stackoverflow.com은 커뮤니티(글 먼저)라, 유형으로 나누면 커뮤니티 9곳 중 9곳이 글 먼저, SNS 7곳 중 7곳이 가입 먼저로 예외가 없습니다.
+- 4절의 「마켓플레이스·O2O 7곳 중 5곳이 위치·날짜 입력」에서 예외였던 zigbang.com·daangn.com/kr을 마켓플레이스로 옮기면, O2O는 5곳 중 5곳으로 예외가 없습니다.

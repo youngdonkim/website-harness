@@ -128,7 +128,7 @@ shadcn이 `--radius` 하나에서 `calc(var(--radius) - 2px)`처럼 sm~xl을 파
 
 - **값(색·간격·모서리…) 이름을 정하거나 새 토큰을 추가할 때** — [naming-taxonomy.md](references/naming-taxonomy.md) (shadcn 이름 문법·유형표 + 새 토큰을 `:root`·`.dark`·`@theme inline`에 잇는 절차)
 - **새 UI 컴포넌트를 받거나 만들거나 인벤토리에 등록할 때** — [component-taxonomy.md](references/component-taxonomy.md) (컴포넌트 역할·범용/전용·shadcn 이름 규칙·cva variant 작성·고치는 차례)
-- **홈 첫 화면에 무엇을 먼저 둘지 정할 때** — [common-patterns.md](references/common-patterns.md) §1 (SaaS / 커머스 / 마켓플레이스·O2O / 커뮤니티·SNS / 혼자 쓰는 기록·도구형 다섯 유형의 최상단 차례와 로그인 전후 갈래 · 관찰 37곳+51곳 · 관례는 기본값이고 사용자 결정이 우선, 다르게 정하면 이유와 함께 기록)
+- **홈 첫 화면에 무엇을 먼저 둘지 정할 때** — [common-patterns.md](references/common-patterns.md) §1 (SaaS / 커머스 / 마켓플레이스 / O2O / 커뮤니티 / SNS / 사람 매칭 / 혼자 쓰는 기록·도구형 여덟 유형의 최상단 차례와 로그인 전후 갈래 · 관찰 37곳+51곳 · 관례는 기본값이고 사용자 결정이 우선, 다르게 정하면 이유와 함께 기록)
 - **댓글창·게시글 에디터처럼 글을 써서 올리는 입력란을 만들 때** — [common-patterns.md](references/common-patterns.md) §2~§7 (접근성 체크 목록 · 컴포저 · 에디터)
 - **새 화면·레이아웃을 설계할 때** — [layout-frames.md](references/layout-frames.md) (frame-first 절차, 셸 분류, 컨테이너 정책)
 - **참고 사이트·스크린샷에서 스타일 값을 뽑을 때, 또는 그렇게 뽑아 브리프에 적어 둔 값을 토큰으로 옮길 때** — [reference-analysis.md](references/reference-analysis.md) (고르는 법·갤러리 · 입력 네 종류와 값 뽑는 법 · 분석 항목표 · 분석값 → 1층 램프·2층 shadcn 변수 · 금지)
