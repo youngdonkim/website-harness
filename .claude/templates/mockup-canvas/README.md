@@ -34,17 +34,19 @@
 | `lib/dev-state.ts.template` | `src/lib/dev-state.ts` — `?state=` 읽기 도우미 |
 | `scripts/canvas-list.mjs.template` | `scripts/canvas-list.mjs` — 목록 만들기 스크립트 |
 | `scripts/canvas-shots.mjs.template` | `scripts/canvas-shots.mjs` — 그림 찍기 스크립트 |
+| `scripts/state-fill.mjs.template` | `scripts/state-fill.mjs` — 상태 표 채우기 스크립트 |
 
 ## 프로젝트에 넣는 차례
 
 1. 위 표대로 파일을 같은 경로로 복사하면서 끝의 `.template`을 뗀다(`app/`·`lib/`는 `src/` 아래, `scripts/`는 프로젝트 맨 위).
 2. **개발 의존성 둘을 깐다** — 요소 복사 도구 `react-grab`과 그림 찍기에 쓰는 브라우저 자동화 도구 `playwright`. 판을 고정해서 깐다(`npm install -D --save-exact react-grab playwright`). 확대·이동은 틀이 직접 구현해서 따로 깔 것이 없다.
-3. **`package.json`에 목록 만들기·그림 찍기 명령을 더한다**:
+3. **`package.json`에 목록 만들기·그림 찍기·상태 표 채우기 명령을 더한다**:
 
    ```json
    "scripts": {
      "canvas:list": "node scripts/canvas-list.mjs",
-     "canvas:shots": "playwright install --only-shell chromium && node scripts/canvas-shots.mjs"
+     "canvas:shots": "playwright install --only-shell chromium && node scripts/canvas-shots.mjs",
+     "state:fill": "node scripts/state-fill.mjs"
    }
    ```
 
@@ -112,6 +114,11 @@
   - 흐름 묶음은 「흐름 묶음」 칸에서 온다. 이름은 「역할: 흐름」 꼴이다(예: 「소비자: 찾아보기에서 참가 신청까지」). 칸이 없거나 비면 「역할」 칸 값으로 「<역할>: 흐름 미정」을 만들어 묶는다 — 바꾸려면 `SCREEN_OVERRIDES`에 `group`을 적는다.
   - 순서는 표의 행 순서다. 캔버스는 같은 흐름 묶음끼리 이 순서대로 왼쪽→오른쪽에 놓는다.
 - **7절 상태 표** — 첫 칸이 화면 ID로 시작하는 행에서, 칸마다 끝 괄호에 적힌 `?state=` 값(`empty`·`loading`·`error`·`forbidden`)을 모아 그 화면의 `states`로 쓴다.
+- **상태 표 칸 채우기** — 7절의 `?state=` 값을 손으로 적으면 화면이 많은 표에서 칸이 한 칸씩 밀리기 쉽다. 그래서 「화면 ID와 상태 값」만 한 줄씩 적은 파일을 만들어 `npm run state:fill -- 상태값.txt`를 돌린다. 스크립트가 머리줄의 칸 이름(빈 상태·로딩·오류·권한없음)으로 칸을 찾아 `O` 칸 끝에 `(?state=…)`를 붙인다.
+  - 입력 파일은 한 줄에 화면 하나다: `S-01 empty loading`, `S-02: error forbidden`. `#`로 시작하는 줄은 건너뛴다.
+  - `해당없음`이나 `O*` 칸에는 적지 않고 알려 준다. 이미 값이 있는 칸은 건너뛰니 여러 번 돌려도 된다.
+  - `npm run state:fill -- --check`는 아무것도 쓰지 않고 점검만 한다 — `O`인데 값이 없는 칸, 값이 있는데 `O`가 아닌 칸을 알려 준다.
+  - 손으로 고칠 때는 머리줄에서 칸 이름을 먼저 짚고, 그 이름의 세로줄에서 화면 행을 찾는다. 앞에서부터 `|`를 세지 않는다.
 - **화면 목록이나 상태 표를 고칠 때마다 다시 돌린다.** 자동 부분의 화면 ID·주소·상태가 바뀌어도 손 부분은 화면 ID로 붙으니 그대로 따라간다.
 
 **손 부분에 적는 모양** (`screens.ts`):
