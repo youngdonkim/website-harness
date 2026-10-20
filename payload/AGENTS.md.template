@@ -111,7 +111,9 @@ design-system 스킬의 bootstrap-project.md 절차가 아래 항목을 여기�
 - 컴포넌트 인벤토리 위치 (두 곳 — `components/ui/` 범용 · `components/` 전용)
 - 프레임·화면 패턴 목록 위치
 - **고친 shadcn 부품 목록** — 받은 뒤 직접 고친 `components/ui/` 파일과 고친 이유 한 줄씩. 다시 받기 전엔 `--diff`로 비교하고 이 목록대로 다시 고친다 (`--overwrite` 금지)
-- 디자인 규칙 검사 예외 줄 (3단계 배포 전 검사 중 디자인 규칙 검사의 grep에 걸리지만 남길 값)
+- 디자인 규칙 검사 예외 줄 (3단계 배포 전 검사 중 디자인 규칙 검사의 grep에 걸리지만 남길 값). 기본값 — 셸 틀(`.claude/templates/app-shell/`)의 뷰포트 접두어 네 줄(검사 3), 화면 전체가 통째로 바뀌는 자리라 뷰포트 기준이 맞다:
+  - `src/components/shell-nav.tsx`의 메뉴 전환 둘 — `hidden h-full md:block`(넓은 화면 상단 메뉴) · `… md:hidden`(폰 하단 탭바)
+  - `src/components/app-shell.tsx`의 헤더 전환 둘 — `SHELL_WIDTH.phoneOnly`(`flex md:hidden`) · `SHELL_WIDTH.wideOnly`(`hidden md:flex`)
 - **적용 규칙 요약** (글자 크기 바닥선, 역할 한정 토큰 등 — 부품 값을 고를 때 매번 필요한 규칙)
 
 ## 앱 개발 컨벤션

@@ -29,7 +29,7 @@
    이미 `postinstall`·`predev`·`prebuild`가 있으면 `&&`로 이어 붙인다. 복사본은 `npm install`이 매번 만드니 `.gitignore`에 `/public/maplibre-gl-worker.mjs`를 더해 올리지 않는다.
    **개발 서버는 `npm run dev -- -p <포트>`로 띄운다.** `npx next dev`로 바로 띄우면 `predev`가 돌지 않아 복사를 건너뛴다(`npm install` 직후엔 `postinstall`이 만들어 둔 복사본이 있어 티가 안 날 뿐이다).
 3. **부품을 놓는다** — `sample-map.tsx.template`을 `src/components/sample-map.tsx`로 복사한다. 지도가 있는 화면에서만 import한다 — 부품이 라이브러리를 동적 import(필요할 때 내려받기)로 불러서, 지도 없는 화면의 번들에는 안 섞인다. 첫 화면 등 다른 화면에서 이 부품을 import하면 그 화면 번들에 들어가니 피한다.
-   - 지도 칸에는 높이가 꼭 있어야 한다. 앱 셸(상단 로고 줄) 안에서는 `h-dvh`가 아니라 `h-full`로 부모를 따르게 한다.
+   - 지도를 놓는 부모는 `relative`이고 높이가 있어야 한다. 부품의 바깥 틀이 `absolute inset-0`으로 부모를 꽉 채우고, 지도는 그 안에서 `h-full w-full`로 따른다. 지도 `div`에 직접 `absolute`를 주면 지도 라이브러리 CSS(`.maplibregl-map { position: relative }` — 층 없는 스타일)가 이겨 높이가 0이 되고, 부모 높이가 flex로 정해지면 `h-full`만으로도 0이 된다. 지도 칸의 로딩 뼈대도 같은 `absolute inset-0` 틀로 짓는다.
    - 마커 모양은 서비스 토큰 클래스(`bg-foreground` 등)로 정한다. hex 값을 쓰지 않는다.
    - 오른쪽 아래 출처 표시(OpenFreeMap · OpenMapTiles · OpenStreetMap)는 지도 사용 조건이다. 지우지 않는다.
 4. **견본 장소 데이터를 저장·조회 코드에 둔다** — 장소 이름과 좌표(`[경도, 위도]`)는 예시 콘텐츠처럼 그럴듯하게 지어서 저장·조회 코드(`src/lib/storage.ts`)의 견본 데이터에 넣는다. 화면에 박지 않는다. **주소 검색은 「견본 장소 목록에서 찾기」로 흉내 낸다** — 입력한 글자로 견본 장소의 이름·주소를 걸러 보이는 것이다. 공개 주소 검색 서비스(Nominatim)는 부르지 않는다. 초당 1회 제한과 자동완성 금지가 정책이라, 글자를 칠 때마다 부르는 화면이 금지에 걸린다. 진짜 주소 검색은 실서비스 지도를 정하는 4단계 준비에서 함께 정한다.

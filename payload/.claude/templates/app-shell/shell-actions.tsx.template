@@ -1,0 +1,26 @@
+"use client"
+
+// 셸 헤더 오른쪽 — 알림·내 정보 아이콘 단추. 폰 폭·넓은 화면 모두 보인다(mvp/feature-list.md 8절).
+// 프로젝트에 넣는 자리: src/components/shell-actions.tsx. 넣는 차례와 채울 자리는 틀의 README.md.
+// 알림이나 내 정보 화면이 없는 서비스면 그 단추를 뺀다. 둘 다 없으면 이 파일을 넣지 않고 app-shell.tsx의 ShellActions 자리를 비운다.
+// 안 읽은 알림 표시(종 옆 작은 점)는 저장·조회 코드에 알림 수 함수가 생기면 더한다 — 점은 글자색(bg-foreground)으로, 강조색·상태색을 장식에 쓰지 않는다.
+import Link from "next/link"
+import { Bell, CircleUserRound } from "lucide-react"
+import { Button } from "@/components/ui/button"
+
+export function ShellActions() {
+  return (
+    <div className="flex items-center gap-1">
+      <Button asChild variant="ghost" size="icon">
+        <Link href="{{알림 주소}}" aria-label="알림">
+          <Bell aria-hidden className="size-5" />
+        </Link>
+      </Button>
+      <Button asChild variant="ghost" size="icon" className="-mr-2">
+        <Link href="{{내 정보 주소}}" aria-label="내 정보">
+          <CircleUserRound aria-hidden className="size-5" />
+        </Link>
+      </Button>
+    </div>
+  )
+}
