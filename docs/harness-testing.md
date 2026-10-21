@@ -89,6 +89,7 @@ MOCKUP_CANVAS=1 npm run build && MOCKUP_CANVAS=1 npm run start -- -p 3300
 
 - `MOCKUP_CANVAS=1`을 붙여야 실서비스 빌드에서도 목업 캔버스가 열리고 `?state=`(빈 상태·오류 같은 상태 화면 보기)가 켜집니다. 시험 폴더에서만 이렇게 쓰고 Vercel에는 넣지 않습니다(`payload/.claude/templates/mockup-canvas/README.md` 「실서비스 빌드로 빠르게 보기」).
 - 포트는 3000을 피해 3300처럼 비어 있는 번호를 씁니다 — 3000에는 다른 프로젝트의 개발 서버가 떠 있을 수 있습니다. 3300 근처도 다른 시험 프로젝트가 쓰고 있을 수 있으니, 빈 번호를 `for p in $(seq 3300 3399); do lsof -nP -iTCP:$p -sTCP:LISTEN >/dev/null || { echo $p; break; }; done`로 찾아 `3300` 자리에 넣습니다.
+- 실서비스 빌드 서버(`next start`)와 개발 서버(`next dev`)는 같은 폴더에 함께 떠 있을 수 있지만, `next dev`는 같은 폴더에 하나만 뜹니다 — Next 16이 두 번째를 「Another next dev server is already running」으로 거부합니다. 시험 중에 개발 서버가 필요하면 이미 떠 있는 그 폴더의 `next dev`를 쓰고, 없을 때만 빈 포트에 띄웁니다.
 - Node 판이 이 컴퓨터의 기본 판과 다르면 명령 앞에 `fnm exec --using=.nvmrc --`를 붙입니다.
 
 볼 주소:

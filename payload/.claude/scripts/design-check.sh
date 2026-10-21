@@ -97,8 +97,10 @@ want() {
 c1() {
   ex "$CSS3" "${PRODUCT[@]}"; [ ${#EX[@]} -eq 0 ] && return
   # 주석 속 숫자(예: 「누르는 영역 44px」 설명)는 세지 않는다 — scan이 주석을 걷고 본다
-  scan line '#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|rgba?\(|hsla?\(|oklch\(|oklab\(' "${EX[@]}"
-  scan line '[0-9]+px' "${EX[@]}"
+  # 2-3 비교안 판 폴더(`(dev)/…/_bold|_innov|_leap/`) 안 .ts 값 파일({수단}.ts·motion.ts)은 보지 않는다 —
+  #   고르면 제품 코드 밖 lib/로 옮겨질 값 파일이라, 그 안의 색 변환 도우미(`rgb(`)가 오탐이 된다(2026-10-22 시험). .tsx는 그대로 본다.
+  { scan line '#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|rgba?\(|hsla?\(|oklch\(|oklab\(' "${EX[@]}"
+    scan line '[0-9]+px' "${EX[@]}"; } | g -vE '\(dev\)/([^:]*/)?_(bold|innov|leap)/[^/:]+\.ts:[0-9]+:'
 }
 
 c2() {
