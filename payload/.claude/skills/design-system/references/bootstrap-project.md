@@ -233,7 +233,9 @@ idea-to-mvp 3단계면 `mvp/design-brief.md` 「8. 모션·인터랙션 방향�
   *, *::before, *::after {
     animation-duration: 0s !important;
     animation-iteration-count: 1 !important;
+    animation-delay: 0s !important;      /* 차례 움직임의 지연도 없앤다 — 남으면 요소가 늦게 나타난다 */
     transition-duration: 0s !important;
+    transition-delay: 0s !important;
     scroll-behavior: auto !important;
   }
 }
