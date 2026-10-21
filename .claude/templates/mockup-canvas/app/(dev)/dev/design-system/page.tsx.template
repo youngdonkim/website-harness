@@ -158,7 +158,7 @@ function contrast(a: string, b: string): string {
   return `${((hi + 0.05) / (lo + 0.05)).toFixed(2)} : 1`
 }
 
-/** 브랜드 색 면 견본 — 면 위 글자와 주 버튼을 올리고, 흰 바탕·면 위 글자·면 위 주 버튼 대비를 계산값으로 보인다 */
+/** 브랜드 색 면 견본 — 면 위 글자와 주 버튼을 올리고, 바탕과 면·면 위 글자·면 위 주 버튼 대비를 계산값으로 보인다 */
 function BrandSurfaceProbe() {
   const surface = useRef<HTMLDivElement>(null)
   const button = useRef<HTMLButtonElement>(null)
@@ -169,7 +169,7 @@ function BrandSurfaceProbe() {
     const page = getComputedStyle(document.body).backgroundColor
     const btn = getComputedStyle(button.current).backgroundColor
     setLines([
-      `바탕과 면 ${contrast(page, s.backgroundColor)}`,
+      `바탕과 면 ${contrast(page, s.backgroundColor)} (1.2 이상)`,
       `면 위 글자 ${contrast(s.color, s.backgroundColor)} (4.5 이상)`,
       `면 위 주 버튼 ${contrast(btn, s.backgroundColor)} (3 이상)`,
     ])

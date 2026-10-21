@@ -20,6 +20,7 @@
 #   AGENTS_MD=AGENTS.md                    (15번: 연결 정보의 `BRAND_PARTS:` 줄을 읽는 곳)
 #   BRAND_PARTS="src/components/hero-band.tsx …"   (15번: 주면 AGENTS_MD 대신 이 목록을 쓴다)
 #
+# 1·11번은 주석 속 숫자를 세지 않는다(scan — 2026-10-21 시험에서 「44px」 설명 주석이 하드코딩으로 잡혔다). 15번은 대상이 아직 없으면 「해당 없음」으로 따로 적는다 — 통과와 다르다.
 # 늘 exit 0 이다. 걸린 줄을 어떻게 볼지는 문서 기준으로 사람·메인이 판정한다.
 # bash 3.2(macOS 기본)에서 돌고, zsh에서 `bash …`로 불러도 낱말이 바르게 쪼개진다.
 
@@ -50,6 +51,25 @@ AGENTS_MD="${AGENTS_MD:-AGENTS.md}"
 
 g() { command grep "$@"; }
 
+# scan line|only 정규식 경로... : grep -rnE 결과에서 주석을 걷어 낸 뒤에도 정규식이 맞는 줄만 남긴다.
+#   걷어 내는 것 — `/* … */`·`{/* … */}`, 공백 뒤 `//`부터 줄 끝(주소의 `https://`는 남는다),
+#   ` * `로 시작하는 여러 줄 주석의 가운데 줄, 닫히지 않은 `/*`부터 줄 끝.
+#   못 걷는 것 — ` * ` 없이 쓴 여러 줄 주석의 가운데 줄(그 줄은 그대로 나온다).
+#   line: 걸린 줄을 그대로 / only: 주석 밖에서 맞은 조각만 「파일:줄:조각」으로 (grep -o와 같은 모양)
+scan() {
+  local mode="$1" re="$2"; shift 2
+  g -rnHE --exclude-dir=ui -- "$re" "$@" | MODE="$mode" RE="$re" perl -ne '
+    chomp; my ($h, $c) = /^(.*?:[0-9]+:)(.*)$/ or next;
+    my $s = $c;
+    $s =~ s{\{?/\*.*?\*/\}?}{}g;
+    $s =~ s{(^|\s)//.*$}{$1};
+    $s =~ s{^\s*\*(\s+[^\s\{]|/|$).*$}{};
+    $s =~ s{/\*.*$}{};
+    my $re = $ENV{RE};
+    if ($ENV{MODE} eq "only") { while ($s =~ /($re)/g) { print "$h$1\n" } }
+    elsif ($s =~ /$re/) { print "$h$c\n" }'
+}
+
 T=$(mktemp -d)
 trap 'rm -rf "$T"' EXIT
 
@@ -75,8 +95,9 @@ want() {
 # ---------- 검사 함수 ----------
 c1() {
   ex "$CSS3" "${PRODUCT[@]}"; [ ${#EX[@]} -eq 0 ] && return
-  g -rnE --exclude-dir=ui '#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|rgba?\(|hsla?\(|oklch\(|oklab\(' "${EX[@]}"
-  g -rnE --exclude-dir=ui '[0-9]+px' "${EX[@]}"
+  # 주석 속 숫자(예: 「누르는 영역 44px」 설명)는 세지 않는다 — scan이 주석을 걷고 본다
+  scan line '#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|rgba?\(|hsla?\(|oklch\(|oklab\(' "${EX[@]}"
+  scan line '[0-9]+px' "${EX[@]}"
 }
 
 c2() {
@@ -158,7 +179,7 @@ c10() {
 
 c11() {
   ex "$CSS3" "${PRODUCT[@]}"; [ ${#EX[@]} -eq 0 ] && return
-  g -rnoE --exclude-dir=ui '(duration|delay|ease)-\[[^]]+\]|(duration|delay)-[0-9]+|[0-9]+ms|cubic-bezier\(|(^|[^a-z-])ease-(linear|in-out|in|out)\b' "${EX[@]}"
+  scan only '(duration|delay|ease)-\[[^]]+\]|(duration|delay)-[0-9]+|[0-9]+ms|cubic-bezier\(|(^|[^a-z-])ease-(linear|in-out|in|out)\b' "${EX[@]}"
 }
 
 # 12번 못 세는 모양: 조건식 variant(`variant={started ? "secondary" : "default"}`)는 주 버튼으로 세지 않는다 — 0개로 나오면 눈으로 본다.
@@ -200,7 +221,12 @@ c14() {
 }
 
 # 15번: brand-surface(브랜드 색 면)를 쓴 파일이 연결 정보의 자리 부품 목록(BRAND_PARTS) 밖에 있으면 찍는다.
-# 개발용 묶음 (dev)은 뺀다 — 디자인 시스템 페이지 견본과 2-3 비교안이 쓴다. 브랜드 색을 안 쓰는 프로젝트면 아무것도 안 나온다.
+# 개발용 묶음 (dev)은 뺀다 — 디자인 시스템 페이지 견본과 2-3 비교안이 쓴다.
+# 세 갈래를 가른다:
+#   ① 브랜드 색을 아직 안 들임(2층 :root에 --brand-surface 값 없음 · 제품 코드에 쓴 곳 없음 · 목록 줄 없음) → 「해당 없음」 (걸린 줄로 세지 않는다)
+#   ② 들였는데 목록 줄이 없음(:root 값이나 쓴 파일은 있는데 BRAND_PARTS 줄 없음) → 「목록 줄 없음」 (걸린 줄)
+#   ③ 목록이 있음 → 목록 밖 파일만 찍는다. 목록에 있는데 파일이 없으면 (참고)로 알린다
+NA_LIST=""
 c15() {
   ex "${PRODUCT[@]}"; [ ${#EX[@]} -eq 0 ] && return
   local list="${BRAND_PARTS:-}"
@@ -208,11 +234,31 @@ c15() {
     list=$(g -m1 'BRAND_PARTS:' "$AGENTS_MD" | sed -E 's/.*BRAND_PARTS:[[:space:]]*//' | tr -d '`')
   fi
   g -rlE --exclude-dir=ui --exclude-dir='(dev)' 'brand-surface' "${EX[@]}" | sort -u > "$T/brand-files.txt"
-  [ -s "$T/brand-files.txt" ] || return
-  [ -z "$list" ] && echo "  (참고) 자리 부품 목록(BRAND_PARTS)을 못 찾음 — 쓴 파일이 모두 목록 밖으로 나온다"
-  local f ok p
-  local parts=()
+  local rootval=0
+  if [ -e "$SEMANTIC_CSS" ]; then
+    # 2층에서 선택자가 :root인 블록 안의 --brand-surface 값만 센다(비교안 범위 블록 .draft-… 안의 값은 빼고)
+    rootval=$(awk '
+      { line=$0; sub(/\/\*.*\*\//, "", line) }
+      depth==0 && line ~ /\{/ { sel=line; sub(/\{.*/, "", sel); gsub(/^[ \t]+|[ \t]+$/, "", sel) }
+      { o=gsub(/\{/, "{", line); c=gsub(/\}/, "}", line) }
+      depth+o>0 && sel ~ /^:root/ && line ~ /--brand-surface[[:space:]]*:/ { n++ }
+      { depth+=o-c; if (depth<=0) { depth=0 } }
+      END { print n+0 }' "$SEMANTIC_CSS")
+  fi
+  if [ -z "$list" ]; then
+    if [ ! -s "$T/brand-files.txt" ] && [ "$rootval" = 0 ]; then
+      echo "  (참고) 해당 없음 — 브랜드 색 면을 아직 들이지 않았다(2층 :root에 --brand-surface 값 없음, 제품 코드에 쓴 곳 없음, 연결 정보에 BRAND_PARTS 줄 없음)"
+      NA_LIST="$NA_LIST 15"
+      return
+    fi
+    echo "목록 줄 없음: 브랜드 색 면을 들였는데($([ "$rootval" != 0 ] && echo '2층 :root에 값 있음')$([ -s "$T/brand-files.txt" ] && echo ' 제품 코드에 쓴 파일 있음')) $AGENTS_MD 연결 정보에 BRAND_PARTS: 줄이 없다 — 줄을 빠뜨린 것"
+  fi
+  local parts=() p f ok
   [ -n "$list" ] && read -r -a parts <<< "$list"
+  if [ ${#parts[@]} -gt 0 ]; then
+    for p in "${parts[@]}"; do [ -e "$p" ] || echo "  (참고) 목록에 있는데 파일이 없음: $p"; done
+  fi
+  [ -s "$T/brand-files.txt" ] || return
   while read -r f; do
     ok=0
     if [ ${#parts[@]} -gt 0 ]; then
@@ -265,4 +311,5 @@ run 15 "브랜드 색 면 자리 부품 밖 사용" c15 h
 
 echo
 echo "걸린 검사:${HIT_LIST:- 없음} / 기준 확인이 필요한 검사: 8·10(1 이상이어야 통과), 12(1개가 아닌 화면은 주 행동 칸과 맞대 판정) —${VAL_LIST:- 해당 없음}"
+[ -n "$NA_LIST" ] && echo "해당 없음(검사할 대상이 아직 없음 — 통과와 다르다):$NA_LIST"
 exit 0
