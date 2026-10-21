@@ -291,8 +291,10 @@ c16() {
       NA_LIST="$NA_LIST 16"
       return
     fi
-    echo "목록 줄 없음: 패키지를 동적 import한 파일이 있는데($(wc -l < "$T/heavy-dyn.txt" | tr -d ' ')개) $AGENTS_MD 연결 정보에 HEAVY_LIBS:·HEAVY_PARTS: 줄이 없다 — 무거운 라이브러리면 줄을 빠뜨린 것"
+    # 동적 import는 무거운 라이브러리가 아니어도 쓰일 수 있어 위반으로 세지 않고 참고로만 알린다 — 사람이 보고 HEAVY 줄을 더할지 정한다
+    echo "  (참고) 확인 필요 — 패키지를 동적 import한 파일이 있는데($(wc -l < "$T/heavy-dyn.txt" | tr -d ' ')개) $AGENTS_MD 연결 정보에 HEAVY_LIBS:·HEAVY_PARTS: 줄이 없다. 무거운 라이브러리(3D·지도 등)면 두 줄을 더한다"
     sed 's/^/  (참고) 동적 import 파일: /' "$T/heavy-dyn.txt"
+    NA_LIST="$NA_LIST 16"
     return
   fi
   [ -z "$list" ] && echo "목록 줄 없음: HEAVY_LIBS는 있는데 $AGENTS_MD 연결 정보에 HEAVY_PARTS: 줄이 없다 — 줄을 빠뜨린 것"
