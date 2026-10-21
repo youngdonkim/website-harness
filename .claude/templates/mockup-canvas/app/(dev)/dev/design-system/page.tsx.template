@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -114,7 +115,126 @@ const DRAFT_SCOPES: { label: string; cls: string }[] = [
   // {{예: { label: "B안 값", cls: "draft-home-b" }}}
 ]
 
+// ── 브랜드 (idea-to-mvp 2-3 개성 입히기에서 채운다. 그 전에는 「아직 없음」 한 줄만 보인다) ──
+// 로고는 currentColor 부품을 크기만 달리해 그린다 — 상단 메뉴 크기 · 파비콘 크기(size-4 · size-8) · 큰 크기.
+// 브랜드 색 면은 2층 brand-surface가 생긴 뒤에만 켠다. 면 위 글자·주 버튼과의 대비도 계산값으로 낸다.
+// 사진 톤은 같은 견본 사진을 원본과 보정 클래스로 나란히 둔다. 비교안 값 칸에서는 그 판의 범위 클래스가 값을 바꾼다.
+const LOGOS: { name: string; Logo: React.ComponentType<{ className?: string }> }[] = [
+  // {{예: { name: "소재 A형", Logo: LogoMarkA } — 로고 부품을 import해서 더한다}}
+]
+const LOGO_SIZES = [
+  { name: "상단 메뉴", cls: "h-8 w-auto" },
+  { name: "파비콘 작게", cls: "size-4" },
+  { name: "파비콘", cls: "size-8" },
+  { name: "크게", cls: "h-24 w-auto" },
+]
+const HAS_BRAND_SURFACE = false // {{2-3에서 2층에 brand-surface를 들인 뒤 true로}}
+const FONT_BRAND_STEPS: string[] = [] // {{예: ["text-h1", "text-h2"] — 연결 정보의 「font-brand를 붙이는 글자 이름」 그대로}}
+const PHOTO_SAMPLE = "" // {{예: "/samples/hero.jpg" — public/samples/의 견본 사진 하나}}
+const PHOTO_TONES: { label: string; cls: string }[] = [
+  // {{예: { label: "보정", cls: "photo-tone" }}}
+]
+
+/** 두 색의 대비 — 계산된 색을 캔버스에 칠해 읽은 숫자로 잰다(색 표기 방식과 상관없이) */
+function toRgb(color: string): number[] {
+  const canvas = document.createElement("canvas")
+  canvas.width = 1
+  canvas.height = 1
+  const ctx = canvas.getContext("2d")
+  if (!ctx) return [0, 0, 0]
+  ctx.fillStyle = color
+  ctx.fillRect(0, 0, 1, 1)
+  return Array.from(ctx.getImageData(0, 0, 1, 1).data.slice(0, 3))
+}
+function luminance(color: string): number {
+  const [r, g, b] = toRgb(color).map((v) => {
+    const c = v / 255
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+  })
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+function contrast(a: string, b: string): string {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x)
+  return `${((hi + 0.05) / (lo + 0.05)).toFixed(2)} : 1`
+}
+
+/** 브랜드 색 면 견본 — 면 위 글자와 주 버튼을 올리고, 흰 바탕·면 위 글자·면 위 주 버튼 대비를 계산값으로 보인다 */
+function BrandSurfaceProbe() {
+  const surface = useRef<HTMLDivElement>(null)
+  const button = useRef<HTMLButtonElement>(null)
+  const [lines, setLines] = useState<string[]>([])
+  useEffect(() => {
+    if (!surface.current || !button.current) return
+    const s = getComputedStyle(surface.current)
+    const page = getComputedStyle(document.body).backgroundColor
+    const btn = getComputedStyle(button.current).backgroundColor
+    setLines([
+      `바탕과 면 ${contrast(page, s.backgroundColor)}`,
+      `면 위 글자 ${contrast(s.color, s.backgroundColor)} (4.5 이상)`,
+      `면 위 주 버튼 ${contrast(btn, s.backgroundColor)} (3 이상)`,
+    ])
+  }, [])
+  return (
+    <div className="flex flex-col gap-2">
+      <div ref={surface} className="flex flex-col gap-4 bg-brand-surface px-6 py-8 text-brand-surface-foreground">
+        <p className="text-h2">{SERVICE_NAME}</p>
+        <Button ref={button} className="w-fit">
+          주 버튼
+        </Button>
+      </div>
+      <p className="text-b2 text-muted-foreground">{lines.join(" · ")}</p>
+    </div>
+  )
+}
+
+function BrandSection() {
+  const empty = LOGOS.length === 0 && !HAS_BRAND_SURFACE && FONT_BRAND_STEPS.length === 0 && PHOTO_TONES.length === 0
+  return (
+    <Section title="브랜드">
+      {empty ? (
+        <p className="text-b1 text-muted-foreground">아직 없음 — 2단계 개성 입히기에서 로고·브랜드 색 면·제목 서체·사진 톤을 채웁니다.</p>
+      ) : (
+        <div className="flex flex-col gap-8">
+          {LOGOS.map(({ name, Logo }) => (
+            <div key={name} className="flex flex-col gap-2">
+              <p className="text-b2 font-semibold">로고 — {name}</p>
+              <div className="flex flex-wrap items-end gap-6 text-foreground">
+                {LOGO_SIZES.map((size) => (
+                  <div key={size.name} className="flex flex-col items-start gap-1">
+                    <Logo className={size.cls} />
+                    <span className="text-b2 text-muted-foreground">{size.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+          {HAS_BRAND_SURFACE && <BrandSurfaceProbe />}
+          {FONT_BRAND_STEPS.map((step) => (
+            <div key={step} className="flex flex-col gap-1">
+              <p className="text-b2 text-muted-foreground">{step} + font-brand</p>
+              <Probe className={`${step} font-brand`} read={FONT_READ}>
+                {SERVICE_NAME} 제목 견본
+              </Probe>
+            </div>
+          ))}
+          {PHOTO_SAMPLE && PHOTO_TONES.length > 0 && (
+            <div className="flex flex-wrap gap-6">
+              {[{ label: "원본", cls: "" }, ...PHOTO_TONES].map((tone) => (
+                <figure key={tone.label} className="flex w-64 flex-col gap-2">
+                  <Image src={PHOTO_SAMPLE} alt={`견본 사진 — ${tone.label}`} width={320} height={240} className={`h-auto w-full rounded-card ${tone.cls}`} />
+                  <figcaption className="text-b2 text-muted-foreground">{tone.label}</figcaption>
+                </figure>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </Section>
+  )
+}
+
 const TYPE_READ: (keyof CSSStyleDeclaration & string)[] = ["fontSize", "fontWeight", "lineHeight"]
+const FONT_READ: (keyof CSSStyleDeclaration & string)[] = ["fontFamily", "fontWeight"]
 const COLOR_READ: (keyof CSSStyleDeclaration & string)[] = ["backgroundColor"]
 const SPACE_READ: (keyof CSSStyleDeclaration & string)[] = ["width"]
 const RADIUS_READ: (keyof CSSStyleDeclaration & string)[] = ["borderRadius"]
@@ -244,6 +364,8 @@ function Samples() {
           </p>
         </div>
       </Section>
+
+      <BrandSection />
     </div>
   )
 }

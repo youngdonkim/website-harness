@@ -75,6 +75,7 @@ Tailwind는 이름 묶음(namespace)마다 클래스를 만든다 — `--radius-
 | 유형 | 하위 유형 | 예시 | 둘 자리 → 생기는 클래스 | 신규 추가 문법 |
 |---|---|---|---|---|
 | color/brand | 주색·보조 | `--primary` · `--secondary` · `--accent` | `:root`·`.dark` + `--color-primary` → `bg-primary`·`text-primary` | shadcn 세트에 있으면 그 이름, 없으면 `--{역할}` + `-foreground` 짝 |
+| color/brand | 브랜드 색 면 | `--brand-surface` · `--brand-surface-foreground` — 값은 1층 램프 단계(강조색과 같은 램프의 아주 옅은·아주 진한 단계, 또는 두 번째 색 램프) | 같음 → `bg-brand-surface`·`text-brand-surface-foreground` | 쓰는 자리는 넓은 면뿐, 정해진 전용 부품 안에서만 — design-system `SKILL.md` 「브랜드 색은 어디에 쓰나」. 프로젝트가 브랜드 색을 정하지 않았으면 두지 않는다 |
 | color/text | 위계 | `--foreground` · `--muted-foreground` | 같음 → `text-foreground`·`text-muted-foreground` | shadcn 2단(기본·`muted`)에 필요하면 희미 1단(`--subtle-foreground`)을 더한다. 그 이상 늘리지 않는다 |
 | color/semantic | 상태 의미 | `--destructive` · `--success` · `--success-foreground` | 같음 → `bg-destructive`·`text-success` | `--{의미}` + `--{의미}-foreground` |
 | color/surface·line | 면과 선 | `--background` · `--card` · `--popover` · `--border` · `--input` · `--ring` | 같음 → `bg-card`·`border-border` | 표면 위계 규범(§3) 준수 |

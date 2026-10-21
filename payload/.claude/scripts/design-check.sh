@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# design-check.sh — 3단계 배포 전 「검사 ① 디자인 규칙 검사」의 grep 14개를 한 번에 돌린다.
+# design-check.sh — 3단계 배포 전 「검사 ① 디자인 규칙 검사」의 grep 15개를 한 번에 돌린다.
 #
 # 판정 기준의 정본: .claude/skills/idea-to-mvp/references/3-frontend-build.md §2.5 「검사 ①」
 #   (통과 조건·잡는 예·못 잡는 예·예외 처리는 그 문서를 본다. 이 스크립트는 명령만 실행하고 판정은 하지 않는다.)
 #
 # 쓰는 법 (프로젝트 최상위 폴더에서):
-#   bash .claude/scripts/design-check.sh                      # 14개 전부 (13번은 --allowed 없으면 건너뜀)
+#   bash .claude/scripts/design-check.sh                      # 15개 전부 (13번은 --allowed 없으면 건너뜀)
 #   bash .claude/scripts/design-check.sh --only 1,2,7,12      # 골라서
 #   bash .claude/scripts/design-check.sh --allowed "0 1 2 3 4 6 8 12 16"   # 13번 허용 간격 단계(Tailwind 숫자)
 #
@@ -17,6 +17,8 @@
 #   INVENTORY=docs/components.md           FEATURE_LIST=mvp/feature-list.md
 #   APP_DIR=src/app                        (6번 앱 설정 경로, 12·14번 화면 폴더 찾는 곳)
 #   BTN=Button BTN_FN=buttonVariants PRIMARY=default   (12번: 버튼 부품·클래스 함수·주 버튼 variant)
+#   AGENTS_MD=AGENTS.md                    (15번: 연결 정보의 `BRAND_PARTS:` 줄을 읽는 곳)
+#   BRAND_PARTS="src/components/hero-band.tsx …"   (15번: 주면 AGENTS_MD 대신 이 목록을 쓴다)
 #
 # 늘 exit 0 이다. 걸린 줄을 어떻게 볼지는 문서 기준으로 사람·메인이 판정한다.
 # bash 3.2(macOS 기본)에서 돌고, zsh에서 `bash …`로 불러도 낱말이 바르게 쪼개진다.
@@ -44,6 +46,7 @@ APP_DIR="${APP_DIR:-src/app}"
 BTN="${BTN:-Button}"
 BTN_FN="${BTN_FN:-buttonVariants}"
 PRIMARY="${PRIMARY:-default}"
+AGENTS_MD="${AGENTS_MD:-AGENTS.md}"
 
 g() { command grep "$@"; }
 
@@ -196,6 +199,29 @@ c14() {
   g -rn --exclude-dir='(dev)' '<h1' "$APP_DIR"
 }
 
+# 15번: brand-surface(브랜드 색 면)를 쓴 파일이 연결 정보의 자리 부품 목록(BRAND_PARTS) 밖에 있으면 찍는다.
+# 개발용 묶음 (dev)은 뺀다 — 디자인 시스템 페이지 견본과 2-3 비교안이 쓴다. 브랜드 색을 안 쓰는 프로젝트면 아무것도 안 나온다.
+c15() {
+  ex "${PRODUCT[@]}"; [ ${#EX[@]} -eq 0 ] && return
+  local list="${BRAND_PARTS:-}"
+  if [ -z "$list" ] && [ -e "$AGENTS_MD" ]; then
+    list=$(g -m1 'BRAND_PARTS:' "$AGENTS_MD" | sed -E 's/.*BRAND_PARTS:[[:space:]]*//' | tr -d '`')
+  fi
+  g -rlE --exclude-dir=ui --exclude-dir='(dev)' 'brand-surface' "${EX[@]}" | sort -u > "$T/brand-files.txt"
+  [ -s "$T/brand-files.txt" ] || return
+  [ -z "$list" ] && echo "  (참고) 자리 부품 목록(BRAND_PARTS)을 못 찾음 — 쓴 파일이 모두 목록 밖으로 나온다"
+  local f ok p
+  local parts=()
+  [ -n "$list" ] && read -r -a parts <<< "$list"
+  while read -r f; do
+    ok=0
+    if [ ${#parts[@]} -gt 0 ]; then
+      for p in "${parts[@]}"; do [ "$f" = "$p" ] && ok=1; done
+    fi
+    [ "$ok" = 1 ] || echo "자리 부품 목록 밖: $f"
+  done < "$T/brand-files.txt"
+}
+
 # ---------- 실행 ----------
 HIT_LIST=""
 VAL_LIST=""
@@ -235,6 +261,7 @@ run 11 "모션 값 하드코딩" c11 h
 run 12 "화면마다 주 버튼 수" c12 c12
 run 13 "간격 허용 단계 밖" c13 h
 run 14 "화면의 h1 직접 사용" c14 h
+run 15 "브랜드 색 면 자리 부품 밖 사용" c15 h
 
 echo
 echo "걸린 검사:${HIT_LIST:- 없음} / 기준 확인이 필요한 검사: 8·10(1 이상이어야 통과), 12(1개가 아닌 화면은 주 행동 칸과 맞대 판정) —${VAL_LIST:- 해당 없음}"
