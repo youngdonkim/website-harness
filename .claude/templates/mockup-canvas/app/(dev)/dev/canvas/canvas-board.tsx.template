@@ -37,7 +37,7 @@ const ROW_GAP = 160 // 기본·상태·비교안 줄 사이
 const COL_GAP = 240 // 화면 사이
 const LINE_GAP = 560 // 화면 줄을 접어 넘길 때 줄 사이
 const GROUP_GAP = 1200 // 흐름 묶음 사이
-const COL_WIDTH = VIEWPORTS.desktop.width + PAIR_GAP + VIEWPORTS.phone.width // 데스크톱·폰 한 쌍인 화면의 칸 폭
+const COL_WIDTH = VIEWPORTS.desktop.width + PAIR_GAP + VIEWPORTS.phone.width // 데스크톱·폰 한 쌍인 화면의 자리 폭
 const ROW_HEIGHT = Math.max(VIEWPORTS.desktop.height, VIEWPORTS.phone.height) + ROW_GAP
 const TARGET_ASPECT = 16 / 10
 /** 이름표 한 줄 높이(화면 단위) */
@@ -100,7 +100,7 @@ function useWheelMode() {
 
 /** 고른 페이지(흐름 묶음 하나 또는 전체)의 창을 배치한다 — 화면은 왼쪽→오른쪽(흐름 순서), 한 화면의 기본·상태·비교안은 위→아래.
  *  화면 줄이 너무 길어지지 않게, 전체 모양이 화면 비율에 가깝도록 한 줄에 놓을 화면 수를 정해 접는다.
- *  폭 하나만 띄우는 화면(screens.ts의 widths)은 칸도 그 창 폭만큼만 차지한다. */
+ *  폭 하나만 띄우는 화면(screens.ts의 widths)은 자리도 그 창 폭만큼만 차지한다. */
 function layoutFrames(page: string): Layout {
   const frames = page === ALL ? FRAMES : FRAMES.filter((f) => f.group === page)
   const groups = [...new Set(frames.map((f) => f.group))]
@@ -130,9 +130,9 @@ function layoutFrames(page: string): Layout {
       let x = 0
       for (const list of line) {
         const width = widthOf(list)
-        // 폰 창은 데스크톱 창이 있으면 그 오른쪽, 없으면 칸 왼쪽 끝에 놓는다
+        // 폰 창은 데스크톱 창이 있으면 그 오른쪽, 없으면 자리 왼쪽 끝에 놓는다
         const phoneX = hasDesktop(list) ? VIEWPORTS.desktop.width + PAIR_GAP : 0
-        // 이름표는 다음 화면 칸 앞까지 쓴다 — 폰 창 하나뿐인 칸에서도 이름이 너무 일찍 잘리지 않게
+        // 이름표는 다음 화면 자리 앞까지 쓴다 — 폰 창 하나뿐인 자리에서도 이름이 너무 일찍 잘리지 않게
         screens.push({ text: `${list[0].screenId} ${list[0].screenName}`, x, y, w: width + COL_GAP })
         for (const frame of list) {
           const size = VIEWPORTS[frame.viewport]
