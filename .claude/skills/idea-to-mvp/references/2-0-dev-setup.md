@@ -61,7 +61,7 @@ description: 목업 단계(2단계)의 맨 앞 하위 단계 가이드 — 개�
 - 디자인 시스템 첫 세팅 제약 — 아래 「붙여 넣을 문안」을 그대로 넣는다. design-system 스킬(`references/bootstrap-project.md` §1~§4·`references/reference-analysis.md` §5)을 걸러 둔 것이라 메인이 그 문서들을 따로 읽지 않아도 된다. 에이전트에게 스킬을 읽으라고 시키지 않는다 (`AGENTS.md` 위임 절). 그 문서들이 바뀌면 이 문안도 함께 고친다.
 - 「바깥 조회(npm registry·공식 문서)에서 같은 실패 2회면 멈추고 보고하라. 401·403·404는 재시도하지 마라.」
 - 「브라우저 자동화로 화면을 열어 보고 '확인 완료'라고 결론 내지 마라 — 빌드·린트·타입 검사까지만 하고 결과를 보고하라.」
-- 「개발 서버가 필요하면 이미 떠 있는 서버를 쓰고, 네가 띄운 프로세스만 끈다.」
+- 「개발 서버가 필요하면 이미 떠 있는 서버를 쓰되, 먼저 그 서버가 개발 서버(`next dev`)인지 본다 — 포트를 듣는 프로세스(`lsof -nP -iTCP:<포트> -sTCP:LISTEN -t`)와 그 부모의 명령 줄(`ps -o pid,ppid,command -p <번호>`)에서 확인한다. 실서비스 빌드 서버(`next start`)거나 알 수 없으면 그 서버를 쓰지 말고 빈 포트에 새 개발 서버를 띄워 쓴다. 그 서버가 떠 있는 동안은 빌드(`next build`)를 돌리지 마라 — 그 서버가 읽고 있는 빌드 결과물(`.next`)을 덮어써 사람이 보던 화면이 깨진다. 빌드가 필요하면 멈추고 보고하라. 네가 띄운 프로세스만 끈다.」
 - 「`AGENTS.md`의 `<!-- BEGIN:nextjs-agent-rules -->` 구역은 지우지 않는다.」 — `next dev`가 붙이는 구역이다(§2.2). 지시서에 없으면 에이전트가 낯선 변경으로 보고 되돌린다.
 - 「전제가 다르면 멈추고 보고하라.」
 - 「재위임 금지: 다른 에이전트를 띄우지 말고, 필요해 보이면 멈추고 보고하라.」
@@ -74,6 +74,7 @@ description: 목업 단계(2단계)의 맨 앞 하위 단계 가이드 — 개�
 - import 순서 — `tailwindcss` → init이 넣은 줄(예: `tw-animate-css`·`shadcn/tailwind.css` — 빼면 부품의 열림·닫힘 모양이 조용히 사라진다) → npm 폰트 CSS → 1층 → 2층 → 3층 → `@custom-variant dark`.
 - 1층 값은 브리프 「4」 「우리가 쓰는 값」 표에서 — 색은 hex를 oklch로 바꾼다. 강조색은 H를 고정하고 L만 바꿔 50~950 램프를 만들고, 원래 색을 600 근처에 둔다(양 끝은 C를 줄인다). 성공·위험도 램프로. 둥글기는 `--radius-base` = 카드 값. 서체는 무료 서체(유료면 대체 서체)로 로딩 방식까지 정한다. 모션은 길이 셋·곡선 둘의 자리만 잡는다(값은 3단계).
 - 2층 — shadcn 이름 세트(`--background`…`--sidebar-*`와 `-foreground` 짝)를 지우지 말고 전부 1층 변수로 다시 잇는다. `--success`·`--success-foreground`를 더한다. `--primary` 위 글자, `--background` 위 `--foreground`·`--muted-foreground`는 4.5:1 이상 — 모자라면 잇는 단계를 진한 쪽으로 고르고, 어느 색을 어느 단계로 이었는지 보고한다.
+- 제목 서체 — 브리프 「4」 「서체 — 제목」이 정해져 있으면 2층 `:root`에 중간 변수 `--brand-font: var(<서체 변수>), …`를 두고 `@theme inline`은 `--font-brand: var(--brand-font);`만 적는다(shadcn이 넣은 `--font-heading`이 있으면 같은 `var(--brand-font)`로). `@theme inline`에 서체 값을 바로 적지 않는다 — 클래스에 값이 그대로 들어가 뒤에 비교안이 서체를 바꿔 볼 수 없다. 제목 태그에 서체를 거는 전역 규칙을 3층에 두었으면 그 태그 범위를 연결 정보 적용 규칙 요약에 적는다.
 - `@theme inline` — 맨 앞에 `--color-*: initial;`(Tailwind 기본 팔레트 끄기 — 빼지 않는다)과 `--color-white`·`--color-black` 둘만 남긴다. 글자 이름 `--text-h1`~`--text-b2`를 두고, `--text-sm`·`--text-xs`는 b2 값으로 다시 정의한다(글자 바닥선 14px). 둥글기 `--radius-card`·`--radius-control`(`calc()`로 파생). 길이 클래스는 `--transition-duration-fast|base|slow`, 곡선은 `--ease-standard`·`--ease-emphasis`, 기본값 `--default-transition-duration`·`--default-transition-timing-function`.
 - 2층 맨 끝에 「비교안」 주석 한 줄 자리만 둔다(2-2가 쓴다). 3층 맨 위에 `prefers-reduced-motion: reduce` 전역 규칙(애니메이션·전환 길이 0s)을 둔다.
 - 클래스 합치기 — `src/lib/utils.ts`의 `cn`에 2층 `@theme inline`에 더한 이름 전부(글자 크기·둥글기·컨테이너 폭·움직임)를 알려 준다(`tailwind-merge`면 `extendTailwindMerge`, `cn` 패키지면 `createCn` — 설치된 쪽 문서로 모양을 확인한다). 부품을 받을 때마다 `grep -rlE "from ['\"](cn|tailwind-merge)['\"]" src/components/ui`가 0건이 되게 import를 `@/lib/utils`로 바꾼다.

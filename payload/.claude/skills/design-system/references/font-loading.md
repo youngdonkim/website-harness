@@ -50,6 +50,7 @@
   - npm 폰트: 1층 `:root`에 적은 패밀리 이름 변수(예: `--font-pretendard: "Pretendard Variable"`)가 기본 값이다.
 - **2층 `@theme inline` 블록의 `--font-sans`만 이 기본 값들을 합친다** (예: `--font-sans: var(--font-base), var(--font-pretendard), "Apple SD Gothic Neo", sans-serif`).
   이 블록이 `@theme inline`이어야 `<html>`에 붙는 `--font-base`를 제자리에서 찾는다.
+- **제목 서체는 중간 변수를 한 겹 둔다** — `@theme inline`에 `--font-brand: var(--font-title-google), …`처럼 값을 바로 적으면 클래스 `font-brand`에 그 값이 그대로 들어가, 비교안 범위 클래스가 `--font-brand`를 덮어써도 닿지 않는다. 그래서 2층 `:root`에 `--brand-font: var(<서체 변수>), var(--font-pretendard), "Apple SD Gothic Neo", sans-serif`를 두고 `@theme inline`은 `--font-brand: var(--brand-font)`만 적는다. `:root`는 `<html>`이라 `next/font`가 `<html>`에 붙이는 변수도 그 자리에서 찾는다. shadcn 복사본이 쓰는 `--font-heading`이 있으면 같은 `var(--brand-font)`를 가리키게 한다.
 - 제품 코드는 `font-sans` 클래스만 쓴다. 그래서 폰트를 통째로 갈아끼워도 foundation만 바뀌고 화면 코드는
   한 줄도 안 바뀐다.
 - **로딩 방식은 토큰이 아니다.** 어떤 파일을 어떻게 받아올지는 빌드 인프라의 일이라 3층 밖에 있다.

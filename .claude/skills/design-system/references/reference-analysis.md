@@ -127,8 +127,8 @@
 | 색 — 강조 | 그 색을 600 근처에 둔 브랜드 램프 50~950 | `--primary`·`--primary-foreground`·`--ring`. 옅은 단계는 `--accent`·`--secondary` 후보 |
 | 색 — 성공 | 초록 램프 | `--success`·`--success-foreground` — shadcn 세트에 없어 더한다 (naming-taxonomy.md §2 color/semantic 행) |
 | 색 — 위험 | 빨강 램프 | `--destructive`와 짝. 장식에 쓰지 않는다 |
-| 색 — 브랜드 면 | 강조색 램프의 아주 옅은(50~100) 또는 아주 진한(900~950) 단계, 두 번째 색이면 그 색의 램프를 새로 | `--brand-surface`·`--brand-surface-foreground` — shadcn 세트에 없어 더한다 (naming-taxonomy.md §2 color/brand 행). 넓은 면에만 쓴다 (SKILL.md 「브랜드 색은 어디에 쓰나」). 참고에서 뽑지 않고 idea-to-mvp 2-3이 비교안으로 정한다 |
-| 서체 — 제목·본문 | 폰트 변수(`--font-pretendard` 등). 로딩은 [font-loading.md](font-loading.md) §4 | `@theme inline` 블록 `--font-sans`(본문). 제목 서체가 다르면 `--font-brand` |
+| 색 — 브랜드 면 | 강조색 램프의 옅은 쪽 또는 아주 진한(900~950) 단계, 두 번째 색이면 그 색의 램프를 새로. 바탕과 1.2:1 이상, 2층에 이미 이어진 상태 단계(선택된 것 바탕 등)는 피한다 (SKILL.md 「브랜드 색은 어디에 쓰나」) | `--brand-surface`·`--brand-surface-foreground` — shadcn 세트에 없어 더한다 (naming-taxonomy.md §2 color/brand 행). 넓은 면에만 쓴다 (SKILL.md 「브랜드 색은 어디에 쓰나」). 참고에서 뽑지 않고 idea-to-mvp 2-3이 비교안으로 정한다 |
+| 서체 — 제목·본문 | 폰트 변수(`--font-pretendard` 등). 로딩은 [font-loading.md](font-loading.md) §4 | `@theme inline` 블록 `--font-sans`(본문). 제목 서체가 다르면 `--font-brand: var(--brand-font)`(값은 2층 `:root`의 `--brand-font` — [bootstrap-project.md](bootstrap-project.md) §1.2) |
 | 둥글기 | `--radius-base` = 카드 값 | `--radius` → `--radius-card`·`--radius-control`은 `calc()`로 파생 — 버튼 값이 나오게 차이를 고른다 (SKILL.md 동심원 radius 규칙) |
 | 간격 | 4px 격자는 그대로 둔다 | 따로 변수 없음 — 셸 거터(`--space-screen-x`)와 부품 `size` 기본값을 고르는 근거. adapter 적용 규칙 요약에 한 줄 ([bootstrap-project.md](bootstrap-project.md) §4) |
 | 그림자 | 그림자 기본 값 | `@theme inline` 블록 `--shadow-card` 등 (naming-taxonomy.md §2 shadow 행) |

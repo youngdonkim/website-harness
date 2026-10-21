@@ -75,7 +75,7 @@ Tailwind는 이름 묶음(namespace)마다 클래스를 만든다 — `--radius-
 | 유형 | 하위 유형 | 예시 | 둘 자리 → 생기는 클래스 | 신규 추가 문법 |
 |---|---|---|---|---|
 | color/brand | 주색·보조 | `--primary` · `--secondary` · `--accent` | `:root`·`.dark` + `--color-primary` → `bg-primary`·`text-primary` | shadcn 세트에 있으면 그 이름, 없으면 `--{역할}` + `-foreground` 짝 |
-| color/brand | 브랜드 색 면 | `--brand-surface` · `--brand-surface-foreground` — 값은 1층 램프 단계(강조색과 같은 램프의 아주 옅은·아주 진한 단계, 또는 두 번째 색 램프) | 같음 → `bg-brand-surface`·`text-brand-surface-foreground` | 쓰는 자리는 넓은 면뿐, 정해진 전용 부품 안에서만 — design-system `SKILL.md` 「브랜드 색은 어디에 쓰나」. 프로젝트가 브랜드 색을 정하지 않았으면 두지 않는다 |
+| color/brand | 브랜드 색 면 | `--brand-surface` · `--brand-surface-foreground` — 값은 1층 램프 단계(강조색과 같은 램프의 옅은 쪽·아주 진한 단계, 또는 두 번째 색 램프 — 바탕과 1.2:1 이상, 2층에 이미 이어진 상태 단계는 피한다) | 같음 → `bg-brand-surface`·`text-brand-surface-foreground` | 쓰는 자리는 넓은 면뿐, 정해진 전용 부품 안에서만 — design-system `SKILL.md` 「브랜드 색은 어디에 쓰나」. 프로젝트가 브랜드 색을 정하지 않았으면 두지 않는다 |
 | color/text | 위계 | `--foreground` · `--muted-foreground` | 같음 → `text-foreground`·`text-muted-foreground` | shadcn 2단(기본·`muted`)에 필요하면 희미 1단(`--subtle-foreground`)을 더한다. 그 이상 늘리지 않는다 |
 | color/semantic | 상태 의미 | `--destructive` · `--success` · `--success-foreground` | 같음 → `bg-destructive`·`text-success` | `--{의미}` + `--{의미}-foreground` |
 | color/surface·line | 면과 선 | `--background` · `--card` · `--popover` · `--border` · `--input` · `--ring` | 같음 → `bg-card`·`border-border` | 표면 위계 규범(§3) 준수 |
@@ -86,7 +86,7 @@ Tailwind는 이름 묶음(namespace)마다 클래스를 만든다 — `--radius-
 | layout/frame-budget | 프레임 계약 값 | 영역 치수: `--app-max-width` · `--nav-height` / 거터·안전영역: `--space-screen-x` · `--space-bottom-safe` | `:root`. 클래스가 필요하면 `@theme inline` 블록에 (`--spacing-screen-x: var(--space-screen-x)` → `px-screen-x`) | `--{영역}-{치수}` — 거터·안전영역은 레거시로 `--space-` 접두 유지 |
 | shadow | 용도별 | `--shadow-fab/cta/sheet/card` | `@theme inline` 블록 → `shadow-card` | `--shadow-{용도}` |
 | motion | 가속 곡선·길이 | `--ease-standard` · `--duration-fast/base/slow` | 곡선: `@theme inline` 블록 → `ease-standard` / 길이: `:root`에 `--duration-*`, `@theme inline` 블록에 `--transition-duration-*`로 올림 → `duration-base` ([bootstrap-project.md](bootstrap-project.md) §1.4) | `--ease-{느낌}` / `--duration-{속도}` |
-| typography/family | 글꼴 자체 | `--font-sans`(본문 기본) · 필요시 `--font-brand`·`--font-mono` | `@theme inline` 블록 → `font-sans` | `--font-{역할}` — 값은 1층 폰트 변수를 합친 것 ([font-loading.md](font-loading.md) §3) |
+| typography/family | 글꼴 자체 | `--font-sans`(본문 기본) · 필요시 `--font-brand`·`--font-mono` | `@theme inline` 블록 → `font-sans` | `--font-{역할}` — 값은 1층 폰트 변수를 합친 것 ([font-loading.md](font-loading.md) §3). 제목 서체 `--font-brand`는 값을 바로 두지 않고 2층 `:root`의 중간 변수 `--brand-font`를 가리킨다 — 범위 클래스가 덮어쓸 자리 |
 | typography/weight | 글자 굵기 | 400 · 500 · 700 | Tailwind 기본 → `font-normal`·`font-medium`·`font-bold` | 역할 이름이 필요하면 `--font-weight-{역할}` → `font-{역할}` |
 | typography/scale | 글(prose) 전용 — 제목·본문·캡션 | `t1~t4`(제목) `h1~h2` `b1~b2` `c1~c2`·`label` | `@theme inline` 블록 `--text-b1` + `--text-b1--line-height` → `text-b1` | 스케일 이름은 시스템 규약으로 고정, 크기 값만 프로젝트별 교체. 11단계에 안 맞는 크기는 typography/component으로 |
 | typography/component | UI 부품 전용 — 칩·뱃지·필드라벨·헬퍼텍스트 등 prose 스케일에 안 맞는 크기 | `--text-chip` · `--text-field-label` | `@theme inline` 블록 → `text-chip` | `--text-{부품/역할}` — §5 절차로 신규 추가 |
