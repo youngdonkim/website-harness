@@ -4,7 +4,7 @@ import { devOnly } from "../../dev-only"
 import { SHOTS_DIR } from "../server-paths"
 
 // 찍어 둔 그림 목록 — 캔버스가 어느 창에 그림이 있는지 알아 간다. 그림은 프로젝트 맨 위 `.canvas-shots/`에 있다(git에 안 올린다).
-// GET /dev/canvas/shots → { files: { "<창 열쇠>": 고친 시각(밀리초) } }
+// GET /dev/canvas/shots → { files: { "<창 열쇠>": 고친 시각(밀리초) } } — 이 시각이 캔버스 그림 귀퉁이의 「찍은 때」로 보인다
 export const dynamic = "force-dynamic"
 
 export async function GET() {
