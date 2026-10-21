@@ -13,7 +13,7 @@ type Props = {
   center: [number, number] // [경도, 위도] — 구글 지도와 순서가 반대다
   zoom: number
   markers: SampleMarker[]
-  className?: string // 부모는 relative여야 한다 — 지도 칸이 absolute로 부모를 채운다
+  className?: string // 부모는 relative여야 한다 — 지도 영역이 absolute로 부모를 채운다
 }
 
 // 공개 무료 스타일. 서비스가 커지면 이 주소 한 줄만 바꿔 자체 호스팅·유료 타일로 옮긴다
