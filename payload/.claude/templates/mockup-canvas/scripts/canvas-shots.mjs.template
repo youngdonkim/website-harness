@@ -9,6 +9,8 @@
 //
 // 찍을 창 목록은 서버의 /dev/canvas/frames에서 받는다(screens.ts를 창 목록으로 편 것). 그림 이름은 `<창 열쇠>.jpg`.
 // 지도가 있는 화면(칸에 data-map-ready 표시가 달린 화면)은 지도가 다 그려질 때까지 기다렸다 찍는다 — 틀 `sample-map`.
+// 3D 장면·게임판처럼 늦게 그려지는 화면은 첫 그림을 그리면 data-view-ready="1"을 낸다 — 그것도 같은 방식으로 기다린다.
+// 3D 화면이 있으면 크로미움을 `--use-angle=swiftshader`(소프트웨어 그래픽)로 띄운다 — 그래픽 카드 없는 헤드리스에서 WebGL이 그려진다. 환경변수 CANVAS_GL=0이면 끈다.
 // 폰 폭만 띄우는 화면(screens.ts의 widths: ["phone"])은 목록에 데스크톱 창이 없으니 폰 그림만 찍는다.
 
 import { mkdir, readdir, rm } from "node:fs/promises"
@@ -25,6 +27,10 @@ const SCALE = 0.5
 const CONCURRENCY = 2
 // 지도 기다리는 시간 상한 — 지도 영역(`data-map-ready`)이 있는 화면은 "1"이 될 때까지 기다린다. 타일이 막히면 영영 안 오니 상한을 둔다
 const MAP_WAIT_MS = 15_000
+// 늦게 그려지는 화면(3D 장면 등)이 `data-view-ready="1"`을 낼 때까지 기다리는 시간 상한 — 소프트웨어 그래픽은 느리니 지도보다 넉넉히 둔다
+const VIEW_WAIT_MS = 30_000
+// 3D(WebGL) 화면이 있으면 켠다 — 프로젝트에 3D 화면이 없으면 `CANVAS_GL=0`으로 끄거나 이 줄을 지운다
+const BROWSER_ARGS = process.env.CANVAS_GL === "0" ? [] : ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"]
 
 const response = await fetch(`${base}/dev/canvas/frames`).catch(() => null)
 if (!response?.ok) {
@@ -35,7 +41,7 @@ const { frames, viewports } = await response.json()
 const targets = only.size ? frames.filter((f) => only.has(f.screenId)) : frames
 await mkdir(outDir, { recursive: true })
 
-const browser = await chromium.launch()
+const browser = await chromium.launch({ args: BROWSER_ARGS })
 const contexts = {}
 for (const [name, size] of Object.entries(viewports)) {
   contexts[name] = await browser.newContext({
@@ -76,6 +82,13 @@ async function worker() {
         await page.waitForSelector('[data-map-ready="1"]', { timeout: MAP_WAIT_MS }).then(
           () => page.waitForTimeout(300),
           () => console.warn(`지도가 ${MAP_WAIT_MS / 1000}초 안에 안 그려졌습니다: ${frame.key} — 빈 지도가 찍힐 수 있습니다.`),
+        )
+      }
+      // 늦게 그려지는 화면(3D 장면 등)은 `data-view-ready="1"`을 낼 때까지 기다린다. 표시가 없는 화면은 그대로 지나간다
+      if (await page.$("[data-view-ready]")) {
+        await page.waitForSelector('[data-view-ready="1"]', { timeout: VIEW_WAIT_MS }).then(
+          () => page.waitForTimeout(300),
+          () => console.warn(`화면이 ${VIEW_WAIT_MS / 1000}초 안에 안 그려졌습니다: ${frame.key} — 빈 장면이 찍힐 수 있습니다.`),
         )
       }
       await page.screenshot({ path: path.join(outDir, `${frame.key}.jpg`), type: "jpeg", quality: 70 })

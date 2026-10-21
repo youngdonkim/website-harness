@@ -187,8 +187,28 @@ function BrandSurfaceProbe() {
   )
 }
 
+// ── 판별 브랜드 자리 (idea-to-mvp 2-3 — 판마다 자기 영역을 따로 갖는다) ──
+// 메인이 판을 띄우기 전에 고른 판의 껍데기 파일(`../drafts/_{판}/brand-panel.tsx`)을 만들고 여기에 등록한다.
+// 각 판 에이전트는 자기 껍데기 파일만 채운다 — 세 에이전트가 이 페이지 파일을 함께 고치면 서로 덮어쓰기 때문이다.
+// 판 코드: bold(대담판) · innov(혁신판) · leap(파격판). 입구에서 뺀 판은 등록하지 않는다.
+// 비교안을 고르고 나면 고른 판의 내용이 위의 정식 견본으로 옮겨 가고, 이 등록과 껍데기 파일은 지운다.
+const BRAND_PANELS: { edition: string; label: string; Panel: React.ComponentType }[] = [
+  // {{예: { edition: "bold", label: "대담판", Panel: BoldBrandPanel } — 맨 위에 import BoldBrandPanel from "../drafts/_bold/brand-panel" 을 더한다}}
+]
+
+/** 판 하나의 브랜드 자리 — 등록된 껍데기가 없으면 「아직 없음」 */
+function BrandPanel({ edition }: { edition: string }) {
+  const entry = BRAND_PANELS.find((p) => p.edition === edition)
+  return (
+    <div className="flex flex-col gap-3" data-brand-panel={edition}>
+      <p className="text-b2 font-semibold">{entry?.label ?? edition}</p>
+      {entry ? <entry.Panel /> : <p className="text-b1 text-muted-foreground">아직 없음</p>}
+    </div>
+  )
+}
+
 function BrandSection() {
-  const empty = LOGOS.length === 0 && !HAS_BRAND_SURFACE && FONT_BRAND_STEPS.length === 0 && PHOTO_TONES.length === 0
+  const empty = LOGOS.length === 0 && !HAS_BRAND_SURFACE && FONT_BRAND_STEPS.length === 0 && PHOTO_TONES.length === 0 && BRAND_PANELS.length === 0
   return (
     <Section title="브랜드">
       {empty ? (
@@ -209,6 +229,9 @@ function BrandSection() {
             </div>
           ))}
           {HAS_BRAND_SURFACE && <BrandSurfaceProbe />}
+          {BRAND_PANELS.map(({ edition }) => (
+            <BrandPanel key={edition} edition={edition} />
+          ))}
           {FONT_BRAND_STEPS.map((step) => (
             <div key={step} className="flex flex-col gap-1">
               <p className="text-b2 text-muted-foreground">{step} + font-brand</p>

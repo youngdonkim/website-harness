@@ -164,6 +164,13 @@ function fitView(box: Box, width: number, height: number, padding = 64): View {
   return { s, x: (width - box.w * s) / 2 - box.x * s, y: (height - box.h * s) / 2 - box.y * s }
 }
 
+/** 그림을 찍은 때(밀리초) → 「10-21 14:32」 */
+function formatShotTime(ms: number) {
+  const d = new Date(ms)
+  const two = (n: number) => String(n).padStart(2, "0")
+  return `${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}:${two(d.getMinutes())}`
+}
+
 function frameLabel(frame: CanvasFrame) {
   return [frame.draft, VIEWPORTS[frame.viewport].label, frame.state].filter(Boolean).join(" · ")
 }
