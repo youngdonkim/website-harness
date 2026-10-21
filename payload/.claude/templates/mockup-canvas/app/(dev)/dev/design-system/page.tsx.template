@@ -118,7 +118,7 @@ const DRAFT_SCOPES: { label: string; cls: string }[] = [
 // ── 브랜드 (idea-to-mvp 2-3 개성 입히기에서 채운다. 그 전에는 「아직 없음」 한 줄만 보인다) ──
 // 로고는 currentColor 부품을 크기만 달리해 그린다 — 상단 메뉴 크기 · 파비콘 크기(size-4 · size-8) · 큰 크기.
 // 브랜드 색 면은 2층 brand-surface가 생긴 뒤에만 켠다. 면 위 글자·주 버튼과의 대비도 계산값으로 낸다.
-// 사진 톤은 같은 견본 사진을 원본과 보정 클래스로 나란히 둔다. 비교안 값 칸에서는 그 판의 범위 클래스가 값을 바꾼다.
+// 사진 톤은 같은 견본 사진을 원본과 보정 클래스로 나란히 둔다. 비교안 값 영역에서는 그 판의 범위 클래스가 값을 바꾼다.
 const LOGOS: { name: string; Logo: React.ComponentType<{ className?: string }> }[] = [
   // {{예: { name: "소재 A형", Logo: LogoMarkA } — 로고 부품을 import해서 더한다}}
 ]
