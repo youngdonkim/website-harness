@@ -143,7 +143,7 @@ git clone https://github.com/youngdonkim/website-harness.git ~/dev/website-harne
 
 | 종류 | 이름 | 역할 |
 |---|---|---|
-| 단계 스킬 | `idea-to-mvp` | 6단계: Intent(인터뷰) · Mockup(2-0 개발환경 · 2-1 목업 · 2-2 디자인 개선) · FrontendBuild · BackendBuild(4-0~4-3) · MarketResearch · MvpLaunch (통과 기준). 2단계부터 실제 앱과 같은 리액트 코드로 화면을 만들고, 그 코드를 끝까지 이어 짓는다 |
+| 단계 스킬 | `idea-to-mvp` | 6단계: Intent(인터뷰) · Mockup(2-0 개발환경 · 2-1 목업 · 2-2 디자인 개선 · 2-3 개성 입히기) · FrontendBuild · BackendBuild(4-0~4-3) · MarketResearch · MvpLaunch (통과 기준). 2단계부터 실제 앱과 같은 리액트 코드로 화면을 만들고, 그 코드를 끝까지 이어 짓는다 |
 | 공통 스킬 | `project-init` | 프로젝트에 하네스 적용 — `payload/`를 프로젝트 루트에 복사 + 훅 등록 설정 병합 + AGENTS.md 뼈대 생성. 이미 적용된 프로젝트에서 재실행하면 최신 원본과 비교해 동기화 |
 | 공통 스킬 | `github-connect` | 이 컴퓨터에서 프로젝트가 GitHub에 올라가게 준비 — git·gh 설치 확인, 토큰(계정 장부 `~/.config/harness/<소유>.env`), 계정 확인, 저장소 생성, 첫 push. 이미 된 단계는 건너뛴다. 하네스 신규 적용 끝에 자동으로 불리고, "깃헙 연결해줘"로 따로 불러도 된다 |
 | 공통 스킬 | `new-task` | main 최신화 + 머지가 끝난 옛 작업 브랜치 정리 + 새 작업 브랜치 생성 |
