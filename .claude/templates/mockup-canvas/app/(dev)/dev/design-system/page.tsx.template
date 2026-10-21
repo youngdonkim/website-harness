@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-// {{프로젝트에 없는 부품은 import와 아래 「부품 상태」 칸에서 같이 지운다. 있는 부품(탭·토글 등)은 같은 모양으로 더한다}}
+// {{프로젝트에 없는 부품은 import와 아래 「부품 상태」 영역에서 같이 지운다. 있는 부품(탭·토글 등)은 같은 모양으로 더한다}}
 
 // 디자인 시스템 페이지 — 실제 토큰과 실제 부품으로 그린다. 토큰의 정본은 1·2층 CSS이고, 이 페이지는 그것을 비춰 보여 주는 거울이다.
 // 색·크기 값은 코드에 적지 않고, 브라우저가 계산한 값을 읽어 보여 준다.
@@ -121,7 +121,7 @@ const RADIUS_READ: (keyof CSSStyleDeclaration & string)[] = ["borderRadius"]
 const GAP_READ: (keyof CSSStyleDeclaration & string)[] = ["columnGap"]
 const MAX_WIDTH_READ: (keyof CSSStyleDeclaration & string)[] = ["maxWidth"]
 
-/** 견본 묶음 — 「지금 값」과 「비교안 값」에 같은 견본을 두 번 그린다. 계산값을 읽어서 비교안 칸에는 덮어쓴 값이 저절로 보인다 */
+/** 견본 묶음 — 「지금 값」과 「비교안 값」에 같은 견본을 두 번 그린다. 계산값을 읽어서 비교안 영역에는 덮어쓴 값이 저절로 보인다 */
 function Samples() {
   return (
     <div className="flex flex-col gap-12">

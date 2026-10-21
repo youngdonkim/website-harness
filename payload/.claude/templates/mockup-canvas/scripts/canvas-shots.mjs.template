@@ -23,7 +23,7 @@ const outDir = path.join(process.cwd(), ".canvas-shots")
 const SCALE = 0.5
 // 동시에 여는 창 수 — 개발 서버는 처음 여는 주소를 그때 만들어서, 많이 열면 오히려 느려진다
 const CONCURRENCY = 2
-// 지도 기다리는 시간 상한 — 지도 칸(`data-map-ready`)이 있는 화면은 "1"이 될 때까지 기다린다. 타일이 막히면 영영 안 오니 상한을 둔다
+// 지도 기다리는 시간 상한 — 지도 영역(`data-map-ready`)이 있는 화면은 "1"이 될 때까지 기다린다. 타일이 막히면 영영 안 오니 상한을 둔다
 const MAP_WAIT_MS = 15_000
 
 const response = await fetch(`${base}/dev/canvas/frames`).catch(() => null)
@@ -71,7 +71,7 @@ async function worker() {
         await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {})
         await page.waitForTimeout(500)
       }
-      // 지도 칸이 있는 화면은 지도가 다 그려질 때까지 기다린다. 지도 칸이 없는 화면은 그대로 지나간다
+      // 지도 영역이 있는 화면은 지도가 다 그려질 때까지 기다린다. 지도 영역이 없는 화면은 그대로 지나간다
       if (await page.$("[data-map-ready]")) {
         await page.waitForSelector('[data-map-ready="1"]', { timeout: MAP_WAIT_MS }).then(
           () => page.waitForTimeout(300),

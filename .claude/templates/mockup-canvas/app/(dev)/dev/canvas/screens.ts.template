@@ -3,7 +3,7 @@ import { GENERATED_SCREENS } from "./screens.generated"
 // 목업 캔버스 목록 파일 — 캔버스에 띄울 화면의 목록.
 // 기본 목록은 screens.generated.ts다 — `npm run canvas:list`가 mvp/feature-list.md 6절(화면 목록)·7절(상태 표)에서 만든다.
 // 이 파일은 사람이(또는 AI가) 손으로 더하는 것만 적는다. 스크립트는 이 파일을 덮어쓰지 않는다.
-//   · SCREEN_OVERRIDES — 자동 목록의 화면 하나를 화면 ID로 골라 칸을 바꾸거나 더한다(비교안 drafts, 흐름 묶음, 주소, 상태, 폰 폭만, 빼기).
+//   · SCREEN_OVERRIDES — 자동 목록의 화면 하나를 화면 ID로 골라 값을 바꾸거나 더한다(비교안 drafts, 흐름 묶음, 주소, 상태, 폰 폭만, 빼기).
 //   · EXTRA_SCREENS — 화면 목록에 없지만 캔버스에 띄울 화면.
 // 배열 순서가 곧 흐름 순서다(자동 목록은 화면 목록 표의 순서).
 
@@ -28,7 +28,7 @@ export type CanvasScreen = {
   drafts?: { label: string; path: string; states?: CanvasState[] }[]
 }
 
-/** 자동 목록 위에 덮어쓸 칸 — 화면 ID로 고른다. skip: true면 캔버스에서 뺀다 */
+/** 자동 목록 위에 덮어쓸 값 — 화면 ID로 고른다. skip: true면 캔버스에서 뺀다 */
 export const SCREEN_OVERRIDES: Record<string, Partial<Omit<CanvasScreen, "id">> & { skip?: boolean }> = {
   // 비교안을 붙일 때 (화면 개선 단계):
   // "S-01": { drafts: [{ label: "A판", path: "/dev/drafts/home-a" }, { label: "B판", path: "/dev/drafts/home-b" }] },
