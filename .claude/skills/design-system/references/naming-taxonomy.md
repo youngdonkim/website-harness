@@ -80,7 +80,7 @@ Tailwind는 이름 묶음(namespace)마다 클래스를 만든다 — `--radius-
 | color/semantic | 상태 의미 | `--destructive` · `--success` · `--success-foreground` | 같음 → `bg-destructive`·`text-success` | `--{의미}` + `--{의미}-foreground` |
 | color/surface·line | 면과 선 | `--background` · `--card` · `--popover` · `--border` · `--input` · `--ring` | 같음 → `bg-card`·`border-border` | 표면 위계 규범(§3) 준수 |
 | color/control | 컨트롤 전용 | `--neutral-pressed` | 같음 | `--{역할}-{부위}[-{상태}]` |
-| color/domain | 기능 전용 팔레트 | `--chart-1`~`--chart-5`(shadcn) · `--bar-*`(계산기) | 같음 → `fill-chart-1` | `--{도메인}-{역할}` — 2개 이상 화면에서 쓸 때만 |
+| color/domain | 기능 전용 팔레트 | `--chart-1`~`--chart-5`(shadcn) · `--bar-*`(계산기) · `--scene-surface`·`--board-cell`·`--map-marker`(idea-to-mvp 2-3 파격판이 고른 수단 안의 색 — 3D 재질·게임판 칸·지도 표시) | 같음 → `fill-chart-1`. 수단 안의 색은 클래스가 아니라 `getComputedStyle`로 이 2층 이름을 읽는다 | `--{도메인}-{역할}`·`--{수단}-{역할}` — 2개 이상 화면에서 쓸 때만. 수단의 색은 2층 이름만 거치고 1층 램프를 바로 읽지 않는다 |
 | radius | 용도별 | `--radius`(기준) · `--radius-control` · `--radius-card` · `--radius-sheet` · `--radius-pill` | `--radius`는 `:root`, 나머지는 `@theme inline` 블록에 — 대개 `calc(var(--radius) ± Npx)`로 파생 → `rounded-card` | `--radius-{용도}` |
 | space | 콘텐츠 간격·여백 | 4px 그리드 스칼라 (요소 간 gap, 카드 패딩) | Tailwind 간격 스케일 그대로 → `p-4`·`gap-2` | 스케일 밖 간격이 정말 필요할 때만 `--spacing-{용도}` |
 | layout/frame-budget | 프레임 계약 값 | 영역 치수: `--app-max-width` · `--nav-height` / 거터·안전영역: `--space-screen-x` · `--space-bottom-safe` | `:root`. 클래스가 필요하면 `@theme inline` 블록에 (`--spacing-screen-x: var(--space-screen-x)` → `px-screen-x`) | `--{영역}-{치수}` — 거터·안전영역은 레거시로 `--space-` 접두 유지 |
@@ -88,7 +88,7 @@ Tailwind는 이름 묶음(namespace)마다 클래스를 만든다 — `--radius-
 | motion | 가속 곡선·길이 | `--ease-standard` · `--duration-fast/base/slow` | 곡선: `@theme inline` 블록 → `ease-standard` / 길이: `:root`에 `--duration-*`, `@theme inline` 블록에 `--transition-duration-*`로 올림 → `duration-base` ([bootstrap-project.md](bootstrap-project.md) §1.4) | `--ease-{느낌}` / `--duration-{속도}` |
 | typography/family | 글꼴 자체 | `--font-sans`(본문 기본) · 필요시 `--font-brand`·`--font-mono` | `@theme inline` 블록 → `font-sans` | `--font-{역할}` — 값은 1층 폰트 변수를 합친 것 ([font-loading.md](font-loading.md) §3). 제목 서체 `--font-brand`는 값을 바로 두지 않고 2층 `:root`의 중간 변수 `--brand-font`를 가리킨다 — 범위 클래스가 덮어쓸 자리 |
 | typography/weight | 글자 굵기 | 400 · 500 · 700 | Tailwind 기본 → `font-normal`·`font-medium`·`font-bold` | 역할 이름이 필요하면 `--font-weight-{역할}` → `font-{역할}` |
-| typography/scale | 글(prose) 전용 — 제목·본문·캡션 | `t1~t4`(제목) `h1~h2` `b1~b2` `c1~c2`·`label` | `@theme inline` 블록 `--text-b1` + `--text-b1--line-height` → `text-b1` | 스케일 이름은 시스템 규약으로 고정, 크기 값만 프로젝트별 교체. 11단계에 안 맞는 크기는 typography/component으로 |
+| typography/scale | 글(prose) 전용 — 제목·본문·캡션 | `t1~t4`(제목) `h1~h2` `b1~b2` `c1~c2`·`label` | `@theme inline` 블록 `--text-b1` + `--text-b1--line-height` → `text-b1` | 스케일 이름은 시스템 규약으로 고정, 크기 값만 프로젝트별 교체. 11단계에 안 맞는 크기는 typography/component으로. 예외 — 전시용 제목 `--text-display`(+ `--text-display--line-height`) 한 단계는 대표 장면 한 곳에서만 쓴다(idea-to-mvp 2-3). 그 한 곳 밖에서 쓰면 안 된다 |
 | typography/component | UI 부품 전용 — 칩·뱃지·필드라벨·헬퍼텍스트 등 prose 스케일에 안 맞는 크기 | `--text-chip` · `--text-field-label` | `@theme inline` 블록 → `text-chip` | `--text-{부품/역할}` — §5 절차로 신규 추가 |
 
 **typography가 두 갈래인 이유:** `t1~label` 11단계는 **글(prose) 역할** 전용이다 — 제목·본문·캡션처럼
@@ -174,6 +174,8 @@ semantic 층에 토큰을 추가할 때. (foundation 확장은 기본 값 자체
 의도로 명명: `--info-foreground` ✓ / `--blue-text` ✗
 역할이 한정된 토큰(특정 자리 전용)은 이름에 그 자리를 넣는다 — 예: 캡션 전용 크기면 이름에 caption.
 이름이 역할을 말해야, 고치는 파일만 읽는 에이전트가 토큰 선택만으로 규칙을 지킨다.
+
+**비교안 판 접두 규칙** — idea-to-mvp 2-3처럼 판(`bold`·`innov`·`leap`)마다 비교안 파일을 따로 쓸 때, 그 판 파일 안에서 새로 만드는 1층·2층 이름은 `--{판}-…`로 시작한다(예: `--bold-cover-900`, 전시용 제목이면 `--bold-text-display`). 판끼리 이름이 겹쳐 서로 덮어쓰는 일을 막는다. 모든 판이 쓰는 이름(`brand-surface`·`brand-font`)은 접두 없이 먼저 올려 둔다. 고른 뒤 전체 적용에서 접두를 떼고 위 유형표 자리로 옮긴다 — `--bold-text-display` → `--text-display`처럼.
 
 ### 5.3 값 연결
 
