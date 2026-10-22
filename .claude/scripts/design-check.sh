@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# design-check.sh — 3단계 배포 전 「검사 ① 디자인 규칙 검사」의 grep 16개를 한 번에 돌린다.
+# design-check.sh — 3단계 배포 전 「검사 ① 디자인 규칙 검사」의 grep 17개를 한 번에 돌린다.
 #
 # 판정 기준의 정본: .claude/skills/idea-to-mvp/references/3-frontend-build.md §2.5 「검사 ①」
 #   (통과 조건·잡는 예·못 잡는 예·예외 처리는 그 문서를 본다. 이 스크립트는 명령만 실행하고 판정은 하지 않는다.)
 #
 # 쓰는 법 (프로젝트 최상위 폴더에서):
-#   bash .claude/scripts/design-check.sh                      # 16개 전부 (13번은 --allowed 없으면 건너뜀)
+#   bash .claude/scripts/design-check.sh                      # 17개 전부 (13번은 --allowed 없으면 건너뜀)
 #   bash .claude/scripts/design-check.sh --only 1,2,7,12      # 골라서
 #   bash .claude/scripts/design-check.sh --allowed "0 1 2 3 4 6 8 12 16"   # 13번 허용 간격 단계(Tailwind 숫자)
 #
@@ -20,8 +20,10 @@
 #   AGENTS_MD=AGENTS.md                    (15번: 연결 정보의 `BRAND_PARTS:` 줄을 읽는 곳)
 #   BRAND_PARTS="src/components/hero-band.tsx …"   (15번: 주면 AGENTS_MD 대신 이 목록을 쓴다)
 #   HEAVY_LIBS="이름 …" HEAVY_PARTS="파일 …"       (16번: 연결 정보의 `HEAVY_LIBS:`·`HEAVY_PARTS:` 줄 대신 주는 목록. 라이브러리 이름은 스크립트에 없다)
+#   STAY_PALETTE="src/lib/scene-palette.ts" STAY_PARTS="파일 …"  (17번: 연결 정보의 `STAY_PALETTE:`·`STAY_PARTS:` 줄 대신 주는 목록)
+#   LIB_DIR=src/lib                        (17번: 공간 팔레트 파일(`*-palette.ts`)을 찾는 곳)
 #
-# 1·11번은 주석 속 숫자를 세지 않는다(scan — 2026-10-21 시험에서 「44px」 설명 주석이 하드코딩으로 잡혔다). 15·16번은 대상이 아직 없으면 「해당 없음」으로 따로 적는다 — 통과와 다르다.
+# 1·11번은 주석 속 숫자를 세지 않는다(scan — 2026-10-21 시험에서 「44px」 설명 주석이 하드코딩으로 잡혔다). 15·16·17번은 대상이 아직 없으면 「해당 없음」으로 따로 적는다 — 통과와 다르다.
 # 늘 exit 0 이다. 걸린 줄을 어떻게 볼지는 문서 기준으로 사람·메인이 판정한다.
 # bash 3.2(macOS 기본)에서 돌고, zsh에서 `bash …`로 불러도 낱말이 바르게 쪼개진다.
 
@@ -49,6 +51,7 @@ BTN="${BTN:-Button}"
 BTN_FN="${BTN_FN:-buttonVariants}"
 PRIMARY="${PRIMARY:-default}"
 AGENTS_MD="${AGENTS_MD:-AGENTS.md}"
+LIB_DIR="${LIB_DIR:-src/lib}"
 
 g() { command grep "$@"; }
 
@@ -97,10 +100,10 @@ want() {
 c1() {
   ex "$CSS3" "${PRODUCT[@]}"; [ ${#EX[@]} -eq 0 ] && return
   # 주석 속 숫자(예: 「누르는 영역 44px」 설명)는 세지 않는다 — scan이 주석을 걷고 본다
-  # 2-3 비교안 판 폴더(`(dev)/…/_bold|_innov|_leap/`) 안 .ts 값 파일({수단}.ts·motion.ts)은 보지 않는다 —
-  #   고르면 제품 코드 밖 lib/로 옮겨질 값 파일이라, 그 안의 색 변환 도우미(`rgb(`)가 오탐이 된다(2026-10-22 시험). .tsx는 그대로 본다.
+  # 2-3 비교안 판 폴더(`(dev)/…/_bold|_innov|_leap/`)와 2-4 공간 비교안 폴더(`_stay/`) 안 .ts 값 파일({수단}.ts·motion.ts·{수단}-palette.ts)은 보지 않는다 —
+  #   고르면 제품 코드 밖 lib/로 옮겨질 값 파일이라, 그 안의 색 변환 도우미(`rgb(`)·공간 팔레트의 색 값이 오탐이 된다(2026-10-22 시험). .tsx는 그대로 본다.
   { scan line '#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|rgba?\(|hsla?\(|oklch\(|oklab\(' "${EX[@]}"
-    scan line '[0-9]+px' "${EX[@]}"; } | g -vE '\(dev\)/([^:]*/)?_(bold|innov|leap)/[^/:]+\.ts:[0-9]+:'
+    scan line '[0-9]+px' "${EX[@]}"; } | g -vE '\(dev\)/([^:]*/)?_(bold|innov|leap|stay)/[^/:]+\.ts:[0-9]+:'
 }
 
 c2() {
@@ -319,6 +322,56 @@ c16() {
   done < "$T/heavy-files.txt"
 }
 
+# 17번: 공간 팔레트(2-4 머무는 공간의 물건 제 색 — 연결 정보의 STAY_PALETTE 파일)를 공간 부품 목록(STAY_PARTS) 밖 파일에서 불러오면 찍는다.
+# 물건 제 색이 공간 밖 화면으로 번지는 것을 막는다. 개발용 묶음 (dev)은 뺀다 — 디자인 시스템 페이지 견본과 2-4 비교안이 쓴다.
+# 불러오기는 팔레트 파일 이름(확장자 뺀 것)으로 끝나는 import·require 경로로 찾는다(예: `@/lib/scene-palette`).
+# 세 갈래를 가른다:
+#   ① 안 들임(STAY_PALETTE 줄 없음 · LIB_DIR에 *-palette.ts 파일 없음) → 「해당 없음」 (걸린 줄로 세지 않는다)
+#   ② 들였는데 목록 줄이 없음(STAY_PALETTE 줄 없는데 *-palette.ts가 있음 / STAY_PALETTE는 있는데 STAY_PARTS 줄 없음) → 「목록 줄 없음」 (걸린 줄)
+#   ③ 두 목록이 다 있음 → 목록 밖 파일만 찍는다. 목록에 있는데 파일이 없으면 (참고)로 알린다
+c17() {
+  ex "${PRODUCT[@]}"; [ ${#EX[@]} -eq 0 ] && return
+  local pal="${STAY_PALETTE:-}" list="${STAY_PARTS:-}"
+  if [ -e "$AGENTS_MD" ]; then
+    [ -z "$pal" ] && pal=$(g -m1 'STAY_PALETTE:' "$AGENTS_MD" | sed -E 's/.*STAY_PALETTE:[[:space:]]*//' | tr -d '`')
+    [ -z "$list" ] && list=$(g -m1 'STAY_PARTS:' "$AGENTS_MD" | sed -E 's/.*STAY_PARTS:[[:space:]]*//' | tr -d '`')
+  fi
+  if [ -z "$pal" ]; then
+    local found=""
+    [ -e "$LIB_DIR" ] && found=$(find "$LIB_DIR" -name '*-palette.ts' | sort)
+    if [ -z "$found" ]; then
+      echo "  (참고) 해당 없음 — 공간 팔레트를 아직 들이지 않았다(연결 정보에 STAY_PALETTE 줄 없음, $LIB_DIR 에 *-palette.ts 없음)"
+      NA_LIST="$NA_LIST 17"
+      return
+    fi
+    echo "목록 줄 없음: 공간 팔레트 파일이 있는데($(echo "$found" | paste -sd' ' -)) $AGENTS_MD 연결 정보에 STAY_PALETTE: 줄이 없다 — 줄을 빠뜨린 것"
+    return
+  fi
+  [ -z "$list" ] && echo "목록 줄 없음: STAY_PALETTE는 있는데 $AGENTS_MD 연결 정보에 STAY_PARTS: 줄이 없다 — 줄을 빠뜨린 것"
+  local p alt="" re
+  for p in $pal; do
+    [ -e "$p" ] || echo "  (참고) 팔레트 목록에 있는데 파일이 없음: $p"
+    p=$(basename "$p"); p="${p%.*}"
+    alt="${alt:+$alt|}$(printf '%s' "$p" | sed -E 's/[][\\.*^$+?(){}|]/\\&/g')"
+  done
+  [ -z "$alt" ] && return
+  re="(from|import|require)[[:space:]]*\\(?[[:space:]]*[\"']([^\"']*/)?(${alt})(\\.ts)?[\"']"
+  g -rlE --exclude-dir=ui --exclude-dir='(dev)' "$re" "${EX[@]}" | sort -u > "$T/stay-files.txt"
+  local parts=() f ok
+  [ -n "$list" ] && read -r -a parts <<< "$list"
+  if [ ${#parts[@]} -gt 0 ]; then
+    for p in "${parts[@]}"; do [ -e "$p" ] || echo "  (참고) 목록에 있는데 파일이 없음: $p"; done
+  fi
+  [ -s "$T/stay-files.txt" ] || return
+  while read -r f; do
+    ok=0
+    if [ ${#parts[@]} -gt 0 ]; then
+      for p in "${parts[@]}"; do [ "$f" = "$p" ] && ok=1; done
+    fi
+    [ "$ok" = 1 ] || echo "공간 부품 목록 밖: $f"
+  done < "$T/stay-files.txt"
+}
+
 # ---------- 실행 ----------
 HIT_LIST=""
 VAL_LIST=""
@@ -360,6 +413,7 @@ run 13 "간격 허용 단계 밖" c13 h
 run 14 "화면의 h1 직접 사용" c14 h
 run 15 "브랜드 색 면 자리 부품 밖 사용" c15 h
 run 16 "무거운 라이브러리 자리 밖 사용" c16 h
+run 17 "공간 팔레트 자리 밖 사용" c17 h
 
 echo
 echo "걸린 검사:${HIT_LIST:- 없음} / 기준 확인이 필요한 검사: 8·10(1 이상이어야 통과), 12(1개가 아닌 화면은 주 행동 칸과 맞대 판정) —${VAL_LIST:- 해당 없음}"
