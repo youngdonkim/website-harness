@@ -37,6 +37,10 @@
 //     if (await readDevGuest(searchParams)) return null   // 로그인 전 흉내
 //     ...
 //   }
+//
+// 머무는 공간(idea-to-mvp 2-4)은 두 표시를 더 쓴다 — 켜지는 조건은 readDevState와 같다.
+//   ?focus={물건 id} — 공간에서 그 물건을 골라 다가간 모습으로 바로 연다(readDevFocus). 목업 캔버스·자기 점검이 주소 하나로 「가까이 본 모습」을 찍는다.
+//   ?state=many      — 예시 데이터를 늘려 「많을 때」 묶인 모습을 본다(readDevMany). 저장하지 않고 보이기만 한다. 상태 표의 상태가 아니라 DEV_STATES에는 넣지 않는다.
 
 export const DEV_STATES = ["empty", "loading", "error", "forbidden"] as const
 export type DevState = (typeof DEV_STATES)[number]
@@ -77,4 +81,26 @@ export async function readDevForbidden(
 /** 느린 응답 흉내 — 로딩 화면이 보일 만큼 기다린다. 숫자는 밀리초다. */
 export function devLoadingDelay(ms = 4000): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+/** 머무는 공간의 가까이 본 모습 — 주소 끝 `?focus={물건 id}`의 물건 id, 없으면 null. 켜지는 조건은 readDevState와 같다 */
+export async function readDevFocus(
+  searchParams?: DevSearchParams | Promise<DevSearchParams>,
+): Promise<string | null> {
+  if (process.env.NODE_ENV === "production" && process.env.MOCKUP_CANVAS !== "1") return null
+  const params = await searchParams
+  const raw = params?.focus
+  const value = Array.isArray(raw) ? raw[0] : raw
+  return value ? value : null
+}
+
+/** 많은 데이터 흉내 — 주소 끝이 `?state=many`면 참. 저장·조회 코드가 예시 데이터를 늘려 돌려준다(저장하지 않는다) */
+export async function readDevMany(
+  searchParams?: DevSearchParams | Promise<DevSearchParams>,
+): Promise<boolean> {
+  if (process.env.NODE_ENV === "production" && process.env.MOCKUP_CANVAS !== "1") return false
+  const params = await searchParams
+  const raw = params?.state
+  const value = Array.isArray(raw) ? raw[0] : raw
+  return value === "many"
 }

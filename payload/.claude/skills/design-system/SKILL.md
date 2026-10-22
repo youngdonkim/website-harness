@@ -85,6 +85,8 @@ git branch --show-current
 - **프로젝트가 브랜드 색을 정하지 않았으면 쓰지 않는다** — 이 이름이 2층에 없으면 지금처럼 강조색 세 자리 규칙만 있다.
 - 자리 목록을 더하거나 빼는 결정과 그 이유는 프로젝트가 기록한다 — idea-to-mvp 프로젝트는 `mvp/design-brief.md` 「13. 개성」이 정본이다.
 
+**머무는 공간 안 색** — 사용자가 들어가 둘러보는 공간(idea-to-mvp 2-4)의 그림 안에서는 물건이 제 색을 쓴다(나무는 나무색, 화분은 초록). 브랜드 2층 이름만 쓰면 공간이 한 계열로 칙칙해지기 때문이다. 대신 둘을 지킨다. ① 물건 색은 공간 팔레트 파일 한 곳(`lib/{수단}-palette.ts`)에만 두고, 공간 부품(연결 정보 `STAY_PARTS:`)만 불러 쓴다 — 제 색이 공간 밖 화면으로 번지지 않게(검사 17번). ② 신호 자리(지금 고른 물건·오늘·주 행동)는 그대로 2층 이름(`primary` 등)이고, 팔레트에 강조색과 헷갈리는 색을 두지 않는다. 공간 밖(공간 위 글 층·내용 패널·버튼)은 이 문서의 규칙 그대로다. 점검 항목은 [visual-polish.md](references/visual-polish.md) J 묶음.
+
 ## 결정 트리
 
 **새 화면이 필요하다** (frame-first — 콘텐츠부터 쓰지 말 것)
@@ -159,6 +161,7 @@ shadcn이 `--radius` 하나에서 `calc(var(--radius) - 2px)`처럼 sm~xl을 파
 - **참고 사이트·스크린샷에서 스타일 값을 뽑을 때, 또는 그렇게 뽑아 브리프에 적어 둔 값을 토큰으로 옮길 때** — [reference-analysis.md](references/reference-analysis.md) (고르는 법·갤러리 · 입력 네 종류와 값 뽑는 법 · 분석 항목표 · 분석값 → 1층 램프·2층 shadcn 변수 · 금지)
 - **화면 생김새를 개선할 때** — [visual-polish.md](references/visual-polish.md) (위계·글자·간격·색·부품·폰 화면으로 옮기기 점검 항목과 지시 문장 예 · 규칙을 디자인 시스템 페이지에 먼저 올리고 비교안을 만들게 한다)
 - **개성(그림 소재·브랜드 색 면·제목 서체·로고·사진 톤·대표 장면)을 입힐 때** — [visual-polish.md](references/visual-polish.md) I 개성 묶음과 위 「브랜드 색은 어디에 쓰나」
+- **사용자가 들어가 둘러보는 공간(머무는 공간)을 만들 때** — [visual-polish.md](references/visual-polish.md) J 머무는 공간 묶음과 위 「머무는 공간 안 색」
 - **「[서비스 이름] 디자인 시스템」 페이지를 만들거나 고칠 때, 비교안 값을 지금 값과 나란히 보일 때** — [bootstrap-project.md](references/bootstrap-project.md) §6 (보여 주는 것 · 값은 브라우저 계산값으로 · 정본이 아니라 거울 · 범위 클래스로 비교안 값 나란히 · 틀은 `.claude/templates/mockup-canvas/`)
 - **폰트를 새로 넣거나 바꿀 때** — [font-loading.md](references/font-loading.md) (조각화·자체 호스팅 원리, Next.js 로딩 결정표 — 구글 폰트·npm 폰트 갈래, `--font-sans`에서 합치기, 빌드 검증 관문 3종)
 - **새 프로젝트에 도입할 때** — [bootstrap-project.md](references/bootstrap-project.md)를 순서대로 따른다. 이 절차는 도중에 세 문서를 함께 읽는다: 토큰 3층 단계에서 font-loading.md(폰트 선정·로딩 방식을 같이 정한다 — 미루면 foundation을 다시 갈아엎는다), 인벤토리 생성에서 component-taxonomy.md §6(인벤토리 한 줄 형식), 프레임 정의에서 layout-frames.md §4(웹·앱 통합이면 canvas·gutter 플랫폼 차이)

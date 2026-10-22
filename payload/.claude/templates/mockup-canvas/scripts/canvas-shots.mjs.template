@@ -12,6 +12,7 @@
 // 3D 장면·게임판처럼 늦게 그려지는 화면은 첫 그림을 그리면 data-view-ready="1"을 낸다 — 그것도 같은 방식으로 기다린다.
 // 3D 화면이 있으면 크로미움을 `--use-angle=swiftshader`(소프트웨어 그래픽)로 띄운다 — 그래픽 카드 없는 헤드리스에서 WebGL이 그려진다. 환경변수 CANVAS_GL=0이면 끈다.
 // 폰 폭만 띄우는 화면(screens.ts의 widths: ["phone"])은 목록에 데스크톱 창이 없으니 폰 그림만 찍는다.
+// 머무는 공간(idea-to-mvp 2-4)의 가까이 본 모습(`?focus=`)·많을 때(`?state=many`)는 목록 파일 drafts의 한 줄로 올라와 다른 창처럼 찍힌다 — README 「머무는 공간의 가까이·많을 때 주소」.
 
 import { mkdir, readdir, rm } from "node:fs/promises"
 import path from "node:path"

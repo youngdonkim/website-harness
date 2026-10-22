@@ -256,6 +256,55 @@ function BrandSection() {
   )
 }
 
+// ── 머무는 공간 (idea-to-mvp 2-4에서 채운다. 비어 있으면 이 영역을 그리지 않는다) ──
+// 공간 안의 물건은 제 색을 쓰고, 그 색은 공간 팔레트 파일(`src/lib/{수단}-palette.ts`) 한 곳에만 있다.
+// 이 영역은 그 팔레트를 색 칸으로 그리고 바로 옆에 신호 자리 색(강조색)을 나란히 둔다 — 헷갈리는 색이 없는지 사람이 견준다.
+// 색 값은 이 파일에 적지 않는다 — 팔레트 파일을 import해 그 값을 넘긴다(검사 1번이 이 파일을 본다).
+// 비교안 동안에는 껍데기(`../drafts/_stay/stay-panel.tsx`)를 STAY_PANELS에 등록해 공간 에이전트가 채운다(팔레트 견본·숫자 값·캐릭터 견본).
+// 공간을 쓰기로 해 본 코드로 옮기면 껍데기 등록을 지우고 STAY_PALETTE_SAMPLE에 본 팔레트를 넣는다. 쓰지 않으면 껍데기와 등록을 비교안과 함께 지운다.
+const STAY_PALETTE_SAMPLE: Record<string, string> = {} // {{예: import { PALETTE } from "@/lib/scene-palette" 후 = PALETTE}}
+const STAY_PANELS: { label: string; Panel: React.ComponentType }[] = [
+  // {{예: { label: "머무는 공간 — 비교안", Panel: StayPanel } — 맨 위에 import StayPanel from "../drafts/_stay/stay-panel" 을 더한다}}
+]
+
+function StaySection() {
+  const names = Object.keys(STAY_PALETTE_SAMPLE)
+  if (names.length === 0 && STAY_PANELS.length === 0) return null
+  return (
+    <Section title="머무는 공간">
+      <div className="flex flex-col gap-8">
+        {names.length > 0 && (
+          <div className="flex flex-col gap-3">
+            <p className="text-b2 font-semibold">공간 팔레트와 신호 자리 색</p>
+            <div className="flex flex-wrap gap-4">
+              {names.map((name) => (
+                <div key={name} className="flex flex-col items-start gap-1">
+                  {/* 색은 팔레트 파일에서 온 값을 그대로 칠한다 — 공간 팔레트는 토큰이 아니라 이 칸만 style로 받는다 */}
+                  <span
+                    className="size-10 rounded-card border border-border"
+                    style={{ backgroundColor: STAY_PALETTE_SAMPLE[name] }}
+                  />
+                  <span className="text-b2 text-muted-foreground">{name}</span>
+                </div>
+              ))}
+              <div className="flex flex-col items-start gap-1">
+                <span className="size-10 rounded-card bg-primary" />
+                <span className="text-b2 text-muted-foreground">강조색(신호 자리)</span>
+              </div>
+            </div>
+          </div>
+        )}
+        {STAY_PANELS.map(({ label, Panel }) => (
+          <div key={label} className="flex flex-col gap-3" data-stay-panel>
+            <p className="text-b2 font-semibold">{label}</p>
+            <Panel />
+          </div>
+        ))}
+      </div>
+    </Section>
+  )
+}
+
 const TYPE_READ: (keyof CSSStyleDeclaration & string)[] = ["fontSize", "fontWeight", "lineHeight"]
 const FONT_READ: (keyof CSSStyleDeclaration & string)[] = ["fontFamily", "fontWeight"]
 const COLOR_READ: (keyof CSSStyleDeclaration & string)[] = ["backgroundColor"]
@@ -424,6 +473,8 @@ export default function DesignSystemPage() {
           ))}
         </div>
       )}
+
+      <StaySection />
 
       <Section title="폰 배치 메모">
         {/* 프로젝트에 맞게 고친다: 어느 폭에서 무엇이 접히는지 한 줄씩 */}
