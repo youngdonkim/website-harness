@@ -67,7 +67,7 @@ description: 프런트엔드 구현 단계 가이드. 2단계에서 만든 리�
 - ❌ **개발환경 구성** — 스택 선택·버전 조합·Supabase 자리·Vercel 플러그인·디자인 시스템 첫 세팅·목업 캔버스는 2단계 개발환경 준비(`2-0-dev-setup.md`)가 이미 했다. 스택은 2단계에서 고정됐고 이 단계에서 다시 고르지 않는다 (`2-0-dev-setup.md` §2.1·§2.2).
 - ❌ **백엔드** — DB 테이블·RLS·로그인·서버 로직은 전부 4단계(BackendBuild) 몫이다. 이 단계 데이터는 브라우저 로컬스토리지에 담긴다 (왜 이렇게 나누는지는 `2-0-dev-setup.md` §2.3).
 - ❌ **퍼널 계측·실결제** — 4단계.
-- ❌ **다크모드·다국어·성능 튜닝** — production 영역. (단 반응형은 폰으로 열어볼 수 있어야 하니 챙긴다.)
+- ❌ **다크모드·다국어·성능 튜닝** — production 영역. (단 반응형은 폰으로 열어볼 수 있어야 하니 챙긴다. 기본값 때문에 느려지는 자리 — 리전·글꼴·이미지·첫 응답 시간 — 를 막는 점검은 튜닝이 아니라 기본 설정 확인이라 §2.6 첫 배포 체크리스트 「속도 점검」에서 한다.)
 
 **작업 모드가 절마다 다르다** (SKILL.md §1.5) — 헷갈리지 않게 미리 정리한다:
 
@@ -601,6 +601,22 @@ grep -lE 'Error\("|message:|throw new' src/lib/*.ts 2>/dev/null
    - [ ] 공개 주소에서 목업 캔버스가 막혀 있다 — `curl -s -o /dev/null -w "%{http_code}" https://<프로젝트이름>.vercel.app/dev/canvas`가 404인지 확인한다. 개발용 묶음 레이아웃(`src/app/(dev)/layout.tsx`)이 실서비스 빌드에서 404를 내야 하고, 200이면 배포를 멈추고 그 레이아웃부터 고친다. Vercel 환경변수에 `MOCKUP_CANVAS`가 없는지도 `npx vercel env ls`로 본다 — 이 변수는 내 컴퓨터에서 목업 캔버스를 실서비스 빌드로 빠르게 볼 때만 명령 앞에 붙이는 것이라, Vercel에 들어가면 공개 주소에서 열린다
    - [ ] Vercel 빌드 기록(배포 화면의 Build Logs)의 Node 버전이 `package.json`의 `engines.node`·`.nvmrc`와 같은 주 버전이다 — 기록에 버전이 안 보이면 Vercel 공식 문서(「Supported Node.js versions」)가 권하는 대로 빌드 명령 앞에 `node -v`를 붙여 한 번 배포해 보고 되돌린다. 다르면 Vercel 프로젝트 설정(Settings → Build and Deployment → Node.js Version)이나 `engines.node`를 2단계 개발환경 준비에서 정한 주 버전으로 맞춘다 (`2-0-dev-setup.md` §2.2). Vercel은 `engines.node`를 프로젝트 설정보다 먼저 따른다
    - [ ] 연동 실패("you have access to the repository" 류) 시 원인은 대부분 앱 미설치가 아니라 **설치된 Vercel GitHub 앱의 저장소 접근 목록(Only select repositories)에 이 저장소가 빠진 것** — GitHub 계정 Settings → Applications → Vercel → Repository access에 이 저장소만 추가한다(All repositories 전환 금지). 세부 함정은 `docs/account-check.md` Vercel 항목 참조
+
+   **속도 점검** — 성능 튜닝(§1 「여기서 안 하는 것」)이 아니라, 아무것도 안 정하면 따라오는 기본값 때문에 느려지는 자리를 첫 배포 때 한 번 막는 점검이다. 4단계 최종 배포(`4-3-backend-deploy.md` §2.6)가 이 묶음을 다시 돈다 — 이 묶음이 정본이다. 설정 이름·기본값은 2026-10-22에 각 줄 끝의 공식 문서로 확인했다.
+
+   - [ ] **리전을 적는다 (첫 배포 전)** — Vercel 서버 함수는 아무것도 안 적으면 미국 동부 워싱턴(`iad1`)에서 돈다. 한국 서비스면 프로젝트 맨 위 `vercel.json`에 `"regions": ["icn1"]`(서울)을 적고, 프로젝트 `AGENTS.md` 계정 표 아래 「배포 리전」 줄에도 같은 값을 적는다. 3단계는 데이터가 브라우저에 있고 정적 화면은 CDN(사용자와 가까운 지점에서 파일을 내주는 망)이 내보내서 차이가 작다. 그래도 동적 화면과 4단계 서버 함수는 이 리전에서 돌기 때문에 처음부터 적어 둔다 — 4단계에서 잊으면 DB 조회마다 태평양을 오간다. 대시보드(Settings → Functions → Function Regions)에서도 바꿀 수 있지만 `vercel.json`은 git에 남아 리뷰에 보이니 그쪽에 적는다. (vercel.com/docs/functions/configuring-functions/region · vercel.com/docs/regions)
+   - [ ] **배포 뒤 실제 리전을 확인한다** — 동적(`ƒ`, 아래 줄) 화면 주소 하나에 `curl -sI https://<프로젝트이름>.vercel.app/<동적 주소> | grep -i x-vercel-id`를 돌린다. 이 응답 헤더에는 요청이 거친 리전과 함수가 돈 리전의 코드가 `::` 앞에 나열된다 — 한국에서 재고 서울로 적었으면 코드가 전부 `icn1`이어야 하고, `iad1`이 보이면 설정이 안 먹은 것이다. 정적 화면은 가까운 지점 하나만 찍혀서(`icn1::…`) 함수 리전을 알 수 없다. 동적 화면이 하나도 없으면 대시보드의 그 배포 요약에서 함수 리전을 본다. (vercel.com/docs/headers/response-headers)
+   - [ ] **정적·동적을 본다** — `npm run build` 끝의 결과표에서 화면마다 붙은 표시를 본다. `○`는 정적(빌드 때 만들어 둔 파일을 CDN이 바로 내줌), `ƒ`는 동적(요청마다 서버 함수가 만듦)이다. 3단계는 데이터가 브라우저에 있으니 대부분 `○`여야 한다. `ƒ`인 화면이 있으면 그 화면의 서버 쪽 코드가 쿠키·요청 헤더·주소 검색값(`searchParams`)을 읽는지, `dynamic = "force-dynamic"`을 적었는지 원인을 찾고, 그럴 이유가 없으면 정적으로 돌린다.
+   - [ ] **글꼴** — 한글 글꼴은 글자가 1만 자가 넘어 통째로 받으면 MB 단위라 첫 화면이 그만큼 늦는다. 로딩 방식은 design-system `font-loading.md` §4가 정본이다 — 구글 폰트는 `next/font/google`(+ `preload: false`), Pretendard 같은 npm 폰트는 조각화 CSS `@import`이고, `next/font/local`과 CDN `<link>`는 쓰지 않는다. 여기서는 ① 그 문서 §6 관문(빌드 결과의 woff2 조각 수·크기)을 실서비스 빌드로 한 번 더 돌리고 ② 받는 굵기가 쓰는 것뿐인지(제목 서체는 하나 — `2-3-personality.md`) 본다. `next/font`의 `display` 기본값이 이미 `swap`(글꼴이 오기 전엔 기본 글꼴로 먼저 보여 줌)이라 따로 적지 않는다. (nextjs.org/docs/app/api-reference/components/font)
+   - [ ] **이미지** — 사진은 `next/image`로 넣고 `width`·`height`(또는 `fill` + `sizes`)를 준다 — 사진이 오기 전에 자리를 잡아 두어 글자가 밀리지 않는다. 첫 화면 맨 위의 큰 사진 하나에는 `fetchPriority="high"`를 준다 — 첫 화면의 가장 큰 그림이 뜨는 시점(LCP, Largest Contentful Paint)을 앞당긴다. 공식 문서가 대부분 이 방법을 권하고, 옛 `priority`는 Next.js 16부터 폐기됐다(대신 `preload`가 생겼다). 사진 자리가 아직 자리 표시뿐이면 해당 없음. (nextjs.org/docs/app/api-reference/components/image)
+   - [ ] **배포 뒤 첫 응답 시간을 잰다** — 공개 주소의 첫 화면(동적 화면이 있으면 그 화면도 하나)에 아래를 돌린다. 다섯 번 중 첫 번째는 잠들어 있던 함수를 깨우는 시간(콜드 스타트)이 섞일 수 있어 빼고, 나머지 네 번의 가운데 값을 사용자에게 보고한다.
+
+     ```bash
+     for i in 1 2 3 4 5; do curl -s -o /dev/null -w "%{time_starttransfer}\n" https://<프로젝트이름>.vercel.app/; done
+     ```
+
+     `time_starttransfer`는 요청을 보내고 첫 바이트를 받기까지 걸린 초(TTFB, Time To First Byte)다. **가운데 값이 0.5초를 넘으면 원인부터 찾는다** — 리전(위 `x-vercel-id`), 정적이어야 할 화면이 동적인지, 서버에서 기다리는 조회가 있는지. 0.5초의 근거는 둘이다. ① web.dev는 실제 사용자 75%가 0.8초 안이면 「좋음」으로 보는데, 이건 연결·DNS까지 든 실사용자 기준이고 스스로 「대략의 기준」이라 한다. 한국의 컴퓨터 한 대에서 서울 리전을 재는 이 측정은 그보다 빡빡하게 둔다. ② 우리 실측에서 리전이 미국 동부일 때 566ms, 서울로 옮긴 뒤 188ms였다(`4-3-backend-deploy.md` §2.6) — 0.5초가 두 경우를 가른다. (web.dev/articles/ttfb)
+   - [ ] (사용자 검증) **체감 속도** — 사용자가 ① 자기 폰으로 공개 주소를 열어 첫 화면이 뜨는 느낌을 보고 ② pagespeed.web.dev에 공개 주소를 넣어 「모바일」 결과를 한 번 본다. PageSpeed Insights 점수는 화면을 보는 일이 아니라 구글 서버가 내는 숫자라 AI가 API로 재도 「화면 검증은 사람 몫」 규칙에는 걸리지 않는다. 다만 키 없이 부르면 공유 한도에 걸려 실패해서(2026-10-22 실측: 429) 사람 몫으로 둔다. AI는 점수를 받아 「빠르다」고 판정하지 않는다 — 사용자가 본 숫자를 전해 주면 위 원인 찾기에 쓴다.
 2. **사이트 전체에 색인 제외(noindex)를 건다.** 지금 올리는 건 로컬스토리지로 도는 워킹 프로토타입이라 빈 상태 화면과 예시 데이터뿐인데, 이 링크는 4단계까지 몇 주를 떠 있는다. 그동안 검색에 잡히면 서비스가 그 얇은 화면으로 알려진다. 막는 건 검색 색인뿐이고 링크를 보내 여는 건 그대로 되니 남에게 보여주는 데는 아무 지장이 없다. Vercel의 preview 배포는 기본으로 막혀 있지만 **여기서 만드는 공개 URL은 production이라 안 막힌다** — 그래서 직접 걸어야 한다. 4단계에서 검색 노출을 켤 때 푼다 (`4-3-backend-deploy.md` §2.2).
 3. **사용자가 배포 URL을 브라우저로 직접 클릭해 확인한다** (사람 몫 — SKILL.md §1.5, AI가 자동 도구로 사인오프하지 않는다):
    - 화면 목록의 핵심 플로우가 끝까지 돌아가는지.
@@ -654,6 +670,7 @@ grep -lE 'Error\("|message:|throw new' src/lib/*.ts 2>/dev/null
 - [ ] **배포 완료 + 공개 링크 확보** (§2.6) — 남에게 보여주고 4단계에서 이어 쓸 링크.
 - [ ] **배포 주소의 `/dev` 404** (§2.6) — `curl`로 공개 주소의 `/dev/canvas`가 404임을 확인. Vercel 환경변수에 `MOCKUP_CANVAS` 없음.
 - [ ] **Vercel의 Node 주 버전이 `engines.node`와 같음** (§2.6) — 빌드 기록으로 확인.
+- [ ] **속도 점검** (§2.6 첫 배포 체크리스트 「속도 점검」) — `vercel.json`에 리전을 적었고 동적 화면의 `x-vercel-id`로 실제 리전을 확인함(동적 화면이 없으면 대시보드). 빌드 결과표의 `ƒ` 화면은 이유가 있음. 글꼴 관문·이미지 크기 지정 통과. 첫 응답 가운데 값을 사용자에게 보고했고, 0.5초를 넘었으면 원인을 찾음. 체감 속도는 사용자가 폰과 PageSpeed Insights로 봄.
 - [ ] **색인 제외 적용 확인** (§2.6) — 배포 URL이 검색엔진에 안 잡히게 막혀 있음. 4단계에서 푼다.
 - [ ] (사용자 검증) **사람이 브라우저로 클릭 확인 완료** (§2.6) — 핵심 플로우 끝까지 + 새로고침 후 데이터 유지 + 모바일 폭에서 안 깨짐 + 움직임 확인(§2.6 3번). AI 자동 사인오프 아님.
 
