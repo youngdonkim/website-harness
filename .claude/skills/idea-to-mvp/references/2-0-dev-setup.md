@@ -236,7 +236,7 @@ description: 목업 단계(2단계)의 맨 앞 하위 단계 가이드 — 개�
        ```
 
        이렇게 받은 fnm은 명령 경로에 없으니 `~/.local/share/fnm/fnm`처럼 전체 경로로 부른다.
-     - **윈도우** — `winget install -e --id Schniz.fnm`(winget — 윈도우에 들어 있는 공식 프로그램 설치 도구). 깔았는데 명령을 못 찾으면 「fnm을 깔았습니다. 새 명령이 잡히도록 클로드 코드를 껐다 켜 주세요」 한 줄만 알린다.
+     - **윈도우** — `winget install -e --id Schniz.fnm --accept-source-agreements --accept-package-agreements`(winget — 윈도우에 들어 있는 공식 프로그램 설치 도구). 깔았는데 명령을 못 찾으면 「fnm을 깔았습니다. 새 명령이 잡히도록 클로드 코드를 껐다 켜 주세요」 한 줄만 알린다.
    - **판 받기** — `fnm install <주 버전>`. fnm이 Node 공식 배포판(nodejs.org)에서 받아 사용자 폴더에 둔다. 이미 받아 둔 판이 있으면 건너뛴다.
    - **부르는 법** — 이 프로젝트의 node·npm·npx 명령은 전부 `fnm exec --using=.nvmrc -- <명령>`으로 부른다. 예: `fnm exec --using=.nvmrc -- npm install`, `fnm exec --using=.nvmrc -- npx supabase start`. `--using`은 판 숫자나 판이 적힌 파일 이름을 받는다(fnm 공식 명령 설명) — `.nvmrc`를 만들기 전에는 `--using=<주 버전>`으로 부른다. 받은 뒤 `fnm exec --using=<주 버전> -- node -v`로 주 버전을 확인한다.
    - **하지 않는 것** — 셸 설정 파일(`~/.zshrc`·`~/.zprofile` 등 터미널이 열릴 때 읽는 파일)에 fnm을 넣지 않는다(`fnm env`·`fnm use`·`fnm default`는 셸 설정이 있어야 듣는 명령이라 쓰지 않는다). 이 컴퓨터의 기본 Node를 바꾸거나 명령을 찾는 경로 순서를 고치지 않는다. 위 세 설치 방법은 셸 설정 파일을 고치지 않는다.

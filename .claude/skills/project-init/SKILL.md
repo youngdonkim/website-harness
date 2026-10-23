@@ -138,6 +138,7 @@ git -C <원본경로> rev-parse --short=12 HEAD
 <원본>/payload/.claude/  →  <프로젝트>/.claude/   (skills·agents·hooks·scripts·rules·templates)
 <원본>/payload/docs/     →  <프로젝트>/docs/      (git-workflow.md·account-check.md)
 <원본>/payload/.github/  →  <프로젝트>/.github/   (workflows/ci.yml)
+<원본>/payload/.gitattributes  →  <프로젝트>/.gitattributes   (텍스트 파일 LF 고정 — 윈도우에서 .sh가 CRLF가 되어 깨지는 것을 막는다)
 ```
 
 **복사에서 빼는 파일 둘** — 미러 규칙의 예외는 이 둘뿐이다. 그대로 놓이는 파일이 아니라서 빠진다.
@@ -151,10 +152,10 @@ git -C <원본경로> rev-parse --short=12 HEAD
 
 ### 5. 훅 등록 — settings.json 병합
 
-원본의 `payload/.claude/settings-hooks.json`은 **훅 등록 원본**이다. 이 파일의 `hooks` 블록을 프로젝트의 `.claude/settings.json`에 병합한다.
+원본의 `payload/.claude/settings-hooks.json`은 **훅 등록 원본**이다. 이 파일의 `hooks` 블록과 `env` 블록을 프로젝트의 `.claude/settings.json`에 병합한다. `env`에는 윈도우에서 PowerShell 도구를 끄는 `CLAUDE_CODE_USE_POWERSHELL_TOOL=0`이 들어 있다(하네스 스크립트·스킬의 명령이 bash 문법이라서다). 훅 matcher는 `Bash|PowerShell`이라 PowerShell 도구가 켜진 환경에서도 안전장치가 걸린다.
 
 - 프로젝트에 `settings.json`이 없으면 그 내용 그대로 새로 만든다.
-- 있으면 **기존 키를 전부 보존한 채** `hooks` 블록만 넣는다. 프로젝트가 이미 자기 훅을 등록해뒀다면 지우지 말고, 같은 이벤트 안에 하네스 훅을 덧붙인다 — 겹치는 하네스 훅(같은 스크립트 경로)은 하나만 남긴다.
+- 있으면 **기존 키를 전부 보존한 채** `hooks` 블록과 `env` 블록만 넣는다. 프로젝트 `env`에 다른 키가 있으면 지우지 말고 하네스 키만 더하거나 갱신한다. 프로젝트가 이미 자기 훅을 등록해뒀다면 지우지 말고, 같은 이벤트 안에 하네스 훅을 덧붙인다 — 겹치는 하네스 훅(같은 스크립트 경로)은 하나만 남긴다.
 
 경로는 `"$CLAUDE_PROJECT_DIR"/.claude/hooks/<이름>.sh` 형태라 프로젝트를 어디에 두든 그대로 작동한다.
 
@@ -191,7 +192,7 @@ date=<오늘 날짜 YYYY-MM-DD>
    출력이 있으면 그 파일을 `.gitignore`에 넣을지(이미 추적 중이면 추적에서 뺄지) 사용자에게 묻고, 정리된 뒤에 커밋한다.
 3. **첫 커밋** — 하네스가 넣은 파일과, 이미 있던 1단계 산출물(`mvp/` 안 파일 — 들고 온 `intent.md`·`design-brief.md` 등)을 담는다. `mvp/`를 빼면 main에 미추적으로 남아 첫 `/new-task`가 따로 처리해야 한다. 그 밖에 원래 있던 미커밋 파일은 건드리지 않고 마무리 안내에 적는다.
    ```bash
-   git add -- CLAUDE.md AGENTS.md .gitignore .claude docs/git-workflow.md docs/account-check.md .github/workflows/ci.yml
+   git add -- CLAUDE.md AGENTS.md .gitignore .gitattributes .claude docs/git-workflow.md docs/account-check.md .github/workflows/ci.yml
    [ -d mvp ] && git add -- mvp
    git commit -m "chore: website-harness 하네스 적용 (<적용한 하네스 커밋>)"
    ```
@@ -236,7 +237,7 @@ date=<오늘 날짜 YYYY-MM-DD>
 
 **사람이 바로 대답할 수 없는 동기화** — 다른 세션이나 다른 에이전트가 시킨 동기화(예: 하네스 저장소 세션이 옆 프로젝트를 맞추라고 시킴)는 그 자리에 대답할 사람이 없다. 이 절차의 「확인받고 쓴다」·「사용자에게 묻는다」 자리를 만나면 멈추지도, 혼자 정하지도 않는다. 그 항목은 쓰지 않고 남겨 두고, 확인 없이 해도 되는 것(동일 파일 넘기기, 새 파일 복사, 옛 버전과 같아 뒤처진 것만 확인된 파일 교체)만 하고 끝까지 간다. 남겨 둔 항목 — 지울 파일 목록, 충돌 파일과 다른 곳, `AGENTS.md` 병합안 요지, `CLAUDE.md` 옮길 안, 옛 구조라서 맞추지 않은 것 — 을 [8. 마무리 보고](#8-마무리-보고)에 「확인이 필요한 것」 한 묶음으로 모아 시킨 쪽에 돌려준다. 시킨 쪽이 사람에게 한 번에 물어 답을 받은 뒤 다시 부르면 그 항목만 반영한다. 1번 미커밋 검사에 걸리면 덮어쓰기 전에 거기서 멈추고 걸린 목록을 보고한다(덮어쓰면 되돌릴 수 없다).
 
-**payload 미러로 온 파일은 전부 하네스 소유물**이고, **`AGENTS.md` 하나만 예외**다. `.claude/owner`·`.claude/harness-version`·`.claude/settings.json`(hooks 블록 밖)은 payload에 없는 프로젝트 파일이라 「원본에서 사라짐」으로 지우지 않는다. `CLAUDE.md`는 `@AGENTS.md` 한 줄짜리 포인터라 하네스 소유물로 다룬다 — 다만 옛 구조로 만든 프로젝트는 여기에 규칙이 들어 있을 수 있어, 확인 없이 줄이지 않는다([4. AGENTS.md — 예외 하나, 병합이 기본](#4-agentsmd--예외-하나-병합이-기본)).
+**payload 미러로 온 파일은 전부 하네스 소유물**이고, **`AGENTS.md` 하나만 예외**다. `.claude/owner`·`.claude/harness-version`·`.claude/settings.json`(hooks 블록·하네스 env 키 밖)은 payload에 없는 프로젝트 파일이라 「원본에서 사라짐」으로 지우지 않는다. `CLAUDE.md`는 `@AGENTS.md` 한 줄짜리 포인터라 하네스 소유물로 다룬다 — 다만 옛 구조로 만든 프로젝트는 여기에 규칙이 들어 있을 수 있어, 확인 없이 줄이지 않는다([4. AGENTS.md — 예외 하나, 병합이 기본](#4-agentsmd--예외-하나-병합이-기본)).
 
 ### 1. 프로젝트 쪽 미커밋 검사
 
@@ -265,7 +266,8 @@ git status --porcelain -- .claude docs/git-workflow.md docs/account-check.md .gi
 - `payload/.claude/*` ↔ `.claude/*` (skills·agents·hooks·scripts·rules·templates)
 - `payload/docs/*` ↔ `docs/git-workflow.md`·`docs/account-check.md`
 - `payload/.github/workflows/ci.yml` ↔ `.github/workflows/ci.yml`
-- `payload/.claude/settings-hooks.json`의 hooks 블록 ↔ `.claude/settings.json`의 hooks 블록
+- `payload/.gitattributes` ↔ `.gitattributes` — 단 **프로젝트에 이미 다른 내용의 `.gitattributes`가 있으면 덮어쓰지 않는다.** 프로젝트 파일로 취급해, 하네스 줄(`* text=auto eol=lf` 등)이 빠져 있으면 그 줄만 덧붙이고 프로젝트 줄은 그대로 둔다.
+- `payload/.claude/settings-hooks.json`의 hooks 블록·env 블록 ↔ `.claude/settings.json`의 hooks 블록·`env`의 하네스 키
 
 처리 갈래:
 
@@ -274,7 +276,7 @@ git status --porcelain -- .claude docs/git-workflow.md docs/account-check.md .gi
 - **원본에서 사라짐** (이름이 바뀌었거나 폐기된 파일) → 프로젝트에서도 지운다. 지우기 전에 목록으로 보여주고 확인받는다.
 - **다름** → 아래 [로컬 수정 흔적 판별](#3-로컬-수정-흔적-판별)로 갈라진다.
 
-`settings.json`은 파일 전체가 아니라 **hooks 블록만** 하네스 소유물이다. 나머지 키(`permissions`·`env` 등 프로젝트가 넣은 것)는 손대지 않는다.
+`settings.json`은 파일 전체가 아니라 **hooks 블록과 `env`의 하네스 키(`CLAUDE_CODE_USE_POWERSHELL_TOOL`)만** 하네스 소유물이다. 나머지 키(`permissions`와 프로젝트가 넣은 다른 `env` 키 등)는 손대지 않는다.
 
 교체한 훅 스크립트와 실행기에는 실행 권한을 다시 준다: `chmod +x .claude/hooks/*.sh .claude/scripts/*.sh`
 
