@@ -115,7 +115,8 @@ c2() {
   local t=(); local p
   for p in "$CSS3" "${PRODUCT[@]}"; do [ -e "$p" ] && t+=("$p"); done
   [ ${#t[@]} -eq 0 ] && return
-  g -rnwF --exclude-dir=ui -f "$T/foundation-vars.txt" "${t[@]}"
+  # 주석 줄(`//`·`/*`·`*`로 시작)은 세지 않는다 — 「1층 --curve-out과 같은 곡선」 같은 설명 주석이 걸렸다(2026-10-22 시험)
+  g -rnwF --exclude-dir=ui -f "$T/foundation-vars.txt" "${t[@]}" | g -vE '^[^:]+:[0-9]+:[[:space:]]*(//|/\*|\*)'
 }
 
 c3() {
@@ -280,6 +281,7 @@ c15() {
 # 세 갈래를 가른다:
 #   ① 안 들임(HEAVY_LIBS 줄 없음 · 제품 코드에 패키지를 동적 import한 곳도 없음) → 「해당 없음」 (걸린 줄로 세지 않는다)
 #   ② 들였는데 목록 줄이 없음(HEAVY_LIBS 줄 없는데 패키지를 동적 import한 파일이 있음 / HEAVY_LIBS는 있는데 HEAVY_PARTS 줄 없음) → 「목록 줄 없음」 (걸린 줄)
+#      비교안 폴더에서만 쓰고 본 부품이 아직 없으면 `HEAVY_PARTS: (없음)`으로 적는다 — 빈 목록으로 읽고 걸지 않는다
 #   ③ 두 목록이 다 있음 → 목록 밖 파일만 찍는다. 목록에 있는데 파일이 없으면 (참고)로 알린다
 c16() {
   ex "${PRODUCT[@]}"; [ ${#EX[@]} -eq 0 ] && return
@@ -302,7 +304,10 @@ c16() {
     NA_LIST="$NA_LIST 16"
     return
   fi
-  [ -z "$list" ] && echo "목록 줄 없음: HEAVY_LIBS는 있는데 $AGENTS_MD 연결 정보에 HEAVY_PARTS: 줄이 없다 — 줄을 빠뜨린 것"
+  # `HEAVY_PARTS: (없음)` — 비교안 폴더에서만 쓰고 본 부품이 아직 없을 때 적는 값. 줄은 있는 것으로 보고 빈 목록으로 읽는다
+  local none=0
+  case "$list" in "(없음)"|"없음"|"-") none=1; list="" ;; esac
+  [ -z "$list" ] && [ $none -eq 0 ] && echo "목록 줄 없음: HEAVY_LIBS는 있는데 $AGENTS_MD 연결 정보에 HEAVY_PARTS: 줄이 없다 — 줄을 빠뜨린 것"
   local alt re
   alt=$(printf '%s\n' $libs | sed -E 's/[][\\.*^$+?(){}|]/\\&/g' | paste -sd'|' -)
   re="(from|import|require)[[:space:]]*\\(?[[:space:]]*[\"'](${alt})(/[^\"']*)?[\"']"
@@ -347,7 +352,9 @@ c17() {
     echo "목록 줄 없음: 공간 팔레트 파일이 있는데($(echo "$found" | paste -sd' ' -)) $AGENTS_MD 연결 정보에 STAY_PALETTE: 줄이 없다 — 줄을 빠뜨린 것"
     return
   fi
-  [ -z "$list" ] && echo "목록 줄 없음: STAY_PALETTE는 있는데 $AGENTS_MD 연결 정보에 STAY_PARTS: 줄이 없다 — 줄을 빠뜨린 것"
+  local none=0
+  case "$list" in "(없음)"|"없음"|"-") none=1; list="" ;; esac
+  [ -z "$list" ] && [ $none -eq 0 ] && echo "목록 줄 없음: STAY_PALETTE는 있는데 $AGENTS_MD 연결 정보에 STAY_PARTS: 줄이 없다 — 줄을 빠뜨린 것"
   local p alt="" re
   for p in $pal; do
     [ -e "$p" ] || echo "  (참고) 팔레트 목록에 있는데 파일이 없음: $p"
