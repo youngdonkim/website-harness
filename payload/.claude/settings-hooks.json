@@ -1,8 +1,11 @@
 {
+  "env": {
+    "CLAUDE_CODE_USE_POWERSHELL_TOOL": "0"
+  },
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "Bash|PowerShell",
         "hooks": [
           {
             "type": "command",

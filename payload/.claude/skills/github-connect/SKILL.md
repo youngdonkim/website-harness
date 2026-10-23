@@ -72,7 +72,7 @@ v=$(<값을 내는 명령>) && [ -n "$v" ] && { grep -v '^GH_TOKEN=' "$f" 2>/dev
 없으면 "git(코드 변경 이력을 저장하는 도구)을 설치해도 되겠습니까?" 한 번 묻고, 허락받으면:
 
 - **맥** — [AI] `xcode-select --install` → [사람] 뜨는 창에서 「설치」를 누르고 사용권 계약에 「동의」. 끝나면 "됐어"라고 말해 달라고 한다. 맥은 `git --version`만 쳐도 이 창이 먼저 뜰 수 있다 — 그 창이면 그대로 설치하면 된다.
-- **윈도우** — [AI] `winget install --id Git.Git -e` → [사람] "이 앱이 디바이스를 변경하도록 허용하시겠어요?" 창에서 「예」. 클로드 코드 윈도우판은 Git for Windows(Git Bash)가 있어야 돌아서 보통 이미 깔려 있다(최신 확인 — 쓴 시점 기준).
+- **윈도우** — [AI] `winget install --id Git.Git -e --accept-source-agreements --accept-package-agreements` → [사람] "이 앱이 디바이스를 변경하도록 허용하시겠어요?" 창에서 「예」. 클로드 코드 윈도우판은 Git for Windows(Git Bash)가 있어야 돌아서 보통 이미 깔려 있다(최신 확인 — 쓴 시점 기준).
 
 설치 뒤 `command git --version`으로 다시 확인한다. 윈도우에서 새로 깔았는데 인식이 안 되면 앱을 껐다 켜 달라고 한다(명령 경로가 새 창에서만 잡힌다).
 
@@ -86,7 +86,7 @@ gh는 GitHub을 터미널에서 다루는 공식 도구(GitHub CLI)다. 작업 �
 
 - **맥, brew 있음** (`brew --version` 성공) — [AI] `brew install gh`
 - **맥, brew 없음** — brew를 새로 들이지 않는다. [사람] `https://cli.github.com` 에서 「Download for Mac」 → 받은 `.pkg` 파일을 열어 「계속」 → 「설치」 → 맥 로그인 비밀번호 입력. 끝나면 "됐어". (맥 로그인 비밀번호는 사람만 넣을 수 있어 이 갈래만 사람 몫이다.)
-- **윈도우** — [AI] `winget install --id GitHub.cli -e` → [사람] 권한 창에서 「예」. 인식이 안 되면 앱을 껐다 켠다.
+- **윈도우** — [AI] `winget install --id GitHub.cli -e --accept-source-agreements --accept-package-agreements` → [사람] 권한 창에서 「예」. 인식이 안 되면 앱을 껐다 켠다.
 
 설치 뒤 `command gh --version`으로 다시 확인한다. 같은 실패가 2번 나면 멈추고 어느 명령이 무엇으로 실패했는지 보고한다.
 
@@ -105,7 +105,7 @@ jq는 JSON(프로그램끼리 주고받는 데이터 형식)을 읽는 작은 �
   mkdir -p ~/.local/bin && curl -fsSL -o ~/.local/bin/jq "https://github.com/jqlang/jq/releases/latest/download/$f" && chmod +x ~/.local/bin/jq
   ```
   PATH에 든 사용자 폴더가 없으면 `~/.local/bin`에 받고, 그 폴더를 PATH에 넣는 한 줄(`~/.zprofile`에 `export PATH="$HOME/.local/bin:$PATH"`)은 셸 설정을 바꾸는 일이라 사용자에게 안내한다.
-- **윈도우(Git Bash)** — `winget install --id jqlang.jq -e`. winget이 없거나 실패하면 공식 릴리스의 윈도우 실행 파일을 `~/bin/jq.exe`로 받는다 — Git for Windows가 Git Bash를 열 때 `$HOME/bin`을 PATH 맨 앞에 넣는다(Git for Windows `env.sh`).
+- **윈도우(Git Bash)** — `winget install --id jqlang.jq -e --accept-source-agreements --accept-package-agreements`. winget이 없거나 실패하면 공식 릴리스의 윈도우 실행 파일을 `~/bin/jq.exe`로 받는다 — Git for Windows가 Git Bash를 열 때 `$HOME/bin`을 PATH 맨 앞에 넣는다(Git for Windows `env.sh`).
   ```bash
   case "${PROCESSOR_ARCHITECTURE:-AMD64}" in ARM64) f=jq-windows-arm64.exe ;; *) f=jq-windows-amd64.exe ;; esac
   mkdir -p ~/bin && curl -fsSL -o ~/bin/jq.exe "https://github.com/jqlang/jq/releases/latest/download/$f"
